@@ -1,9 +1,6 @@
-
+{% load static %}
 <!DOCTYPE html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+
 	<head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -13,19 +10,6 @@
 	<meta name="keywords" content="free html5, free template, free bootstrap, html5, css3, mobile first, responsive" />
 	<meta name="author" content="FREEHTML5.CO" />
 
-  <!-- 
-	//////////////////////////////////////////////////////
-
-	FREE HTML5 TEMPLATE 
-	DESIGNED & DEVELOPED by FREEHTML5.CO
-		
-	Website: 		http://freehtml5.co/
-	Email: 			info@freehtml5.co
-	Twitter: 		http://twitter.com/fh5co
-	Facebook: 		https://www.facebook.com/fh5co
-
-	//////////////////////////////////////////////////////
-	 -->
 
   	<!-- Facebook and Twitter integration -->
 	<meta property="og:title" content=""/>
@@ -43,24 +27,23 @@
 
 	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,900' rel='stylesheet' type='text/css'>
 	
-	<!-- Animate.css -->
-	<link rel="stylesheet" href="css/animate.css">
-	<!-- Icomoon Icon Fonts-->
-	<link rel="stylesheet" href="css/icomoon.css">
-	<!-- Bootstrap  -->
-	<link rel="stylesheet" href="css/bootstrap.css">
-	<!-- Superfish -->
-	<link rel="stylesheet" href="css/superfish.css">
-
-	<link rel="stylesheet" href="css/style.css">
-
-
+		<!-- Animate.css -->
+		<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+		<link rel="stylesheet" href="{% static 'css/animate.css' %}">
+		<!-- Icomoon Icon Fonts -->
+		<link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
+		<!-- Bootstrap -->
+		<link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+		<!-- Superfish -->
+		<link rel="stylesheet" href="{% static 'css/superfish.css' %}">
+		<!-- Custom Style -->
+		<link rel="stylesheet" href="{% static 'css/style.css' %}">
+		<!-- Bootstrap SCSS -->
+		<link rel="stylesheet" href="{% static 'sass/bootstrap.scss' %}">
+		<link rel="stylesheet" href="{% static 'sass/bootstrap/Style.css' %}">
+	
 	<!-- Modernizr JS -->
 	<script src="js/modernizr-2.6.2.min.js"></script>
-	<!-- FOR IE9 below -->
-	<!--[if lt IE 9]>
-	<script src="js/respond.min.js"></script>
-	<![endif]-->
 
 	</head>
 	<body>
@@ -71,15 +54,15 @@
 				<div class="container">
 					<div class="nav-header">
 						<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle"><i></i></a>
-						<h1 id="fh5co-logo"><a href="index.html">Fit<span>ness</span></a></h1>
+						<h1 id="fh5co-logo"><a href="{% url 'home' %}">Rocks<span>-Fit</span></a></h1>
 						<!-- START #fh5co-menu-wrap -->
 						<nav id="fh5co-menu-wrap" role="navigation">
 							<ul class="sf-menu" id="fh5co-primary-menu">
 								<li>
-									<a href="index.html">Home</a>
+									<a href="{% url 'home' %}">Home</a>
 								</li>
 								<li>
-									<a href="classes.html" class="fh5co-sub-ddown">Classes</a>
+									<a href="{% url 'programs' %}"class="fh5co-sub-ddown">Classes</a>
 									 <ul class="fh5co-sub-menu">
 									 	<li><a href="left-sidebar.html">Web Development</a></li>
 									 	<li><a href="right-sidebar.html">Branding &amp; Identity</a></li>
@@ -100,9 +83,9 @@
 									</ul>
 								</li>
 								<li>
-									<a href="schedule.html">Schedule</a>
+									<a href="{% url 'schedule' %}">Schedule</a>
 								</li>
-								<li><a href="trainer.html">Trainers</a></li>
+								<li><a href="{% url 'trainers' %}">Trainers</a></li>
 								<li class="active"><a href="about.html">About</a></li>
 								<li><a href="contact.html">Contact</a></li>
 							</ul>
@@ -112,14 +95,15 @@
 			</header>		
 		</div>
 		<!-- end:fh5co-header -->
-		<div class="fh5co-parallax" style="background-image: url(images/home-image-4.jpg);" data-stellar-background-ratio="0.5">
+		<div class="fh5co-parallax" style="background-image: url('{% static 'images/96.jpg' %}');">
+			<div class="overlay-section"> data-stellar-background-ratio="0.5">
 			<div class="overlay"></div>
 			<div class="container">
 				<div class="row">
 					<div class="col-md-8 col-md-offset-2 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table">
 						<div class="fh5co-intro fh5co-table-cell animate-box">
-							<h1 class="text-center">About Us</h1>
-							<p>Made with love by the fine folks at <a href="http://freehtml5.co">FreeHTML5.co</a></p>
+							<h1 class="text-center">Sobre a Rocks-Fit</h1>
+							<p>Fundado em 14 de fevereiro de 2014</p>
 						</div>
 					</div>
 				</div>
@@ -130,14 +114,14 @@
 			<div class="container">
 				<div class="row about">
 					<div class="col-md-12 col-md-offset-0">
-						<img class="img-responsive animate-box" src="images/home-image-3.jpg" alt="About">
+						<img class="img-responsive animate-box" src="images/home-image-3.jpg" alt="Sobre a Rocks-Fit">
 					</div>
 					<div class="col-md-12 col-md-offset-0 animate-box">
-						<p>Even the all-powerful Pointing has no control about the blind texts it is an almost unorthographic life One day however a small line of blind text by the name of Lorem Ipsum decided to leave for the far World of Grammar. The Big Oxmox advised her not to do so, because there were thousands of bad Commas, wild Question Marks and devious Semikoli, but the Little Blind Text didn’t listen.</p>
+						<p>A Rocks Fit nasceu em 14 de fevereiro de 2014, uma data marcada pela nossa paixão em transformar vidas através do fitness. Inspirada pela resistência e solidez das rochas, nossa academia foi criada para ser um verdadeiro símbolo de força e perseverança.</p>
 						<blockquote>
-						  <p>Even the all-powerful Pointing has no control about the blind texts it is an almost unorthographic life One day however a small line of blind text by the name of Lorem Ipsum decided to leave for the far World of Grammar.</p>
+						<p>Nosso compromisso é proporcionar uma experiência de treinamento que não só desafie, mas também motive e empodere. Cada aspecto da Rocks Fit foi cuidadosamente planejado para criar um ambiente onde a determinação e a superação são as bases de todas as conquistas.Desde o início, nossa academia foi projetada com um conceito único, inspirado pela força e durabilidade das rochas. O nome "Rocks Fit" traduz nossa filosofia: rochas fortes, simbolizando a resiliência e a robustez que desejamos cultivar em cada um de nossos membros.</p>
 						</blockquote>
-						<p>Even the all-powerful Pointing has no control about the blind texts it is an almost unorthographic life One day however a small line of blind text by the name of Lorem Ipsum decided to leave for the far World of Grammar. The Big Oxmox advised her not to do so, because there were thousands of bad Commas, wild Question Marks and devious Semikoli, but the Little Blind Text didn’t listen.</p>
+						<p>Venha nos conhecer e descubra como a força das rochas pode inspirar a sua jornada fitness!</p>
 					</div>
 				</div>
 				<div class="row">
