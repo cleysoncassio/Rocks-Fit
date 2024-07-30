@@ -4,6 +4,7 @@ python:
   - "3.11.9"
 
 install:
+  - pip install safety
   - pip install -r requirements-dev.txt
 
 script:
@@ -11,6 +12,9 @@ script:
   - isort .
   - black .
   - python manage.py test
+  - coverage run manage.py test --noinput
+  - coverage report --show-missing
+  - safety check -r requirements-dev.txt
 
 after_success:
   - coveralls

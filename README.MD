@@ -32,6 +32,7 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
     flake8 #garante conformidade com as diretrizes de estilo, identifica erros e melhorar a legibilidade e a manutenibilidade do seu código.
     isort . #Ordena e formata automaticamente as declarações de importação em arquivos Python.
     black . #Aplica um estilo de código consistente em todo o projeto Python. PEP8
+    safety check #Este comando verifica todas as dependências instaladas no ambiente Python atual.
 
 4. **Quer contribuir? Instale as Dependências**
 

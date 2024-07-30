@@ -1,0 +1,1350 @@
+{
+    "report_meta": {
+        "scan_target": "environment",
+        "scanned": [
+            "/home/cleyson/.pyenv/versions/3.11.9/lib/python311.zip",
+            "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages",
+            "/home/cleyson/.pyenv/versions/3.11.9/lib/python3.11/lib-dynload",
+            "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor",
+            "/home/cleyson/.pyenv/versions/3.11.9/lib/python3.11",
+            "/home/cleyson/Modelos/Rocks-Fit/venv/bin"
+        ],
+        "scanned_full_path": [
+            "/home/cleyson/Modelos/Rocks-Fit/venv/bin",
+            "/home/cleyson/.pyenv/versions/3.11.9/lib/python311.zip",
+            "/home/cleyson/.pyenv/versions/3.11.9/lib/python3.11",
+            "/home/cleyson/.pyenv/versions/3.11.9/lib/python3.11/lib-dynload",
+            "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages",
+            "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+        ],
+        "target_languages": [
+            "python"
+        ],
+        "policy_file": null,
+        "policy_file_source": "local",
+        "audit_and_monitor": false,
+        "api_key": false,
+        "account": "cleysoncassio@gmail.com",
+        "local_database_path": null,
+        "safety_version": "3.2.4",
+        "timestamp": "2024-07-30 00:22:19",
+        "packages_found": 71,
+        "vulnerabilities_found": 1,
+        "vulnerabilities_ignored": 0,
+        "remediations_recommended": 1,
+        "telemetry": {
+            "safety_options": {
+                "json": {
+                    "--json": 1
+                }
+            },
+            "safety_version": "3.2.4",
+            "safety_source": "cli",
+            "os_type": "Linux",
+            "os_release": "6.1.0-23-amd64",
+            "os_description": "Linux-6.1.0-23-amd64-x86_64-with-glibc2.36",
+            "python_version": "3.11.9",
+            "safety_command": "check"
+        },
+        "git": {
+            "branch": "master",
+            "tag": "",
+            "commit": "c3de6ec7816d575c0e567f9d2714b4c17e4b1b02",
+            "dirty": false,
+            "origin": "https://github.com/cleysoncassio/Rocks-Fit.git"
+        },
+        "project": null,
+        "json_version": "1.1",
+        "remediations_attempted": 0,
+        "remediations_completed": 0,
+        "remediation_mode": "NON_INTERACTIVE"
+    },
+    "scanned_packages": {
+        "authlib": {
+            "name": "authlib",
+            "version": "1.3.1",
+            "requirements": [
+                {
+                    "raw": "authlib==1.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "authlib",
+                    "specifier": "==1.3.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "django": {
+            "name": "django",
+            "version": "5.0.7",
+            "requirements": [
+                {
+                    "raw": "django==5.0.7",
+                    "extras": [],
+                    "marker": null,
+                    "name": "django",
+                    "specifier": "==5.0.7",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "markupsafe": {
+            "name": "markupsafe",
+            "version": "2.1.5",
+            "requirements": [
+                {
+                    "raw": "markupsafe==2.1.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "markupsafe",
+                    "specifier": "==2.1.5",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pyyaml": {
+            "name": "pyyaml",
+            "version": "6.0.1",
+            "requirements": [
+                {
+                    "raw": "pyyaml==6.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyyaml",
+                    "specifier": "==6.0.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "annotated-types": {
+            "name": "annotated-types",
+            "version": "0.7.0",
+            "requirements": [
+                {
+                    "raw": "annotated-types==0.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "annotated-types",
+                    "specifier": "==0.7.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "asgiref": {
+            "name": "asgiref",
+            "version": "3.8.1",
+            "requirements": [
+                {
+                    "raw": "asgiref==3.8.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "asgiref",
+                    "specifier": "==3.8.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "black": {
+            "name": "black",
+            "version": "24.4.2",
+            "requirements": [
+                {
+                    "raw": "black==24.4.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "black",
+                    "specifier": "==24.4.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "certifi": {
+            "name": "certifi",
+            "version": "2024.7.4",
+            "requirements": [
+                {
+                    "raw": "certifi==2024.7.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "certifi",
+                    "specifier": "==2024.7.4",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "cffi": {
+            "name": "cffi",
+            "version": "1.16.0",
+            "requirements": [
+                {
+                    "raw": "cffi==1.16.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cffi",
+                    "specifier": "==1.16.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "cfgv": {
+            "name": "cfgv",
+            "version": "3.4.0",
+            "requirements": [
+                {
+                    "raw": "cfgv==3.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cfgv",
+                    "specifier": "==3.4.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "charset-normalizer": {
+            "name": "charset-normalizer",
+            "version": "3.3.2",
+            "requirements": [
+                {
+                    "raw": "charset-normalizer==3.3.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "charset-normalizer",
+                    "specifier": "==3.3.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "click": {
+            "name": "click",
+            "version": "8.1.7",
+            "requirements": [
+                {
+                    "raw": "click==8.1.7",
+                    "extras": [],
+                    "marker": null,
+                    "name": "click",
+                    "specifier": "==8.1.7",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "coverage": {
+            "name": "coverage",
+            "version": "7.6.0",
+            "requirements": [
+                {
+                    "raw": "coverage==7.6.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "coverage",
+                    "specifier": "==7.6.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "coveralls": {
+            "name": "coveralls",
+            "version": "4.0.1",
+            "requirements": [
+                {
+                    "raw": "coveralls==4.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "coveralls",
+                    "specifier": "==4.0.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "cryptography": {
+            "name": "cryptography",
+            "version": "43.0.0",
+            "requirements": [
+                {
+                    "raw": "cryptography==43.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cryptography",
+                    "specifier": "==43.0.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "distlib": {
+            "name": "distlib",
+            "version": "0.3.8",
+            "requirements": [
+                {
+                    "raw": "distlib==0.3.8",
+                    "extras": [],
+                    "marker": null,
+                    "name": "distlib",
+                    "specifier": "==0.3.8",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "django-sass-processor": {
+            "name": "django-sass-processor",
+            "version": "1.4.1",
+            "requirements": [
+                {
+                    "raw": "django-sass-processor==1.4.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "django-sass-processor",
+                    "specifier": "==1.4.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "docopt": {
+            "name": "docopt",
+            "version": "0.6.2",
+            "requirements": [
+                {
+                    "raw": "docopt==0.6.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "docopt",
+                    "specifier": "==0.6.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "dparse": {
+            "name": "dparse",
+            "version": "0.6.4b0",
+            "requirements": [
+                {
+                    "raw": "dparse==0.6.4b0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "dparse",
+                    "specifier": "==0.6.4b0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "filelock": {
+            "name": "filelock",
+            "version": "3.12.4",
+            "requirements": [
+                {
+                    "raw": "filelock==3.12.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "filelock",
+                    "specifier": "==3.12.4",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "flake8": {
+            "name": "flake8",
+            "version": "7.1.0",
+            "requirements": [
+                {
+                    "raw": "flake8==7.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flake8",
+                    "specifier": "==7.1.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "identify": {
+            "name": "identify",
+            "version": "2.6.0",
+            "requirements": [
+                {
+                    "raw": "identify==2.6.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "identify",
+                    "specifier": "==2.6.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "idna": {
+            "name": "idna",
+            "version": "3.7",
+            "requirements": [
+                {
+                    "raw": "idna==3.7",
+                    "extras": [],
+                    "marker": null,
+                    "name": "idna",
+                    "specifier": "==3.7",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "isort": {
+            "name": "isort",
+            "version": "5.13.2",
+            "requirements": [
+                {
+                    "raw": "isort==5.13.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "isort",
+                    "specifier": "==5.13.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "jinja2": {
+            "name": "jinja2",
+            "version": "3.1.4",
+            "requirements": [
+                {
+                    "raw": "jinja2==3.1.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jinja2",
+                    "specifier": "==3.1.4",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "markdown-it-py": {
+            "name": "markdown-it-py",
+            "version": "3.0.0",
+            "requirements": [
+                {
+                    "raw": "markdown-it-py==3.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "markdown-it-py",
+                    "specifier": "==3.0.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "marshmallow": {
+            "name": "marshmallow",
+            "version": "3.21.3",
+            "requirements": [
+                {
+                    "raw": "marshmallow==3.21.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "marshmallow",
+                    "specifier": "==3.21.3",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "mccabe": {
+            "name": "mccabe",
+            "version": "0.7.0",
+            "requirements": [
+                {
+                    "raw": "mccabe==0.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mccabe",
+                    "specifier": "==0.7.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "mdurl": {
+            "name": "mdurl",
+            "version": "0.1.2",
+            "requirements": [
+                {
+                    "raw": "mdurl==0.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mdurl",
+                    "specifier": "==0.1.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "mypy-extensions": {
+            "name": "mypy-extensions",
+            "version": "1.0.0",
+            "requirements": [
+                {
+                    "raw": "mypy-extensions==1.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mypy-extensions",
+                    "specifier": "==1.0.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "nodeenv": {
+            "name": "nodeenv",
+            "version": "1.9.1",
+            "requirements": [
+                {
+                    "raw": "nodeenv==1.9.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nodeenv",
+                    "specifier": "==1.9.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "packaging": {
+            "name": "packaging",
+            "version": "24.1",
+            "requirements": [
+                {
+                    "raw": "packaging==24.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "packaging",
+                    "specifier": "==24.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pathspec": {
+            "name": "pathspec",
+            "version": "0.12.1",
+            "requirements": [
+                {
+                    "raw": "pathspec==0.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pathspec",
+                    "specifier": "==0.12.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pillow": {
+            "name": "pillow",
+            "version": "10.4.0",
+            "requirements": [
+                {
+                    "raw": "pillow==10.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pillow",
+                    "specifier": "==10.4.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pip": {
+            "name": "pip",
+            "version": "24.1.2",
+            "requirements": [
+                {
+                    "raw": "pip==24.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pip",
+                    "specifier": "==24.1.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pipfreeze": {
+            "name": "pipfreeze",
+            "version": "2.0.3",
+            "requirements": [
+                {
+                    "raw": "pipfreeze==2.0.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pipfreeze",
+                    "specifier": "==2.0.3",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "platformdirs": {
+            "name": "platformdirs",
+            "version": "4.2.2",
+            "requirements": [
+                {
+                    "raw": "platformdirs==4.2.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "platformdirs",
+                    "specifier": "==4.2.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pre-commit": {
+            "name": "pre-commit",
+            "version": "3.8.0",
+            "requirements": [
+                {
+                    "raw": "pre-commit==3.8.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pre-commit",
+                    "specifier": "==3.8.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pycodestyle": {
+            "name": "pycodestyle",
+            "version": "2.12.0",
+            "requirements": [
+                {
+                    "raw": "pycodestyle==2.12.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pycodestyle",
+                    "specifier": "==2.12.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pycparser": {
+            "name": "pycparser",
+            "version": "2.22",
+            "requirements": [
+                {
+                    "raw": "pycparser==2.22",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pycparser",
+                    "specifier": "==2.22",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pydantic": {
+            "name": "pydantic",
+            "version": "2.8.2",
+            "requirements": [
+                {
+                    "raw": "pydantic==2.8.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic",
+                    "specifier": "==2.8.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pydantic-core": {
+            "name": "pydantic-core",
+            "version": "2.20.1",
+            "requirements": [
+                {
+                    "raw": "pydantic-core==2.20.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic-core",
+                    "specifier": "==2.20.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pyflakes": {
+            "name": "pyflakes",
+            "version": "3.2.0",
+            "requirements": [
+                {
+                    "raw": "pyflakes==3.2.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyflakes",
+                    "specifier": "==3.2.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "pygments": {
+            "name": "pygments",
+            "version": "2.18.0",
+            "requirements": [
+                {
+                    "raw": "pygments==2.18.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pygments",
+                    "specifier": "==2.18.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "requests": {
+            "name": "requests",
+            "version": "2.32.3",
+            "requirements": [
+                {
+                    "raw": "requests==2.32.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "requests",
+                    "specifier": "==2.32.3",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "rich": {
+            "name": "rich",
+            "version": "13.7.1",
+            "requirements": [
+                {
+                    "raw": "rich==13.7.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rich",
+                    "specifier": "==13.7.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "ruamel.yaml": {
+            "name": "ruamel.yaml",
+            "version": "0.18.6",
+            "requirements": [
+                {
+                    "raw": "ruamel.yaml==0.18.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruamel.yaml",
+                    "specifier": "==0.18.6",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "ruamel.yaml.clib": {
+            "name": "ruamel.yaml.clib",
+            "version": "0.2.8",
+            "requirements": [
+                {
+                    "raw": "ruamel.yaml.clib==0.2.8",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruamel.yaml.clib",
+                    "specifier": "==0.2.8",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "safety": {
+            "name": "safety",
+            "version": "3.2.4",
+            "requirements": [
+                {
+                    "raw": "safety==3.2.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safety",
+                    "specifier": "==3.2.4",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "safety-schemas": {
+            "name": "safety-schemas",
+            "version": "0.0.2",
+            "requirements": [
+                {
+                    "raw": "safety-schemas==0.0.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safety-schemas",
+                    "specifier": "==0.0.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "setuptools": {
+            "name": "setuptools",
+            "version": "72.1.0",
+            "requirements": [
+                {
+                    "raw": "setuptools==72.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "setuptools",
+                    "specifier": "==72.1.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "shellingham": {
+            "name": "shellingham",
+            "version": "1.5.4",
+            "requirements": [
+                {
+                    "raw": "shellingham==1.5.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "shellingham",
+                    "specifier": "==1.5.4",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "sqlparse": {
+            "name": "sqlparse",
+            "version": "0.5.1",
+            "requirements": [
+                {
+                    "raw": "sqlparse==0.5.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sqlparse",
+                    "specifier": "==0.5.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "typer": {
+            "name": "typer",
+            "version": "0.12.3",
+            "requirements": [
+                {
+                    "raw": "typer==0.12.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typer",
+                    "specifier": "==0.12.3",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "typing-extensions": {
+            "name": "typing-extensions",
+            "version": "4.12.2",
+            "requirements": [
+                {
+                    "raw": "typing-extensions==4.12.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typing-extensions",
+                    "specifier": "==4.12.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "urllib3": {
+            "name": "urllib3",
+            "version": "2.2.2",
+            "requirements": [
+                {
+                    "raw": "urllib3==2.2.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "urllib3",
+                    "specifier": "==2.2.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "virtualenv": {
+            "name": "virtualenv",
+            "version": "20.26.3",
+            "requirements": [
+                {
+                    "raw": "virtualenv==20.26.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "virtualenv",
+                    "specifier": "==20.26.3",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ]
+        },
+        "autocommand": {
+            "name": "autocommand",
+            "version": "2.2.2",
+            "requirements": [
+                {
+                    "raw": "autocommand==2.2.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "autocommand",
+                    "specifier": "==2.2.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "backports.tarfile": {
+            "name": "backports.tarfile",
+            "version": "1.2.0",
+            "requirements": [
+                {
+                    "raw": "backports.tarfile==1.2.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "backports.tarfile",
+                    "specifier": "==1.2.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "importlib-metadata": {
+            "name": "importlib-metadata",
+            "version": "8.0.0",
+            "requirements": [
+                {
+                    "raw": "importlib-metadata==8.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "importlib-metadata",
+                    "specifier": "==8.0.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "importlib-resources": {
+            "name": "importlib-resources",
+            "version": "6.4.0",
+            "requirements": [
+                {
+                    "raw": "importlib-resources==6.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "importlib-resources",
+                    "specifier": "==6.4.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "inflect": {
+            "name": "inflect",
+            "version": "7.3.1",
+            "requirements": [
+                {
+                    "raw": "inflect==7.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "inflect",
+                    "specifier": "==7.3.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "jaraco.context": {
+            "name": "jaraco.context",
+            "version": "5.3.0",
+            "requirements": [
+                {
+                    "raw": "jaraco.context==5.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.context",
+                    "specifier": "==5.3.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "jaraco.functools": {
+            "name": "jaraco.functools",
+            "version": "4.0.1",
+            "requirements": [
+                {
+                    "raw": "jaraco.functools==4.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.functools",
+                    "specifier": "==4.0.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "jaraco.text": {
+            "name": "jaraco.text",
+            "version": "3.12.1",
+            "requirements": [
+                {
+                    "raw": "jaraco.text==3.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.text",
+                    "specifier": "==3.12.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "more-itertools": {
+            "name": "more-itertools",
+            "version": "10.3.0",
+            "requirements": [
+                {
+                    "raw": "more-itertools==10.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "more-itertools",
+                    "specifier": "==10.3.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "ordered-set": {
+            "name": "ordered-set",
+            "version": "4.1.0",
+            "requirements": [
+                {
+                    "raw": "ordered-set==4.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ordered-set",
+                    "specifier": "==4.1.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "tomli": {
+            "name": "tomli",
+            "version": "2.0.1",
+            "requirements": [
+                {
+                    "raw": "tomli==2.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tomli",
+                    "specifier": "==2.0.1",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "typeguard": {
+            "name": "typeguard",
+            "version": "4.3.0",
+            "requirements": [
+                {
+                    "raw": "typeguard==4.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typeguard",
+                    "specifier": "==4.3.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "wheel": {
+            "name": "wheel",
+            "version": "0.43.0",
+            "requirements": [
+                {
+                    "raw": "wheel==0.43.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "wheel",
+                    "specifier": "==0.43.0",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "zipp": {
+            "name": "zipp",
+            "version": "3.19.2",
+            "requirements": [
+                {
+                    "raw": "zipp==3.19.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "zipp",
+                    "specifier": "==3.19.2",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages/setuptools/_vendor"
+                }
+            ]
+        }
+    },
+    "affected_packages": {
+        "jinja2": {
+            "name": "jinja2",
+            "version": "3.1.4",
+            "requirements": [
+                {
+                    "raw": "jinja2==3.1.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jinja2",
+                    "specifier": "==3.1.4",
+                    "url": null,
+                    "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "2.0",
+                "2.0rc1",
+                "2.1",
+                "2.10",
+                "2.10.1",
+                "2.10.2",
+                "2.10.3",
+                "2.1.1",
+                "2.11.0",
+                "2.11.1",
+                "2.11.2",
+                "2.11.3",
+                "2.2",
+                "2.2.1",
+                "2.3",
+                "2.3.1",
+                "2.4",
+                "2.4.1",
+                "2.5",
+                "2.5.1",
+                "2.5.2",
+                "2.5.3",
+                "2.5.4",
+                "2.5.5",
+                "2.6",
+                "2.7",
+                "2.7.1",
+                "2.7.2",
+                "2.7.3",
+                "2.8",
+                "2.8.1",
+                "2.9",
+                "2.9.1",
+                "2.9.2",
+                "2.9.3",
+                "2.9.4",
+                "2.9.5",
+                "2.9.6",
+                "3.0.0",
+                "3.0.0a1",
+                "3.0.0rc1",
+                "3.0.0rc2",
+                "3.0.1",
+                "3.0.2",
+                "3.0.3",
+                "3.1.0",
+                "3.1.1",
+                "3.1.2",
+                "3.1.3",
+                "3.1.4"
+            ],
+            "secure_versions": [],
+            "latest_version_without_known_vulnerabilities": "",
+            "latest_version": "3.1.4",
+            "more_info_url": "https://data.safetycli.com/p/pypi/jinja2/eda/"
+        }
+    },
+    "announcements": [],
+    "vulnerabilities": [
+        {
+            "vulnerability_id": "70612",
+            "package_name": "jinja2",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=0"
+            ],
+            "all_vulnerable_specs": [
+                ">=0"
+            ],
+            "analyzed_version": "3.1.4",
+            "analyzed_requirement": {
+                "raw": "jinja2==3.1.4",
+                "extras": [],
+                "marker": null,
+                "name": "jinja2",
+                "specifier": "==3.1.4",
+                "url": null,
+                "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+            },
+            "advisory": "In Jinja2, the from_string function is prone to Server Side Template Injection (SSTI) where it takes the \"source\" parameter as a template object, renders it, and then returns it. The attacker can exploit it with {{INJECTION COMMANDS}} in a URI. \r\nNOTE: The maintainer and multiple third parties believe that this vulnerability isn't valid because users shouldn't use untrusted templates without sandboxing.",
+            "is_transitive": false,
+            "published_date": "2019-Feb-15",
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [
+                "https://pyup.io/v/70612/eda",
+                "https://github.com/JameelNabbo/Jinja2-Code-execution",
+                "https://www.exploit-db.com/exploits/46386/",
+                "http://lists.opensuse.org/opensuse-security-announce/2019-05/msg00030.html",
+                "http://lists.opensuse.org/opensuse-security-announce/2019-06/msg00064.html",
+                "https://bugzilla.redhat.com/show_bug.cgi?id=1677653",
+                "https://bugzilla.suse.com/show_bug.cgi?id=1125815",
+                "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8341",
+                "https://hackerone.com/reports/125980"
+            ],
+            "CVE": "CVE-2019-8341",
+            "severity": {
+                "source": "CVE-2019-8341",
+                "cvssv2": {
+                    "base_score": 7.5,
+                    "impact_score": 6.4,
+                    "vector_string": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
+                },
+                "cvssv3": {
+                    "base_score": 9.8,
+                    "impact_score": 5.9,
+                    "base_severity": "CRITICAL",
+                    "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                }
+            },
+            "affected_versions": [
+                "3.1.4",
+                "3.1.3",
+                "3.1.2",
+                "3.1.1",
+                "3.1.0",
+                "3.0.3",
+                "3.0.2",
+                "3.0.1",
+                "3.0.0",
+                "3.0.0rc2",
+                "3.0.0rc1",
+                "3.0.0a1",
+                "2.11.3",
+                "2.11.2",
+                "2.11.1",
+                "2.11.0",
+                "2.10.3",
+                "2.10.2",
+                "2.10.1",
+                "2.10",
+                "2.9.6",
+                "2.9.5",
+                "2.9.4",
+                "2.9.3",
+                "2.9.2",
+                "2.9.1",
+                "2.9",
+                "2.8.1",
+                "2.8",
+                "2.7.3",
+                "2.7.2",
+                "2.7.1",
+                "2.7",
+                "2.6",
+                "2.5.5",
+                "2.5.4",
+                "2.5.3",
+                "2.5.2",
+                "2.5.1",
+                "2.5",
+                "2.4.1",
+                "2.4",
+                "2.3.1",
+                "2.3",
+                "2.2.1",
+                "2.2",
+                "2.1.1",
+                "2.1",
+                "2.0",
+                "2.0rc1"
+            ],
+            "more_info_url": "https://data.safetycli.com/v/70612/eda"
+        }
+    ],
+    "ignored_vulnerabilities": [],
+    "remediations": {
+        "jinja2": {
+            "requirements": {
+                "==3.1.4": {
+                    "vulnerabilities_found": 1,
+                    "version": "3.1.4",
+                    "requirement": {
+                        "raw": "jinja2==3.1.4",
+                        "extras": [],
+                        "marker": null,
+                        "name": "jinja2",
+                        "specifier": "==3.1.4",
+                        "url": null,
+                        "found": "/home/cleyson/Modelos/Rocks-Fit/venv/lib/python3.11/site-packages"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/jinja2/eda/?from=3.1.4",
+                    "closest_secure_version": {
+                        "upper": null,
+                        "lower": null
+                    },
+                    "recommended_version": null,
+                    "other_recommended_versions": []
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        }
+    },
+    "remediations_results": {
+        "vulnerabilities_fixed": [],
+        "remediations_applied": {},
+        "remediations_skipped": {}
+    }
+}
