@@ -1,10 +1,10 @@
 language: python
 
 python:
-  - "3.9"
+  - "3.11.9"
 
 install:
-  - pip install -r requirements.txt
+  - pip install -r requirements-dev.txt
 
 script:
   - flake8 .
@@ -14,3 +14,6 @@ script:
 
 after_success:
   - coveralls
+env:
+  global:
+    - COVERALLS_REPO_TOKEN=4wTG5MYJHXtIZiD1s4KZqb4q1J187gTcS

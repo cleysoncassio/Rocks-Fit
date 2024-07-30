@@ -30,6 +30,8 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
 
     ```bash
     flake8 #garante conformidade com as diretrizes de estilo, identifica erros e melhorar a legibilidade e a manutenibilidade do seu código.
+    isort . #Ordena e formata automaticamente as declarações de importação em arquivos Python.
+    black . #Aplica um estilo de código consistente em todo o projeto Python. PEP8
 
 4. **Quer contribuir? Instale as Dependências**
 
@@ -94,3 +96,6 @@ Este projeto está licenciado sob a MIT License.
 Para quaisquer dúvidas ou sugestões, sinta-se à vontade para entrar em contato através do e-mail: cleysoncassio@gmail.com whatsapp: + 55 84 99805-9947
 
 Divirta-se e mantenha-se em forma! 💪
+
+[![Build Status](https://app.travis-ci.com/cleysoncassio/Rocks-Fit.svg?token=s5zDkRsrk6xP3ss4bFRp&branch=master)](https://app.travis-ci.com/cleysoncassio/Rocks-Fit)
+[![Coverage Status](https://coveralls.io/repos/github/cleysoncassio/Rocks-Fit/badge.svg?branch=master)](https://coveralls.io/github/cleysoncassio/Rocks-Fit?branch=master)
