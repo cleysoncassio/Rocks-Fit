@@ -17,3 +17,6 @@ after_success:
 env:
   global:
     - COVERALLS_REPO_TOKEN=4wTG5MYJHXtIZiD1s4KZqb4q1J187gTcS
+    - name: pyupio/safety-action
+      uses: pyupio/safety-action@v1.0.1
+            
