@@ -26,32 +26,36 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
     source venv/bin/activate  # No Windows, use `venv\Scripts\activate`
 
 
-3. **Instale as Dependências**
+3. **Para conferir a qualidade do código,rode no console**
 
     ```bash
-    pip install -r requirements.txt
+    flake8 #garante conformidade com as diretrizes de estilo, identifica erros e melhorar a legibilidade e a manutenibilidade do seu código.
 
+4. **Quer contribuir? Instale as Dependências**
 
-4. **Configure o Banco de Dados**
+    ```bash
+    pip install -r requirements-dev.txt
+
+5. **Configure o Banco de Dados**
 
     A configuração padrão usa SQLite, então não é necessário configurar um banco de dados adicional. Para usar outra base de dados, ajuste o settings.py de acordo.
 
-5. **Aplique as Migrações**
+6. **Aplique as Migrações**
 
     ```bash
     python manage.py makemigrations
     python manage.py migrate
 
-6. **Crie um Superusuário**
+7. **Crie um Superusuário**
 
     ```bash
     python manage.py createsuperuser
 
-7. **Inicie o Servidor de Desenvolvimento**
+8. **Inicie o Servidor de Desenvolvimento**
     ```bash
     python manage.py runserver
 
-8. **Acesse o Site**
+9. **Acesse o Site**
 
 Abra o navegador e vá para http://localhost:8000 para ver o site da academia Rocks Fit em ação.
 
