@@ -133,7 +133,6 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.9.11",
         "Topic :: Internet :: WWW/HTTP",
-        "Framework :: Django :: 5.0.7.",
         "Framework :: Pytest",
     ],
     install_requires=[
