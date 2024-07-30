@@ -98,6 +98,6 @@ Para quaisquer dúvidas ou sugestões, sinta-se à vontade para entrar em contat
 Divirta-se e mantenha-se em forma! 💪
 
 [![Build Status](https://app.travis-ci.com/cleysoncassio/Rocks-Fit.svg?token=s5zDkRsrk6xP3ss4bFRp&branch=master)](https://app.travis-ci.com/cleysoncassio/Rocks-Fit)
-[![Coverage Status](https://coveralls.io/repos/github/cleysoncassio/Rocks-Fit/badge.svg?branch=master)](https://coveralls.io/github/cleysoncassio/Rocks-Fit?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/cleysoncassio/Rocks-Fit/badge.svg)](https://coveralls.io/github/cleysoncassio/Rocks-Fit)
 [![Updates](https://pyup.io/repos/github/pyupio/pyup/shield.svg)](https://pyup.io/repos/github/pyupio/pyup/)
 [![Python 3](https://pyup.io/repos/github/pyupio/pyup/python-3-shield.svg)](https://pyup.io/repos/github/pyupio/pyup/)
