@@ -104,7 +104,7 @@ def find_package_data(
 
 
 PACKAGE = "sitio"
-NAME = "PACKAGE"
+NAME = "sitio"
 DESCRIPTION = "desenvolvido por Cleyson Cassio para proporcionar uma experiência online interativa e informativa para os membros da academia."
 AUTHOR = "Cleyson Cassio"
 AUTHOR_EMAIL = "cleysoncassio@gmail.com"
