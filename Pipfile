@@ -1,0 +1,31 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+libsass = "*"
+django-compressor = "*"
+django-sass-processor = "*"
+pillow = "*"
+setuptools = "*"
+
+[dev-packages]
+black = "*"
+coverage = "*"
+coveralls = "*"
+flake8 = "*"
+indentify = "*"
+isort = "*"
+pre-commit = "*"
+pycodestyle = "*"
+pyflakes = "*"
+pytest = "*"
+safety = "*"
+safety-schemas = "*"
+twine = "*"
+virtualenv = "*"
+
+[requires]
+python_version = "3.11"
