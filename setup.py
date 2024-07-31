@@ -15,7 +15,13 @@ def read(fname):
 # of replicating them:
 standard_exclude = ["*.py", "*.pyc", "*$py.class", "*~", ".*", "*.bak"]
 standard_exclude_directories = [
-    ".*", "CVS", "_darcs", "./build", "./dist", "EGG-INFO", "*.egg-info"
+    ".*",
+    "CVS",
+    "_darcs",
+    "./build",
+    "./dist",
+    "EGG-INFO",
+    "*.egg-info",
 ]
 
 
@@ -30,7 +36,8 @@ def find_package_data(
     exclude=standard_exclude,
     exclude_directories=standard_exclude_directories,
     only_in_packages=True,
-    show_ignored=False):
+    show_ignored=False,
+):
     """
     Return a dictionary suitable for use in ``package_data``
     in a distutils ``setup.py`` file.
@@ -66,18 +73,16 @@ def find_package_data(
             if os.path.isdir(fn):
                 bad_name = False
                 for pattern in exclude_directories:
-                    if (fnmatchcase(name, pattern)
-                        or fn.lower() == pattern.lower()):
+                    if fnmatchcase(name, pattern) or fn.lower() == pattern.lower():
                         bad_name = True
                         if show_ignored:
                             print >> sys.stderr, (
-                                "Directory %s ignored by pattern %s"
-                                % (fn, pattern))
+                                "Directory %s ignored by pattern %s" % (fn, pattern)
+                            )
                         break
                 if bad_name:
                     continue
-                if (os.path.isfile(os.path.join(fn, "__init__.py"))
-                    and not prefix):
+                if os.path.isfile(os.path.join(fn, "__init__.py")) and not prefix:
                     if not package:
                         new_package = name
                     else:
@@ -89,17 +94,16 @@ def find_package_data(
                 # is a file
                 bad_name = False
                 for pattern in exclude:
-                    if (fnmatchcase(name, pattern)
-                        or fn.lower() == pattern.lower()):
+                    if fnmatchcase(name, pattern) or fn.lower() == pattern.lower():
                         bad_name = True
                         if show_ignored:
                             print >> sys.stderr, (
-                                "File %s ignored by pattern %s"
-                                % (fn, pattern))
+                                "File %s ignored by pattern %s" % (fn, pattern)
+                            )
                         break
                 if bad_name:
                     continue
-                out.setdefault(package, []).append(prefix+name)
+                out.setdefault(package, []).append(prefix + name)
     return out
 
 
@@ -116,8 +120,8 @@ setup(
     name=NAME,
     version=VERSION,
     description=DESCRIPTION,
-    long_description=read('README.md'),
-    long_description_content_type='text/markdown',
+    long_description=read("README.md"),
+    long_description_content_type="text/markdown",
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     license="BSD",

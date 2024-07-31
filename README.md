@@ -16,15 +16,18 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
 1. **Clone o Repositório**
 
    ```bash
-   git clone https://github.com/seu-usuario/rocks-fit-gym-website.git
-   cd rocks-fit-gym-website
+   git clone https://github.com/cleysoncassio/Rocks-Fit
+   cd Rocks-Fit #aqui você vai entrar na pasta do projeto e executar os comandos abaixo
 
-2. **Crie e Ative um Ambiente Virtual**
+2. **Dentro da pasta do projeto instale o pipenv**
 
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # No Windows, use `venv\Scripts\activate`
+    pipenv install
 
+4. **Quer contribuir? Instale as Dependências**
+
+    ```bash
+    pipenv sync -d
 
 3. **Para conferir a qualidade do código,rode no console**
 
@@ -34,10 +37,7 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
     black . #Aplica um estilo de código consistente em todo o projeto Python. PEP8
     safety check #Este comando verifica todas as dependências instaladas no ambiente Python atual.
 
-4. **Quer contribuir? Instale as Dependências**
 
-    ```bash
-    pip install -r requirements-dev.txt
 
 5. **Configure o Banco de Dados**
 
