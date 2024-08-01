@@ -52,7 +52,7 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
 7. **Crie um Superusuário**
 
     ```bash
-    python manage.py createsuperuser
+    python manage.py createsuperuser #aqui você cria seu usuário do administrador do usuário
 
 8. **Inicie o Servidor de Desenvolvimento**
     ```bash
