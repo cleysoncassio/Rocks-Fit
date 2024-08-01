@@ -27,7 +27,7 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
 4. **Quer contribuir? Instale as Dependências**
 
     ```bash
-    pipenv sync -d
+    pipenv sync -d # instala as Dependênciasdo projeto
 
 3. **Para conferir a qualidade do código,rode no console**
 
