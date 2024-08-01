@@ -1,5 +1,6 @@
 runtime: python
 env: flex
+entrypoint: gunicorn -b :$PORT project_name.wsgi
 
 entrypoint: gunicorn -b :$PORT main:app
 
