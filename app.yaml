@@ -12,19 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-runtime: python "3.11"
-env: flex
-entrypoint: gunicorn -b :$PORT main:app
 
-runtime_config:
-  operating_system:  Debian
-  runtime_version: "12"
-
-  
 # This sample incurs costs to run on the App Engine flexible environment.
 # The settings below are to reduce costs during testing and are not appropriate
 # for production use. For more information, see:
 # https://cloud.google.com/appengine/docs/flexible/python/configuring-your-app-with-app-yaml
+
+
+language: python
+
+python:
+  - "3.11.9"
+
+install:
+  - pip install safety
+  - pip install -q pipenv codecov
+  - pipenv sync --dev
+
+script:
+  - flake8 .
+  - isort .
+  - black .
+  - python manage.py test
+  - coverage run manage.py test --noinput
+  - coverage report --show-missing
+  - safety check -r requirements-dev.txt
+
+after_success:
+  - coveralls
+env:
+  global:
+    - COVERALLS_REPO_TOKEN=4wTG5MYJHXtIZiD1s4KZqb4q1J187gTcS
+    - name: pyupio/safety-action
+      uses: pyupio/safety-action@v1.0.1
+
 manual_scaling:
   instances: 1
 resources:
@@ -32,4 +53,9 @@ resources:
   memory_gb: 0.5
   disk_size_gb: 10
 
+requirements:
+  - Pipfile
+  - Pipfile.lock
+
 entrypoint: gunicorn -b :$PORT -b :2222 main:app
+            
