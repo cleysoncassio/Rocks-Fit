@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-runtime: python
+runtime: python "3.11"
 env: flex
 entrypoint: gunicorn -b :$PORT main:app
 
 runtime_config:
-  operating_system:  Debian GNU/Linux 12
+  operating_system:  Debian
+  runtime_version: "12"
+
   
 # This sample incurs costs to run on the App Engine flexible environment.
 # The settings below are to reduce costs during testing and are not appropriate
