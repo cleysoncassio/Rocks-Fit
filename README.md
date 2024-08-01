@@ -56,7 +56,7 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
 
 8. **Inicie o Servidor de Desenvolvimento**
     ```bash
-    python manage.py runserver
+    python manage.py runserver # Roda o servidor de desenvolvimento
 
 9. **Acesse o Site**
 
