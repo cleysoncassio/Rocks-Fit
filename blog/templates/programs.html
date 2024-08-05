@@ -1,23 +1,26 @@
 {% load static %}
-<!DOCTYPE html>
+<!DOCTYPE Html5>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
-	<head>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<title>Rocks-Fit</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<meta name="description" content="Academia Rocks Fit - Treinamento Personalizado, Musculação, Cardio e Mais" />
-		<meta name="keywords" content="academia, fitness, musculação, treino personalizado, cardio, saúde, bem-estar, Rocks Fit" />
-		<meta name="author" content="Cleyson Cassio" />
+<!--[if gt IE 8]><!-->
+<html class="no-js"> <!--<![endif]-->
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Rocks-Fit</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Academia Rocks Fit - Treinamento Personalizado, Musculação, Cardio e Mais" />
+	<meta name="keywords"
+		content="academia, fitness, musculação, treino personalizado, cardio, saúde, bem-estar, Rocks Fit" />
+	<meta name="author" content="Cleyson Cassio" />
 
 	<!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
 	<link rel="shortcut icon" href="favicon.ico">
 
 	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,900' rel='stylesheet' type='text/css'>
-	
+
 	<!-- Animate.css -->
 	<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
 	<link rel="stylesheet" href="{% static 'css/animate.css' %}">
@@ -41,309 +44,232 @@
 	<script src="js/respond.min.js"></script>
 	<![endif]-->
 
-	</head>
-	<body>
-		<div id="fh5co-wrapper">
+</head>
+
+<body>
+	<div id="fh5co-wrapper">
 		<div id="fh5co-page">
-		<div id="fh5co-header">
-			<header id="fh5co-header-section">
-				<div class="container">
-					<div class="nav-header">
-						<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle"><i></i></a>
-						<h1 id="fh5co-logo"><a href="{% url 'home' %}">Rocks-<span>Fit</span></a></h1>
-						<!-- START #fh5co-menu-wrap -->
-						<nav id="fh5co-menu-wrap" role="navigation">
-							<ul class="sf-menu" id="fh5co-primary-menu">
-								<li class="active">
-									<a href="{% url 'home' %}">Início</a>
-								</li>
-								<li>
-									<a href="{% url 'programs' %}" class="fh5co-sub-ddown"></a>
-								</li>
-								<li>
-									<a href="{% url 'schedule' %}">Modalidades</a>
-								</li>
-								<li><a href="{% url 'trainers' %}">Professores</a></li>
-								<li><a href="{% url 'about' %}">Sobre nós</a></li>
-								<li><a href="{% url 'contact' %}">Contato</a></li>
-							</ul>
-						</nav>
+			<div id="fh5co-header">
+				<header id="fh5co-header-section">
+					<div class="container">
+						<div class="nav-header">
+							<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle"><i></i></a>
+							<h1 id="fh5co-logo"><a href="{% url 'home' %}">Rocks-<span>Fit</span></a></h1>
+							<!-- START #fh5co-menu-wrap -->
+							<nav id="fh5co-menu-wrap" role="navigation">
+								<ul class="sf-menu" id="fh5co-primary-menu">
+									<li class="active">
+										<a href="{% url 'home' %}">Início</a>
+									</li>
+									<li>
+										<a href="{% url 'programs' %}">Nossos Planos </a>
+									</li>
+									<li>
+										<a href="{% url 'schedule' %}">Modalidades</a>
+									</li>
+									<li><a href="{% url 'trainers' %}">Professores</a></li>
+									<li><a href="{% url 'about' %}">Sobre nós</a></li>
+									<li><a href="{% url 'contact' %}">Contato</a></li>
+								</ul>
+							</nav>
+						</div>
 					</div>
-				</div>
-			</header>		
-		<!-- end:fh5co-header -->
-		<div class="fh5co-parallax" style="background-image: url({% static 'images/home-image-5.jpg' %});" data-stellar-background-ratio="0.5">
-			<div class="overlay"></div>
-			<div class="container">
-				<div class="row">
-					<div class="col-md-8 col-md-offset-2 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table">
-						<div class="fh5co-intro fh5co-table-cell animate-box">
-							<h1 class="text-center">Programação</h1>
-							<p>Explore nossas modalidades e encontre o treino perfeito para você!</p>
+				</header>
+				<!-- end:fh5co-header -->
+				<div class="fh5co-parallax" style="background-image: url({% static 'images/home-image-5.jpg' %});"
+					data-stellar-background-ratio="0.5">
+					<div class="overlay"></div>
+					<div class="container">
+						<div class="row">
+							<div
+								class="col-md-8 col-md-offset-2 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table">
+								<div class="fh5co-intro fh5co-table-cell animate-box">
+									<h1 class="text-center">Nossos Planos</h1>
+									<p>Explore nossas modalidades e encontre o plano perfeito para você!</p>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-		</div>
-		
-		</div><!-- end: fh5co-parallax -->
-		<!-- end:fh5co-hero -->
-		<div id="fh5co-programs-section">
-			<div class="container">
-				<div class="row">
-					<div class="col-md-8 col-md-offset-2">
-						<div class="heading-section text-center animate-box">
-							<h2>Nossas Modalidades</h2>
-							<p>Separated they live in Bookmarksgrove right at the coast of the Semantics, a large language ocean.</p>
+
+				<!-- NOSSOS PLANOS -->
+				<div id="fh5co-pricing-section" class="fh5co-pricing fh5co-lightgray-section">
+					<div class="container">
+						<div class="row">
+							<div class="col-md-8 col-md-offset-2">
+								<div class="heading-section text-center animate-box">
+									<h2>Nossos Planos</h2>
+									<p>Escolha o que melhor lhe atende.</p>
+								</div>
+							</div>
 						</div>
-					</div>
-				</div>
-				<div class="row text-center">
-					<div class="col-md-4 col-sm-6">
-						<div class="program animate-box">
-							<img src="{% static 'images/fit-dumbell.svg' %}" alt="Cycling">
-							<h3>Body Combat</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
-						</div>
-					</div>
-					<div class="col-md-4 col-sm-6">
-						<div class="program animate-box">
-							<img src="{% static 'images/fit-yoga.svg' %}" alt="">
-							<h3>Yoga Programs</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
-						</div>
-					</div>
-					<div class="col-md-4 col-sm-6">
-						<div class="program animate-box">
-							<img src="{% static 'images/fit-cycling.svg' %}" alt="">
-							<h3>Cycling Program</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
-						</div>
-					</div>
-					<div class="col-md-4 col-sm-6">
-						<div class="program animate-box">
-							<img src="{% static 'images/fit-boxing.svg' %}" alt="Cycling">
-							<h3>Boxing Fitness</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
-						</div>
-					</div>
-					<div class="col-md-4 col-sm-6">
-						<div class="program animate-box">
-							<img src="{% static 'images/fit-swimming.svg' %}" alt="">
-							<h3>Swimming Program</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
-						</div>
-					</div>
-					<div class="col-md-4 col-sm-6">
-						<div class="program animate-box">
-							<img src="{% static 'images/fit-massage.svg' %}" alt="">
-							<h3>Massage</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<div id="fh5co-schedule-section" class="fh5co-lightgray-section">
-			<div class="container">
-				<div class="row">
-					<div class="col-md-8 col-md-offset-2">
-						<div class="heading-section text-center animate-box">
-							<h2>Class Schedule</h2>
-							<p>Separated they live in Bookmarksgrove right at the coast of the Semantics, a large language ocean.</p>
-						</div>
-					</div>
-				</div>
-				<div class="row animate-box">
-					<div class="col-md-10 col-md-offset-1 text-center">
-						<ul class="schedule">
-							<li><a href="#" class="active" data-sched="sunday">Sunday</a></li>
-							<li><a href="#" data-sched="monday">Monday</a></li>
-							<li><a href="#" data-sched="tuesday">Tuesday</a></li>
-							<li><a href="#" data-sched="wednesday">Wednesday</a></li>
-							<li><a href="#" data-sched="thursday">Thursday</a></li>
-							<li><a href="#" data-sched="monday">Monday</a></li>
-							<li><a href="#" data-sched="saturday">Saturday</a></li>
-						</ul>
-					</div>
-					<div class="row text-center">
-		
-						<div class="col-md-12 schedule-container">
-		
-							<div class="schedule-content active" data-day="sunday">
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-dumbell.svg' %}" alt="Cycling">
-										<small>06AM-7AM</small>
-										<h3>Body Building</h3>
-										<span>John Doe</span>
+						<div class="row">
+							<div class="pricing">
+								<div class="col-md-3 animate-box">
+									<div class="price-box animate-box">
+										<h2 class="pricing-plan">Diária</h2>
+										<div class="price"><sup class="currency">R$</sup>10<small>/DIÁRIA</small></div>
+										<p>Para quem quer conhecer</p>
+										<ul class="classes">
+											<li>Musculação</li>
+											<li class="color">Acompanhamento Profissional</li>
+											<li>Aeróbico</li>
+											<li class="color">01 Treino Funcional</li>
+										</ul>
+										<a href="https://loja.infinitepay.io/workplacevirgilio/zfy3125-diaria"
+											class="btn btn-default">PAGAR</a>
 									</div>
 								</div>
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-yoga.svg' %}" alt="">
-										<small>06AM-7AM</small>
-										<h3>Yoga Programs</h3>
-										<span>James Smith</span>
+
+								<div class="col-md-3 animate-box">
+									<div class="price-box animate-box">
+										<h2 class="pricing-plan">MENSAL</h2>
+										<div class="price"><sup class="currency">R$</sup>60,00<small>/mensal</small>
+										</div>
+										<p>O valor total cobrado será de R$ 65,00 incluindo matrícula. </p>
+										<ul class="classes">
+											<li>Musculação</li>
+											<li class="color">Treino Funcional 2x por Semana</li>
+											<li>aulão cardio conforme agendamento</li>
+											<li class="color">Elíptico</li>
+											<li class="color">Acompanhamento Profissional</li>
+										</ul>
+										<a href="https://loja.infinitepay.io/workplacevirgilio/mup2504-musculacao-mensal-esteira-matricula"
+											class="btn btn-default">COM ESTEIRA</a>
+										<a href="https://loja.infinitepay.io/workplacevirgilio/cgg1637-musculacao-mensal-matricula"
+											class="btn btn-default">SEM ESTEIRA</a>
 									</div>
 								</div>
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-cycling.svg' %}" alt="">
-										<small>06AM-7AM</small>
-										<h3>Cycling Program</h3>
-										<span>Rita Doe</span>
+
+								<div class="col-md-3 animate-box">
+									<div class="price-box animate-box popular">
+										<h2 class="pricing-plan pricing-plan-offer">TRIMESTRAL <span>MAIS VENDIDO</span>
+										</h2>
+										<div class="price"><sup class="currency">R$</sup>55,00<small>/TRIMESTRAL</small>
+										</div>
+										<p>O valor total cobrado será de R$ 170,00, incluindo matrícula.</p>
+										<ul class="classes">
+											<li>Musculação</li>
+											<li class="color">Treino Funcional 2x por Semana</li>
+											<li>aulão cardio conforme agendamento</li>
+											<li class="color">Elíptico</li>
+											<li class="color">Acompanhamento Profissional</li>
+										</ul>
+										<a href="https://loja.infinitepay.io/workplacevirgilio/sfz1150-musculacao-trimestral-esteira-matricula"
+											class="btn btn-select-plan btn-sm">COM ESTEIRA</a>
+										<a href="https://loja.infinitepay.io/workplacevirgilio/trm4676-musculacao-trimestral-esteira-matricula"
+											class="btn btn-select-plan btn-sm">SEM ESTEIRA</a>
+
 									</div>
 								</div>
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-boxing.svg' %}" alt="Cycling">
-										<small>06AM-7AM</small>
-										<h3>Boxing Fitness</h3>
-										<span>John Dose</span>
+
+								<div class="col-md-3 animate-box">
+									<div class="price-box animate-box">
+										<h2 class="pricing-plan">Unlimited</h2>
+										<div class="price"><sup class="currency">$</sup>50,00<small>/semestral</small>
+										</div>
+										<p>O valor total cobrado será de R$ 305,00, incluindo matrícula. </p>
+										<ul class="classes">
+											<li>Musculação</li>
+											<li class="color">Treino Funcional 2x por Semana</li>
+											<li>aulão cardio conforme agendamento</li>
+											<li class="color">Elíptico</li>
+											<li class="color">Acompanhamento Profissional</li>
+										</ul>
+										<a href="#" class="btn btn-default">COM ESTEIRA</a>
+										<a href="#" class="btn btn-default">SEM ESTEIRA</a>
 									</div>
 								</div>
 							</div>
-							<!-- END sched-content -->
-		
-							<div class="schedule-content" data-day="monday">
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-yoga.svg' %}" alt="">
-										<small>06AM-7AM</small>
-										<h3>Yoga Programs</h3>
-										<span>James Smith</span>
-									</div>
-								</div>
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-dumbell.svg' %}" alt="Cycling">
-										<small>06AM-7AM</small>
-										<h3>Body Building</h3>
-										<span>John Doe</span>
-									</div>
-								</div>
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-boxing.svg' %}" alt="Cycling">
-										<small>06AM-7AM</small>
-										<h3>Boxing Fitness</h3>
-										<span>John Dose</span>
-									</div>
-								</div>
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-cycling.svg' %}" alt="">
-										<small>06AM-7AM</small>
-										<h3>Cycling Program</h3>
-										<span>Rita Doe</span>
-									</div>
-								</div>
-							</div>
-							<!-- END sched-content -->
-		
-							<div class="schedule-content" data-day="tuesday">
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-dumbell.svg' %}" alt="Cycling">
-										<small>06AM-7AM</small>
-										<h3>Body Building</h3>
-										<span>John Doe</span>
-									</div>
-								</div>
-								<div class="col-md-3 col-sm-6">
-									<div class="program program-schedule">
-										<img src="{% static 'images/fit-yoga.svg' %}" alt="">
-										<small>06AM-7AM</small>
-		
-		<footer>
-			<div id="footer">
-				<div class="container">
-					<div class="row">
-						<div class="col-md-4 animate-box">
-							<h3 class="section-title">About Us</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts. Separated they live in Bookmarksgrove right at the coast of the Semantics.</p>
-						</div>
-
-						<div class="col-md-4 animate-box">
-							<h3 class="section-title">Our Address</h3>
-							<ul class="contact-info">
-								<li><i class="icon-map-marker"></i>198 West 21th Street, Suite 721 New York NY 10016</li>
-								<li><i class="icon-phone"></i>+ 1235 2355 98</li>
-								<li><i class="icon-envelope"></i><a href="#">info@yoursite.com</a></li>
-								<li><i class="icon-globe2"></i><a href="#">www.yoursite.com</a></li>
-							</ul>
-						</div>
-						<div class="col-md-4 animate-box">
-							<h3 class="section-title">Drop us a line</h3>
-							<form class="contact-form">
-								<div class="form-group">
-									<label for="name" class="sr-only">Name</label>
-									<input type="name" class="form-control" id="name" placeholder="Name">
-								</div>
-								<div class="form-group">
-									<label for="email" class="sr-only">Email</label>
-									<input type="email" class="form-control" id="email" placeholder="Email">
-								</div>
-								<div class="form-group">
-									<label for="message" class="sr-only">Message</label>
-									<textarea class="form-control" id="message" rows="7" placeholder="Message"></textarea>
-								</div>
-								<div class="form-group">
-									<input type="submit" id="btn-submit" class="btn btn-send-message btn-md" value="Send Message">
-								</div>
-							</form>
 						</div>
 					</div>
-					<div class="row copy-right">
-						<div class="col-md-6 col-md-offset-3 text-center">
-							<p class="fh5co-social-icons">
-								<a href="#"><i class="icon-twitter2"></i></a>
-								<a href="#"><i class="icon-facebook2"></i></a>
-								<a href="#"><i class="icon-instagram"></i></a>
-								<a href="#"><i class="icon-dribbble2"></i></a>
-								<a href="#"><i class="icon-youtube"></i></a>
-							</p>
-							<p>Copyright 2016 Free Html5 <a href="#">Fitness</a>. All Rights Reserved. <br>Made with <i class="icon-heart3"></i> by <a href="http://freehtml5.co/" target="_blank">Freehtml5.co</a> / Demo Images: <a href="https://unsplash.com/" target="_blank">Unsplash</a></p>
+				</div> <!--FIM: NOSSOS PLANOS -->
+			</div>
+			<footer>
+				<div id="footer">
+					<div class="container">
+						<div class="row">
+							<div class="col-md-4 animate-box">
+								<h3 class="section-title">About Us</h3>
+								<p>Far far away, behind the word mountains, far from the countries Vokalia and
+									Consonantia, there live the blind texts. Separated they live in Bookmarksgrove right
+									at the coast of the Semantics.</p>
+							</div>
+
+							<div class="col-md-4 animate-box">
+								<h3 class="section-title">Our Address</h3>
+								<ul class="contact-info">
+									<li><i class="icon-map-marker"></i>198 West 21th Street, Suite 721 New York NY 10016
+									</li>
+									<li><i class="icon-phone"></i>+ 1235 2355 98</li>
+									<li><i class="icon-envelope"></i><a href="#">info@yoursite.com</a></li>
+									<li><i class="icon-globe2"></i><a href="#">www.yoursite.com</a></li>
+								</ul>
+							</div>
+							<div class="col-md-4 animate-box">
+								<h3 class="section-title">Drop us a line</h3>
+								<form class="contact-form">
+									<div class="form-group">
+										<label for="name" class="sr-only">Name</label>
+										<input type="name" class="form-control" id="name" placeholder="Name">
+									</div>
+									<div class="form-group">
+										<label for="email" class="sr-only">Email</label>
+										<input type="email" class="form-control" id="email" placeholder="Email">
+									</div>
+									<div class="form-group">
+										<label for="message" class="sr-only">Message</label>
+										<textarea class="form-control" id="message" rows="7"
+											placeholder="Message"></textarea>
+									</div>
+									<div class="form-group">
+										<input type="submit" id="btn-submit" class="btn btn-send-message btn-md"
+											value="Send Message">
+									</div>
+								</form>
+							</div>
+						</div>
+						<div class="row copy-right">
+							<div class="col-md-6 col-md-offset-3 text-center">
+								<p class="fh5co-social-icons">
+									<a href="#"><i class="icon-twitter2"></i></a>
+									<a href="#"><i class="icon-facebook2"></i></a>
+									<a href="#"><i class="icon-instagram"></i></a>
+									<a href="#"><i class="icon-dribbble2"></i></a>
+									<a href="#"><i class="icon-youtube"></i></a>
+								</p>
+								<p>Copyright 2016 Free Html5 <a href="#">Fitness</a>. All Rights Reserved. <br>Made with
+									<i class="icon-heart3"></i> by <a href="http://freehtml5.co/"
+										target="_blank">Freehtml5.co</a> / Demo Images: <a href="https://unsplash.com/"
+										target="_blank">Unsplash</a></p>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-		</footer>
-	
+			</footer>
+			<!-- END fh5co-page -->
 
-	</div>
-	<!-- END fh5co-page -->
+			<!-- END fh5co-wrapper -->
 
-	</div>
-	<!-- END fh5co-wrapper -->
-
-	<!-- jQuery -->
+			<!-- jQuery -->
 
 
-	<script src="js/jquery.min.js"></script>
-	<!-- jQuery Easing -->
-	<script src="js/jquery.easing.1.3.js"></script>
-	<!-- Bootstrap -->
-	<script src="js/bootstrap.min.js"></script>
-	<!-- Waypoints -->
-	<script src="js/jquery.waypoints.min.js"></script>
-	<!-- Stellar -->
-	<script src="js/jquery.stellar.min.js"></script>
-	<!-- Superfish -->
-	<script src="js/hoverIntent.js"></script>
-	<script src="js/superfish.js"></script>
+			<script src="js/jquery.min.js"></script>
+			<!-- jQuery Easing -->
+			<script src="js/jquery.easing.1.3.js"></script>
+			<!-- Bootstrap -->
+			<script src="js/bootstrap.min.js"></script>
+			<!-- Waypoints -->
+			<script src="js/jquery.waypoints.min.js"></script>
+			<!-- Stellar -->
+			<script src="js/jquery.stellar.min.js"></script>
+			<!-- Superfish -->
+			<script src="js/hoverIntent.js"></script>
+			<script src="js/superfish.js"></script>
 
-	<!-- Main JS (Do not remove) -->
-	<script src="js/main.js"></script>
+			<!-- Main JS (Do not remove) -->
+			<script src="js/main.js"></script>
 
-	</body>
-</html>
+</body>
 
+</html5>
