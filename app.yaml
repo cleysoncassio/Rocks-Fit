@@ -9,3 +9,6 @@ runtime_config:
 
 env_variables:
   PIPENV_VENV_IN_PROJECT: "1"
+
+env_variables:
+  DEBUG: "False"

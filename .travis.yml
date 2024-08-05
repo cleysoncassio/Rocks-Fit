@@ -7,6 +7,7 @@ install:
   - pip install safety
   - pip install -q pipenv codecov
   - pipenv sync --dev
+  - cp contrib/env-sample.env
 
 script:
   - flake8 .
