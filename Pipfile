@@ -10,6 +10,7 @@ django-compressor = "*"
 django-sass-processor = "*"
 pillow = "*"
 setuptools = "*"
+python-decouple = "*"
 
 [dev-packages]
 black = "*"
