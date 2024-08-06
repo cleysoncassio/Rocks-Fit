@@ -27,7 +27,7 @@ load_dotenv()
 SECRET_KEY =  os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-ALLOWED_HOSTS = ["127.0.0.1",]
+ALLOWED_HOSTS = ('127.0.0.1','www.academirocksfit.com.br')
 DEBUG = True
 AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
 
