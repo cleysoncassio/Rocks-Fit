@@ -7,6 +7,18 @@ from fnmatch import fnmatchcase
 from setuptools import setup, find_packages
 
 
+from google.cloud import secretmanager
+
+def get_secret(secret_id):
+    client = secretmanager.SecretManagerServiceClient()
+    name = f"projects/{[rks-python]}/secrets/{secret_id}/versions/latest"
+    response = client.access_secret_version(name=name)
+    payload = response.payload.data.decode('UTF-8')
+    return payload
+
+SECRET_KEY = get_secret("projects/850603106189/secrets/rks_secret_key/versions/1")
+
+
 def read(fname):
     return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
 
