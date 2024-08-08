@@ -23,13 +23,16 @@ dparse==0.6.4b0
 filelock==3.12.4
 flake8==7.1.0
 google-api-core==2.19.1
+google-api-python-client==2.139.0
 google-auth==2.32.0
+google-auth-httplib2==0.2.0
 google-cloud-secret-manager==2.20.2
 googleapis-common-protos==1.63.2
 grpc-google-iam-v1==0.13.1
 grpcio==1.65.4
 grpcio-status==1.65.4
 gunicorn==22.0.0
+httplib2==0.22.0
 identify==2.6.0
 idna==3.7
 importlib_metadata==8.2.0
@@ -69,6 +72,7 @@ pydantic==2.8.2
 pydantic_core==2.20.1
 pyflakes==3.2.0
 Pygments==2.18.0
+pyparsing==3.1.2
 pytest==8.3.2
 python-decouple==3.8
 python-dotenv==1.0.1
@@ -91,6 +95,7 @@ sqlparse==0.5.1
 twine==5.1.1
 typer==0.12.3
 typing_extensions==4.12.2
+uritemplate==4.1.1
 urllib3==2.2.2
 virtualenv==20.26.3
 zipp==3.19.2
