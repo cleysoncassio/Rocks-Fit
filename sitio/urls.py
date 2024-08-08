@@ -26,15 +26,8 @@ urlpatterns = [
 ]
 
 from django.conf.urls.static import static
-from django.contrib import admin
 from django.urls import include, path
 
-from sitio import settings
-
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", include("blog.urls")),
-]
 
 if settings.DEBUG:
     urlpatterns += static(

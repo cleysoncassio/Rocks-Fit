@@ -86,3 +86,25 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.name} at {self.created_at}"
+
+
+class BlogPost(models.Model):
+    title = models.CharField(max_length=200)
+    author = models.CharField(max_length=100)
+    content = models.TextField()
+    posted_on = models.DateTimeField(auto_now_add=True)
+    image = models.ImageField(upload_to='blog_images/', null=True, blank=True)
+    comments_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.title
+
+class Event(models.Model):
+    title = models.CharField(max_length=200)
+    author = models.CharField(max_length=100)
+    description = models.TextField()
+    event_date = models.DateField()
+    comments_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.title} on {self.event_date}"

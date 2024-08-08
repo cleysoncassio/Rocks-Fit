@@ -1,7 +1,6 @@
 from django.shortcuts import render
-
 from blog.models import ContactInfo, ContactMessage, Program, Schedule
-
+from .models import BlogPost, Event
 
 def home(request):
     return render(request, "home.html")
@@ -36,3 +35,12 @@ def trainers(request):
 
 def about(request):
     return render(request, "about.html")
+
+def index(request):
+    blog_posts = BlogPost.objects.all()
+    events = Event.objects.all()
+    context = {
+        'blog_posts': blog_posts,
+        'events': events,
+    }
+    return render(request, 'index.html', context)

@@ -9,14 +9,18 @@ from setuptools import setup, find_packages
 
 from google.cloud import secretmanager
 
-def get_secret(secret_id):
-    client = secretmanager.SecretManagerServiceClient()
-    name = f"projects/{[rks-python]}/secrets/{secret_id}/versions/latest"
-    response = client.access_secret_version(name=name)
-    payload = response.payload.data.decode('UTF-8')
-    return payload
+# Substitua "python" pelo valor real do seu projeto
+rks = "python"
 
-SECRET_KEY = get_secret("projects/850603106189/secrets/rks_secret_key/versions/1")
+def get_secret(secret_id):
+  client = secretmanager.SecretManagerServiceClient()
+  name = f"projects/{rks}/secrets/{secret_id}/versions/latest"
+  response = client.access_secret_version(name=name)
+  payload = response.payload.data.decode('UTF-8')
+  return payload
+
+
+SECRET_KEY = get_secret("rks_secret_key")
 
 
 def read(fname):
