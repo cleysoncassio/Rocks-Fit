@@ -13,7 +13,7 @@ coverage==7.6.0
 coveralls==4.0.1
 cryptography==43.0.0
 distlib==0.3.8
-Django==5.0.7
+Django==5.1
 django-appconf==1.0.6
 django-compressor==4.5.1
 django-sass-processor==1.4.1
