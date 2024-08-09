@@ -36,11 +36,12 @@ def trainers(request):
 def about(request):
     return render(request, "about.html")
 
+
 def index(request):
-    blog_posts = BlogPost.objects.all()
-    events = Event.objects.all()
+    posts = BlogPost.objects.all().order_by('-posted_on')[:5]  # Últimos 5 posts
+    events = Event.objects.all().order_by('event_date')  # Todos os eventos, ordenados por data
     context = {
-        'blog_posts': blog_posts,
+        'posts': posts,
         'events': events,
     }
     return render(request, 'index.html', context)

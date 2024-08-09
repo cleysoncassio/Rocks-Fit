@@ -93,7 +93,7 @@ class BlogPost(models.Model):
     author = models.CharField(max_length=100)
     content = models.TextField()
     posted_on = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(upload_to='blog_images/', null=True, blank=True)
+    image = models.ImageField(upload_to='images/', null=True, blank=True)
     comments_count = models.IntegerField(default=0)
 
     def __str__(self):
