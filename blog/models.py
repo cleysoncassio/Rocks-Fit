@@ -40,8 +40,12 @@ class Program(models.Model):
         return self.name
 
 
-class Instructor(models.Model):
+class Trainer(models.Model):
     name = models.CharField(max_length=100)
+    title = models.CharField(max_length=100, blank=True, null=True)  # Para o título como "Professor"
+    description = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to="trainer_images/", blank=True, null=True)
+    instagram_url = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -62,7 +66,7 @@ class Schedule(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     program = models.ForeignKey(Program, on_delete=models.CASCADE)
-    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    Trainers = models.ForeignKey(Trainer, on_delete=models.CASCADE, default=1)  # Use um ID válido
 
     def __str__(self):
         return f"{self.program.name} on {self.day} from {self.start_time} to {self.end_time}"

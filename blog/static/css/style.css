@@ -346,7 +346,7 @@ fh5co-logo a {
   color: #fff;
 }
 #fh5co-logo a:hover, #fh5co-logo a:focus {
-  color: #fff !important;
+  color: #e91313 !important;
 }
 
 fh5co-menu-wrap {
@@ -357,7 +357,7 @@ fh5co-menu-wrap {
 }
 
 fh5co-primary-menu > li > ul li.active > a {
-  color: #4CB648 !important;
+  color: hsl(19, 100%, 50%) !important;
 }
 #fh5co-primary-menu > li > .sf-with-ul:after {
   border: none !important;

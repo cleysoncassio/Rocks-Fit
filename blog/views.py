@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from blog.models import ContactInfo, ContactMessage, Program, Schedule
+from blog.models import ContactInfo, ContactMessage, Program, Schedule, Trainer
 from .models import BlogPost, Event
 
 def home(request):
@@ -30,7 +30,8 @@ def contact(request):
 
 
 def trainers(request):
-    return render(request, "trainers.html")
+    trainers_list = Trainer.objects.all()
+    return render(request, 'trainers.html', {'trainers': trainers_list})
 
 
 def about(request):

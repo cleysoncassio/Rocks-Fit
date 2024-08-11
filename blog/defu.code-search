@@ -1,0 +1,9 @@
+# Query: defu
+# ContextLines: 1
+
+Um resultado - Um arquivo
+
+blog/migrations/0002_trainer_remove_schedule_instructor_schedule_trainers_and_more.py:
+  45              field=models.ForeignKey(
+  46:                 default="default",
+  47                  on_delete=django.db.models.deletion.CASCADE,
