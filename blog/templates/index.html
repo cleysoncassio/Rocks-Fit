@@ -32,6 +32,50 @@
     <script src="js/modernizr-2.6.2.min.js"></script>
 </head>
 <body>
+    <div id="fh5co-wrapper">
+		<div id="fh5co-page">
+		<div id="fh5co-header">
+			<header id="fh5co-header-section">
+				<div class="container">
+					<div class="nav-header">
+						<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle"><i></i></a>
+						<h1 id="fh5co-logo"><a href="{% url 'home' %}">Rocks-<span>Fit</span></a></h1>
+						<!-- START #fh5co-menu-wrap -->
+						<nav id="fh5co-menu-wrap" role="navigation">
+							<ul class="sf-menu" id="fh5co-primary-menu">
+								<li class="active">
+									<a href="{% url 'home' %}">Início</a>
+								</li>
+								<li>
+									<a href="{% url 'programs' %}">Nossos Planos </a>
+								</li>
+								<li>
+									<a href="{% url 'schedule' %}">Modalidades</a>
+								</li>
+								<li><a href="{% url 'trainers' %}">Professores</a></li>
+								<li><a href="{% url 'about' %}">Sobre nós</a></li>
+								<li><a href="{% url 'contact' %}">Contato</a></li>
+							</ul>
+						</nav>
+					</div>
+				</div>
+			</header>		
+		</div>
+		<!-- end:fh5co-header -->
+		<div class="fh5co-parallax" style="background-image: url('{% static 'images/rks.jpeg' %}');"
+		data-stellar-background-ratio="0.5">
+			<div class="overlay"></div>
+			<div class="container">
+				<div class="row">
+					<div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table">
+						<div class="fh5co-intro fh5co-table-cell animate-box">
+							<h1 class="text-center">Nosso Blog</h1>
+							<p>No blog da Academia Rocks Fit, você encontra dicas de treino, nutrição e saúde para otimizar sua jornada fitness e alcançar seus objetivos.</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div><!-- end: fh5co-parallax -->
     <div id="fh5co-blog-section">
         <div class="container">
             <div class="row">

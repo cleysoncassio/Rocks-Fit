@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from .models import BlogPost
-from .models import ContactInfo, ContactMessage, Instructor, Program, Schedule, Event
+from .models import ContactInfo, ContactMessage, Trainer, Program, Schedule, Event
 
 
 @admin.register(Program)
@@ -10,18 +10,16 @@ class ProgramAdmin(admin.ModelAdmin):
     search_fields = ["name"]
     list_filter = ("name",)
 
-
-@admin.register(Instructor)
-class InstructorAdmin(admin.ModelAdmin):
-    list_display = ("name",)
-    search_fields = ["name"]
-
+@admin.register(Trainer)
+class TrainerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'title', 'instagram_url')
+    search_fields = ('name',)
 
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ("program", "instructor", "day", "start_time", "end_time")
-    list_filter = ("day", "program", "instructor")
-    search_fields = ["program__name", "instructor__name"]
+    list_display = ("program", "Trainers", "day", "start_time", "end_time")
+    list_filter = ("day", "program", "Trainers")
+    search_fields = ["program__name", "Trainer__name"]
 
 
 @admin.register(ContactInfo)
@@ -86,3 +84,4 @@ class EventAdmin(admin.ModelAdmin):
     list_filter = ('event_date', 'author')
     ordering = ('-event_date',)
     readonly_fields = ('comments_count',)
+
