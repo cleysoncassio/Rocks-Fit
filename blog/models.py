@@ -42,7 +42,9 @@ class Program(models.Model):
 
 class Trainer(models.Model):
     name = models.CharField(max_length=100)
-    title = models.CharField(max_length=100, blank=True, null=True)  # Para o título como "Professor"
+    title = models.CharField(
+        max_length=100, blank=True, null=True
+    )  # Para o título como "Professor"
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to="trainer_images/", blank=True, null=True)
     instagram_url = models.URLField(blank=True, null=True)
@@ -66,7 +68,9 @@ class Schedule(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     program = models.ForeignKey(Program, on_delete=models.CASCADE)
-    Trainers = models.ForeignKey(Trainer, on_delete=models.CASCADE, default=1)  # Use um ID válido
+    Trainers = models.ForeignKey(
+        Trainer, on_delete=models.CASCADE, default=1
+    )  # Use um ID válido
 
     def __str__(self):
         return f"{self.program.name} on {self.day} from {self.start_time} to {self.end_time}"
@@ -97,11 +101,12 @@ class BlogPost(models.Model):
     author = models.CharField(max_length=100)
     content = models.TextField()
     posted_on = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(upload_to='images/', null=True, blank=True)
+    image = models.ImageField(upload_to="images/", null=True, blank=True)
     comments_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.title
+
 
 class Event(models.Model):
     title = models.CharField(max_length=200)

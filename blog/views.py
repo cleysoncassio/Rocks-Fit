@@ -2,6 +2,7 @@ from django.shortcuts import render
 from blog.models import ContactInfo, ContactMessage, Program, Schedule, Trainer
 from .models import BlogPost, Event
 
+
 def home(request):
     return render(request, "home.html")
 
@@ -31,7 +32,7 @@ def contact(request):
 
 def trainers(request):
     trainers_list = Trainer.objects.all()
-    return render(request, 'trainers.html', {'trainers': trainers_list})
+    return render(request, "trainers.html", {"trainers": trainers_list})
 
 
 def about(request):
@@ -39,10 +40,12 @@ def about(request):
 
 
 def index(request):
-    posts = BlogPost.objects.all().order_by('-posted_on')[:5]  # Últimos 5 posts
-    events = Event.objects.all().order_by('event_date')  # Todos os eventos, ordenados por data
+    posts = BlogPost.objects.all().order_by("-posted_on")[:5]  # Últimos 5 posts
+    events = Event.objects.all().order_by(
+        "event_date"
+    )  # Todos os eventos, ordenados por data
     context = {
-        'posts': posts,
-        'events': events,
+        "posts": posts,
+        "events": events,
     }
-    return render(request, 'index.html', context)
+    return render(request, "index.html", context)

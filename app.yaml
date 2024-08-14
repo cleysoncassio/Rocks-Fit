@@ -1,11 +1,6 @@
-runtime: python
+runtime: python39
 env: flex
-entrypoint: gunicorn -b :$PORT project_name.wsgi
-
-
-runtime_config:
-  python_version: 3
+entrypoint: gunicorn -b :$PORT RocksFit.wsgi
 
 env_variables:
   PIPENV_VENV_IN_PROJECT: "1"
-
