@@ -23,10 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 load_dotenv()
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY =  os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-ALLOWED_HOSTS = ('127.0.0.1','www.academirocksfit.com.br')
+ALLOWED_HOSTS = ("127.0.0.1", "www.academirocksfit.com.br")
 DEBUG = True
 AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
 

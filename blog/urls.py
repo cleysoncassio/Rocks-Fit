@@ -11,5 +11,5 @@ urlpatterns = [
         "trainers/", views.trainers, name="trainers"
     ),  # Adicione a view 'trainers' se não estiver no seu projeto
     path("about/", views.about, name="about"),
-    path("index/", index, name='index'),
+    path("index/", index, name="index"),
 ]
