@@ -1,6 +1,9 @@
-runtime: python39
-env: flex
-entrypoint: gunicorn -b :$PORT RocksFit.wsgi
+runtime: python311
+entrypoint: gunicorn -b :$PORT sitio.wsgi
 
 env_variables:
-  PIPENV_VENV_IN_PROJECT: "1"
+  DJANGO_SETTINGS_MODULE: "sitio.settings"
+  SECRET_KEY: "<your-secret-key>"
+  DATABASE_URL: "https://rks-python.uc.r.appspot.com"
+
+

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "sass_processor",
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +57,10 @@ MIDDLEWARE = [
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # URLs do projeto
 ROOT_URLCONF = "sitio.urls"
+DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
 
+GS_BUCKET_NAME = '<your-bucket-name>'
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
