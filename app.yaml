@@ -1,9 +1,16 @@
 runtime: python311
 entrypoint: gunicorn -b :$PORT sitio.wsgi
 
+handlers:
+- url: /static
+  static_dir: static/
+
+- url: /.*
+  script: auto
+
 env_variables:
   DJANGO_SETTINGS_MODULE: "sitio.settings"
   SECRET_KEY: "<your-secret-key>"
-  DATABASE_URL: "https://rks-python.uc.r.appspot.com"
+  DATABASE_URL: "https://www.academiarocksfit.com.br"
 
 
