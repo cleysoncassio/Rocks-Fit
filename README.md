@@ -36,6 +36,7 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
     isort . #Ordena e formata automaticamente as declarações de importação em arquivos Python.
     black . #Aplica um estilo de código consistente em todo o projeto Python. PEP8
     safety check #Este comando verifica todas as dependências instaladas no ambiente Python atual.
+    coverage #coverage run -m unittest discover #coverage html
 
 
 

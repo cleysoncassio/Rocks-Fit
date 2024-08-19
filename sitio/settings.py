@@ -10,10 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from functools import partial
 import os
 from pathlib import Path
+import dj_database_url
 from dotenv import load_dotenv
 from decouple import config
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,8 +29,8 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-ALLOWED_HOSTS = ['127.0.0.1', 'sitio.appspot.com', 'www.academiarocksfit.com.br']
-DEBUG = False
+ALLOWED_HOSTS = ["127.0.0.1", "sitio.appspot.com", "www.academiarocksfit.com.br"]
+DEBUG = True
 AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
 
 
@@ -42,7 +45,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "sass_processor",
-    'storages',
 ]
 
 MIDDLEWARE = [
@@ -57,10 +59,10 @@ MIDDLEWARE = [
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # URLs do projeto
 ROOT_URLCONF = "sitio.urls"
-DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
-STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 
-GS_BUCKET_NAME = '<your-bucket-name>'
+GS_BUCKET_NAME = "<your-bucket-name>"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -83,15 +85,15 @@ WSGI_APPLICATION = "sitio.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+default_db_url = 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')
+parse_database = partial(dj_database_url.parse)
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': config('DATABASE_URL', default=default_db_url, cast=parse_database)
     }
-}
 
 
-# Password validation
+# Password validation1
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
