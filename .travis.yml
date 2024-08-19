@@ -4,6 +4,7 @@ python:
   - "3.11.9"
 
 install:
+  - pip install pipenv
   - pip install safety
   - pip install -q pipenv codecov
   - pipenv sync --dev
@@ -13,10 +14,11 @@ script:
   - flake8 .
   - isort .
   - black .
-  - python manage.py test
+  - pipenv run pytest
   - coverage run manage.py test --noinput
   - coverage report --show-missing
-  - safety check -r requirements-dev.txt
+  - pipenv run pytest
+
 
 after_success:
   - coveralls
