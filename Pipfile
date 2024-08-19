@@ -13,6 +13,7 @@ django-sass-processor = "*"
 pillow = "*"
 gunicorn = "*"
 dj-database-url = "*"
+pytest-django = "*"
 
 [dev-packages]
 flake8 = "*"
