@@ -29,8 +29,12 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-ALLOWED_HOSTS = ["127.0.0.1", "sitiodjango-1072730bb6ee.herokuapp.com", "www.academiarocksfit.com.br"]
-DEBUG = True
+DEBUG = config('DEBUG', cast=bool)
+
+if DEBUG:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+else:
+    ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
 
 
