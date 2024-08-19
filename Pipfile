@@ -20,6 +20,7 @@ flake8 = "*"
 black = "*"
 isort = "*"
 coverage = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.11"
