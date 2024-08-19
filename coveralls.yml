@@ -1,0 +1,4 @@
+coverage:
+  precision: 2
+  round: 2
+  html_report: coverage_html_report
