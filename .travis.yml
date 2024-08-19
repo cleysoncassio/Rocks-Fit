@@ -17,7 +17,7 @@ script:
   - pipenv run pytest
   - coverage run manage.py test --noinput
   - coverage report --show-missing
-  - pipenv run pytest
+  - pipenv run pytest --cov=sitio
 
 
 after_success:
