@@ -37,6 +37,7 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
     black . #Aplica um estilo de código consistente em todo o projeto Python. PEP8
     safety check #Este comando verifica todas as dependências instaladas no ambiente Python atual.
     coverage #coverage run -m unittest discover #coverage html
+    pytest #pipenv run pytest --cov=sitio
 
 
 
