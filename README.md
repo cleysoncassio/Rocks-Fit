@@ -103,3 +103,6 @@ Divirta-se e mantenha-se em forma! 💪
 [![Coverage Status](https://coveralls.io/repos/github/cleysoncassio/Rocks-Fit/badge.svg)](https://coveralls.io/github/cleysoncassio/Rocks-Fit)
 [![Updates](https://pyup.io/repos/github/pyupio/pyup/shield.svg)](https://pyup.io/repos/github/pyupio/pyup/)
 [![Python 3](https://pyup.io/repos/github/pyupio/pyup/python-3-shield.svg)](https://pyup.io/repos/github/pyupio/pyup/)
+
+
+Publicado app no heroku: https://sitiodjango-1072730bb6ee.herokuapp.com/
