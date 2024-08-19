@@ -21,7 +21,8 @@ script:
 
 
 after_success:
-  - coveralls
+  - pipenv run coveralls
+  - pipenv run codecov
 env:
   global:
     - PIPENV_VENV_IN_PROJECT=1
