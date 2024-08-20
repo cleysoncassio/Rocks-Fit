@@ -31,11 +31,11 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
 
-if DEBUG:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.academiarocksfit.com.br']
-else:
-    ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
-AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
+#if DEBUG:
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.academiarocksfit.com.br']
+#else:
+    #ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
+#AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
 
 
 # Application definition
