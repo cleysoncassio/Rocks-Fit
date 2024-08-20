@@ -63,8 +63,7 @@ MIDDLEWARE = [
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # URLs do projeto
 ROOT_URLCONF = "sitio.urls"
-DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+
 
 GS_BUCKET_NAME = "<your-bucket-name>"
 TEMPLATES = [
@@ -141,11 +140,11 @@ STATICFILES_FINDERS = [
 SASS_PROCESSOR_ROOT = os.path.join(BASE_DIR, "static")
 
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "blog/static")]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "blog/templates/base/static")]
 
 # Arquivos de mídia
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_ROOT = os.path.join(BASE_DIR, "mediafiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
