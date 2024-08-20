@@ -1,3 +1,3 @@
-DEBUG=False
+DEBUG=True
 SECRET_KEY=defina sua chave secreta
 ALLOWED_HOSTS=localhost, 127.0.0.1, sitiodjango-1072730bb6ee.herokuapp.com, www.academiarocksfit.com.br
