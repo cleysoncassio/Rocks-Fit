@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
-from decouple import config
+from decouple import config, Csv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = config('DEBUG', cast=bool)
 
 #if DEBUG:
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.academiarocksfit.com.br','sitiodjango-1072730bb6ee.herokuapp.com']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 #else:
     #ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 #AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
@@ -64,6 +64,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # URLs do projeto
 ROOT_URLCONF = "sitio.urls"
 
+INTERNAL_IPS = config('INTERNAL_IPS', cast=Csv(), default='127.0.0.1')
 
 GS_BUCKET_NAME = "<your-bucket-name>"
 TEMPLATES = [
