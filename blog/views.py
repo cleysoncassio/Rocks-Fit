@@ -4,7 +4,7 @@ from .models import BlogPost, Event
 
 
 def home(request):
-    return render(request, "home.html")
+    return render(request, "base/home.html")
 
 
 def programs(request):
