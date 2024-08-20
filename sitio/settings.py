@@ -36,7 +36,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 #else:
     #ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 #AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
-
+#teste
 
 # Application definition
 
