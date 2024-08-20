@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = config('DEBUG', cast=bool)
 
 #if DEBUG:
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.academiarocksfit.com.br']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.academiarocksfit.com.br','sitiodjango-1072730bb6ee.herokuapp.com']
 #else:
     #ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 #AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
