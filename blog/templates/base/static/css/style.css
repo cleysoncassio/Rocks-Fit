@@ -483,7 +483,7 @@ fh5co-primary-menu > li > ul li.active > a {
 #fh5co-team-section,
 #fh5co-blog-section,
 #fh5co-contact {
-  padding: 7em 0;
+  padding: 4em 0;
 }
 @media screen and (max-width: 768px) {
   #fh5co-programs-section,
@@ -491,7 +491,7 @@ fh5co-primary-menu > li > ul li.active > a {
   #fh5co-team-section,
   #fh5co-blog-section,
   #fh5co-contact {
-    padding: 4em 0;
+    padding: 1em;
   }
 }
 
