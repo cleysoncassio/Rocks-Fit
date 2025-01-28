@@ -155,3 +155,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Configurações de email (exemplo usando console backend)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+
+from decouple import config
+
+DEBUG = config('DEBUG', default=False, cast=bool)
