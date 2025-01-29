@@ -8,12 +8,12 @@ django = "*"
 requires = "*"
 requests = "*"
 python-dotenv = "*"
-python-decouple = "*"
 django-sass-processor = "*"
 pillow = "*"
 gunicorn = "*"
 dj-database-url = "*"
 pytest-django = "*"
+python-decouple = "*"
 
 [dev-packages]
 flake8 = "*"
