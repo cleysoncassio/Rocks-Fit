@@ -32,7 +32,9 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = config('DEBUG', cast=bool)
 
 #if DEBUG:
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+ALLOWED_HOSTS = ["*"]
+
+
 #else:
     #ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 #AUTH_USER_MODEL = "blog.User"  # Supondo que 'blog' é o nome do seu app
@@ -159,4 +161,16 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 from decouple import config
 
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG', default=True, cast=bool)
+
+
+SECURE_SSL_REDIRECT = True  # Redireciona HTTP para HTTPS
+SESSION_COOKIE_SECURE = True  # Cookies só são enviados via HTTPS
+CSRF_COOKIE_SECURE = True  # CSRF só é enviado via HTTPS
+SECURE_HSTS_SECONDS = 31536000  # Ativa HTTP Strict Transport Security (HSTS)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+
+#SE EU FOR USAR NGINX OU APACHE
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
