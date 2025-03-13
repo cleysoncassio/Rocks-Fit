@@ -87,7 +87,11 @@ DATABASES = {
     }
 }
 
-#psql -U cleysoncassio -h localhost -d rks 
+#PARA ACESSAR O PGADMIN WEB:
+# pgadmin4
+# http://http://127.0.0.1:5050 
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
