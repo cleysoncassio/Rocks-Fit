@@ -86,6 +86,9 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+
+#psql -U cleysoncassio -h localhost -d rks 
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
