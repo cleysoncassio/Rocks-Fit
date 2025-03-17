@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import index
+from .views import blog
 from . import views
 
 urlpatterns = [
@@ -11,5 +11,5 @@ urlpatterns = [
         "trainers/", views.trainers, name="trainers"
     ),  # Adicione a view 'trainers' se não estiver no seu projeto
     path("about/", views.about, name="about"),
-    path("index/", index, name="index"),
+    path("blog/", blog, name="blog"),
 ]

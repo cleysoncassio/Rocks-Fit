@@ -39,7 +39,7 @@ def about(request):
     return render(request, "about.html")
 
 
-def index(request):
+def blog(request):
     posts = BlogPost.objects.all().order_by("-posted_on")[:5]  # Últimos 5 posts
     events = Event.objects.all().order_by(
         "event_date"
@@ -48,4 +48,4 @@ def index(request):
         "posts": posts,
         "events": events,
     }
-    return render(request, "index.html", context)
+    return render(request, "blog.html", context)
