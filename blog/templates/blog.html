@@ -1,0 +1,218 @@
+{% load static %}
+<!-- blog/templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
+
+    <!-- Google Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,900' rel='stylesheet' type='text/css'>
+
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animate.css' %}">
+    <!-- Icomoon Icon Fonts -->
+    <link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+    <!-- Superfish -->
+    <link rel="stylesheet" href="{% static 'css/superfish.css' %}">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Bootstrap SCSS -->
+    <link rel="stylesheet" href="{% static 'sass/bootstrap.scss' %}">
+    <link rel="stylesheet" href="{% static 'sass/bootstrap/Style.css' %}">
+
+    <!-- Modernizr JS -->
+    <script src="js/modernizr-2.6.2.min.js"></script>
+</head>
+
+<body>
+    <div id="fh5co-wrapper">
+        <div id="fh5co-page">
+            <div id="fh5co-header">
+                <header id="fh5co-header-section">
+                    <div class="container">
+                        <div class="nav-header">
+                            <a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle"><i></i></a>
+                            <h1 id="fh5co-logo"><a href="{% url 'home' %}">Rocks-<span>Fit</span></a></h1>
+                            <!-- START #fh5co-menu-wrap -->
+                            <nav id="fh5co-menu-wrap" role="navigation">
+                                <ul class="sf-menu" id="fh5co-primary-menu">
+                                    <li class="active">
+                                        <a href="{% url 'home' %}">Início</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'programs' %}">Nossos Planos </a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'schedule' %}">Modalidades</a>
+                                    </li>
+                                    <li><a href="{% url 'trainers' %}">Professores</a></li>
+                                    <li><a href="{% url 'about' %}">Sobre nós</a></li>
+                                    <li><a href="{% url 'contact' %}">Contato</a></li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </header>
+            </div>
+            <!-- end:fh5co-header -->
+            <div class="fh5co-parallax" style="background-image: url('{% static 'images/rks.jpeg' %}');"
+                data-stellar-background-ratio="0.5">
+                <div class="overlay"></div>
+                <div class="container">
+                    <div class="row">
+                        <div
+                            class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table">
+                            <div class="fh5co-intro fh5co-table-cell animate-box">
+                                <h1 class="text-center">Nosso Blog</h1>
+                                <p>No blog da Academia Rocks Fit, você encontra dicas de treino, nutrição e saúde para
+                                    otimizar sua jornada fitness e alcançar seus objetivos.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- end: fh5co-parallax -->
+            <div id="fh5co-blog-section">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="col-md-12">
+                                <div class="heading-section animate-box">
+                                    <h2>Recentes no Blog</h2>
+                                </div>
+                            </div>
+
+                            {% for post in posts %}
+                            <div class="col-md-12 col-md-offset-0">
+                                <div class="fh5co-blog animate-box">
+                                    <div class="inner-post">
+                                        <a href="#"><img class="img-responsive" src="{{ post.image.url }}" alt=""></a>
+                                    </div>
+                                    <div class="desc">
+                                        <h3><a href="#">{{ post.title }}</a></h3>
+                                        <span class="posted_by">Posted by: {{ post.author }}</span>
+                                        <span class="comment"><a href="#">{{ post.comments_count }}<i
+                                                    class="icon-bubble22"></i></a></span>
+                                        <p>{{ post.content }}</p>
+                                        <a href="#" class="btn btn-default">Read More</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="col-md-12">
+                                <div class="heading-section animate-box">
+                                    <h2>Próximos Eventos</h2>
+                                </div>
+                            </div>
+
+                            {% for event in events %}
+                            <div class="col-md-12 col-md-offset-0">
+                                <div class="fh5co-blog animate-box">
+                                    <div class="meta-date text-center">
+                                        <p><span class="date">{{ event.event_date|date:"d" }}</span><span>{{
+                                                event.event_date|date:"F" }}</span><span>{{ event.event_date|date:"Y"
+                                                }}</span></p>
+                                    </div>
+                                    <div class="desc desc2">
+                                        <h3><a href="#">{{ event.title }}</a></h3>
+                                        <span class="posted_by">Posted by: {{ event.author }}</span>
+                                        <span class="comment"><a href="#">{{ event.comments_count }}<i
+                                                    class="icon-bubble22"></i></a></span>
+                                        <p>{{ event.description }}</p>
+                                        <a href="#" class="btn btn-default">Read More</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+</body>
+
+</html>
+
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 animate-box">
+                    <h3 class="section-title">Sobre Nós</h3>
+                    <p>Na Academia Rocks Fit, estamos comprometidos em fornecer um ambiente acolhedor e
+                        motivador para todos os nossos membros. Nossa missão é ajudar você a alcançar seus
+                        objetivos de fitness com o apoio de nossos treinadores especializados e instalações
+                        de última geração.</p>
+                </div>
+
+                <div class="col-md-4 animate-box">
+                    <h3 class="section-title">Nosso Endereço</h3>
+                    <ul class="contact-info">
+                        <li><i class="icon-map-marker"></i>Rua Cel. Flaminio, 32 - Santos Reis, Natal-RN
+                        </li>
+                        <li><i class="icon-phone"></i>+55 84 99805-9947</li>
+                        <li><i class="icon-envelope"></i><a
+                                href="mailto:academiarocksfit@gmail.com">academiarocksfit@gmail.com</a></li>
+                        <li><i class="icon-globe2"></i><a href="http://www.rocksfit.com">www.rocksfit.com</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-md-4 animate-box">
+                    <h3 class="section-title">Nossa Localização</h3>
+                    <iframe
+                        src="https://storage.googleapis.com/maps-solutions-6rgx896oqq/locator-plus/0hnf/locator-plus.html"
+                        width="100%" height="300px" style="border:0;" loading="lazy">
+                    </iframe>
+                </div>
+
+                <div class="row copy-right">
+                    <div class="col-md-6 col-md-offset-3 text-center">
+                        <p class="fh5co-social-icons">
+                            <a href="#"><i class="icon-twitter2"></i></a>
+                            <a href="https://www.facebook.com/profile.php?id=100007946404693&mibextid=ZbWKwL"><i
+                                    class="icon-facebook2"></i></a>
+                            <a href="https://www.instagram.com/academiarocksfit?igsh=d3hjMW9kdmp6Y2Qw"><i
+                                    class="icon-instagram"></i></a>
+                            <a href="#"><i class="icon-youtube"></i></a>
+                        </p>
+                    </div>
+                </div>
+</footer>
+</div>
+<!-- END fh5co-page -->
+
+</div>
+<!-- END fh5co-wrapper -->
+
+<!-- jQuery -->
+
+
+<script src="js/jquery.min.js"></script>
+<!-- jQuery Easing -->
+<script src="js/jquery.easing.1.3.js"></script>
+<!-- Bootstrap -->
+<script src="js/bootstrap.min.js"></script>
+<!-- Waypoints -->
+<script src="js/jquery.waypoints.min.js"></script>
+<!-- Stellar -->
+<script src="js/jquery.stellar.min.js"></script>
+<!-- Superfish -->
+<script src="js/hoverIntent.js"></script>
+<script src="js/superfish.js"></script>
+
+<!-- Main JS (Do not remove) -->
+<script src="js/main.js"></script>
+
+</body>
+
+</html>
