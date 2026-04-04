@@ -1,0 +1,26 @@
+{
+    "alunos": [
+        {
+            "id": 2,
+            "nome": "Teste Matricula",
+            "matricula": "RF20260002",
+            "cpf": "11122233344",
+            "status": "INATIVO",
+            "vencimento": "SEM PLANO",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 1,
+            "nome": "cleyson cassio",
+            "matricula": "RF20260003",
+            "cpf": "00903993406",
+            "status": "LIBERADO",
+            "vencimento": "03/04/2026",
+            "foto_url": "/media/alunos/fotos/Cleyson-foto_9kUb1xM.jpeg",
+            "tem_foto": true,
+            "tem_digital": false
+        }
+    ]
+}
