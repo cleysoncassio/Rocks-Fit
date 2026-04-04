@@ -1,0 +1,300 @@
+{% load static %}
+<!DOCTYPE html5>
+<html class="no-js">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>Rocks-Fit - Checkout</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="Academia Rocks Fit - Checkout" />
+		<meta name="author" content="Cleyson Cassio" />
+
+		<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,900' rel='stylesheet' type='text/css'>
+		
+		<!-- Animate.css -->
+		<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+		<link rel="stylesheet" href="{% static 'css/animate.css' %}">
+		<!-- Icomoon Icon Fonts -->
+		<link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
+		<!-- Bootstrap -->
+		<link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+		<!-- Superfish -->
+		<link rel="stylesheet" href="{% static 'css/superfish.css' %}">
+		<!-- Custom Style -->
+		<link rel="stylesheet" href="{% static 'css/style.css' %}">
+		<!-- Bootstrap SCSS -->
+		<link rel="stylesheet" href="{% static 'sass/bootstrap.scss' %}">
+		<link rel="stylesheet" href="{% static 'sass/bootstrap/Style.css' %}">
+	
+		<!-- Modernizr JS -->
+		<script src="{% static 'js/modernizr-2.6.2.min.js' %}"></script>
+	</head>
+	<body>
+		<div id="fh5co-wrapper">
+		<div id="fh5co-page">
+		<div id="fh5co-header">
+			<header id="fh5co-header-section">
+				<div class="container">
+					<div class="nav-header">
+						<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle"><i></i></a>
+						<h1 id="fh5co-logo"><a href="{% url 'home' %}">Rocks-<span>Fit</span></a></h1>
+						<nav id="fh5co-menu-wrap" role="navigation">
+							<ul class="sf-menu" id="fh5co-primary-menu">
+								<li><a href="{% url 'home' %}">Início</a></li>
+								<li class="active"><a href="{% url 'programs' %}">Nossos Planos</a></li>
+								<li><a href="{% url 'schedule' %}">Modalidades</a></li>
+								<li><a href="{% url 'trainers' %}">Professores</a></li>
+								<li><a href="{% url 'about' %}">Sobre nós</a></li>
+								<li><a href="{% url 'contact' %}">Contato</a></li>
+								<li><a href="{% url 'blog' %}">Nosso Blog</a></li>
+							</ul>
+						</nav>
+					</div>
+				</div>
+			</header>		
+		</div>
+
+		<div class="fh5co-parallax" style="background-image: url('{% static 'images/rks1.jpeg' %}'); height: 300px; min-height: 300px;">
+			<div class="overlay"></div>
+			<div class="container">
+				<div class="row">
+					<div class="col-md-8 col-md-offset-2 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table" style="height: 300px;">
+						<div class="fh5co-intro fh5co-table-cell animate-box">
+							<h1 class="text-center">Finalizar Cadastro</h1>
+							<p>Plano Selecionado: <strong>{{ plan.name }}</strong> (R$ {{ plan.price }})</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="fh5co-contact">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-8 col-md-offset-2 animate-box">
+						<form id="checkout-form">
+							<h3>Dados do Aluno</h3>
+							<div class="row form-group">
+								<div class="col-md-6">
+									<label for="nome_completo">Nome Completo</label>
+									<input type="text" id="nome_completo" class="form-control" placeholder="Seu nome" required>
+								</div>
+								<div class="col-md-6">
+									<label for="cpf">CPF (Somente Números)</label>
+									<input type="text" id="cpf" class="form-control" placeholder="000.000.000-00" required maxlength="11">
+								</div>
+							</div>
+
+							<div class="row form-group">
+                        <div class="col-md-6">
+                            <label for="email">E-mail</label>
+                            <input type="email" id="email" class="form-control" placeholder="exemplo@email.com" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="whatsapp">WhatsApp (DDD + Número)</label>
+                            <input type="text" id="whatsapp" class="form-control" placeholder="84 99999-9999" required>
+                        </div>
+                    </div>
+
+                    <div class="row form-group">
+                        <div class="col-md-12">
+                            <label for="foto">Sua Foto (Para Reconhecimento Facial na Catraca)</label>
+                            <input type="file" id="foto" class="form-control" accept="image/*" required>
+                            <p class="help-block"><small>Tire uma selfie nítida para liberação automática na entrada.</small></p>
+                        </div>
+                    </div>
+
+							<hr>
+
+							<h3>Como deseja realizar o Acerto?</h3>
+							<div class="row form-group">
+								<div class="col-md-12">
+									<select id="payment_method" class="form-control">
+										<option value="infinitepay">Pagar agora Online (Cartão/Pix via InfinitePay)</option>
+										<option value="local">Pagar fisicamente na Catraca (ou via PIX no WhatsApp)</option>
+									</select>
+								</div>
+							</div>
+
+							<div id="checkout-messages" class="alert alert-danger" style="display:none;"></div>
+
+							<div class="form-group text-center">
+								<button type="button" id="btn-pagar" class="btn btn-primary" style="padding: 15px 30px; font-size: 18px; width:100%">Confirmar e Continuar - R$ {{ plan.price }}</button>
+							</div>
+
+							{% if debug %}
+							<div style="margin-top:20px; padding:15px; background:#fff3cd; border:2px dashed #ff9500; border-radius:8px;">
+								<p style="margin:0 0 10px 0; font-weight:bold; color:#856404;">⚠️ MODO DESENVOLVIMENTO - Apenas em DEBUG=True</p>
+								<p style="margin:0 0 10px 0; font-size:13px; color:#666;">Simula a confirmação de pagamento da InfinityPay sem cobrar nada.</p>
+								<button type="button" id="btn-simular" class="btn btn-warning" style="width:100%; font-weight:bold;">
+									🧪 SIMULAR PAGAMENTO APROVADO (DEV)
+								</button>
+								<div id="dev-result" style="margin-top:10px; display:none;"></div>
+							</div>
+							{% endif %}
+
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<footer>
+			<div id="footer">
+				<div class="container">
+					<div class="row">
+						<div class="col-md-4 animate-box">
+							<h3 class="section-title">Sobre Nós</h3>
+							<p>Na Academia Rocks Fit, estamos comprometidos em fornecer um ambiente acolhedor e motivador para todos os nossos membros.</p>
+						</div>
+						<div class="col-md-4 animate-box">
+							<h3 class="section-title">Nosso Endereço</h3>
+							<ul class="contact-info">
+								<li><i class="icon-map-marker"></i>Rua Cel. Flaminio, 32 - Santos Reis, Natal-RN</li>
+								<li><i class="icon-phone"></i><a href="https://wa.me/5584999470586" target="_blank" style="color:rgba(255,255,255,0.6)">+55 84 99947-0586</a></li>
+							</ul>
+						</div>
+						<div class="col-md-4 animate-box">
+							<h3 class="section-title">Siga-nos</h3>
+							<p class="fh5co-social-icons">
+								<a href="#"><i class="icon-facebook2"></i></a>
+								<a href="#"><i class="icon-instagram"></i></a>
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</footer>
+
+		</div>
+		</div>
+
+		<!-- jQuery -->
+		<script src="{% static 'js/jquery.min.js' %}"></script>
+		<script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+		<script src="{% static 'js/bootstrap.min.js' %}"></script>
+		<script src="{% static 'js/jquery.waypoints.min.js' %}"></script>
+		<script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+		<script src="{% static 'js/hoverIntent.js' %}"></script>
+		<script src="{% static 'js/superfish.js' %}"></script>
+		<script src="{% static 'js/main.js' %}"></script>
+
+		<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const btnPagar = document.getElementById('btn-pagar');
+			const form = document.getElementById('checkout-form');
+			const messages = document.getElementById('checkout-messages');
+
+			function validateForm() {
+				return form.checkValidity();
+			}
+
+			btnPagar.addEventListener('click', function(e) {
+				e.preventDefault();
+				if (!validateForm()) {
+					form.reportValidity();
+					return;
+				}
+
+				btnPagar.disabled = true;
+				btnPagar.innerText = "Processando Cadastro...";
+				messages.style.display = 'none';
+
+				const formData = new FormData();
+				formData.append('plan_id', "{{ plan.id }}");
+				formData.append('nome_completo', document.getElementById('nome_completo').value);
+				formData.append('cpf', document.getElementById('cpf').value);
+				formData.append('email', document.getElementById('email').value);
+				formData.append('whatsapp', document.getElementById('whatsapp').value);
+				formData.append('payment_method', document.getElementById('payment_method').value);
+				
+				const fotoFile = document.getElementById('foto').files[0];
+				if (fotoFile) {
+					formData.append('foto', fotoFile);
+				}
+
+				fetch('/api/process-payment/', {
+					method: 'POST',
+					body: formData
+					// Nota: Não defina Content-Type manualmente ao usar FormData; o navegador fará isso com o boundary correto.
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.success && data.action === 'redirect') {
+						btnPagar.innerText = "Redirecionando...";
+						window.location.href = data.url;
+					} else {
+						messages.innerText = "Erro: " + data.error;
+						messages.style.display = 'block';
+						btnPagar.disabled = false;
+						btnPagar.innerText = "Confirmar e Continuar - R$ {{ plan.price }}";
+					}
+				})
+				.catch(err => {
+					messages.innerText = "Erro ao conectar com o servidor.";
+					messages.style.display = 'block';
+					btnPagar.disabled = false;
+				});
+			});
+
+			// Botão DEV: Simular Pagamento
+			const btnSimular = document.getElementById('btn-simular');
+			if (btnSimular) {
+				btnSimular.addEventListener('click', function() {
+					const cpf = document.getElementById('cpf').value;
+					const nome = document.getElementById('nome_completo').value;
+					if (!cpf || !nome) {
+						alert('Preencha ao menos Nome e CPF para simular.');
+						return;
+					}
+					// Primeiro cadastra o aluno
+					const formData = new FormData();
+					formData.append('plan_id', '{{ plan.id }}');
+					formData.append('nome_completo', nome);
+					formData.append('cpf', cpf);
+					formData.append('email', document.getElementById('email').value || 'dev@test.com');
+					formData.append('whatsapp', document.getElementById('whatsapp').value || '00000000000');
+					formData.append('payment_method', 'dev_simulate');
+
+					btnSimular.disabled = true;
+					btnSimular.innerText = '⏳ Simulando...';
+
+					fetch('/api/dev/simular-pagamento/', {
+						method: 'POST',
+						body: formData
+					})
+					.then(r => r.json())
+					.then(data => {
+						const div = document.getElementById('dev-result');
+						div.style.display = 'block';
+						if (data.success) {
+							div.style.background = '#d4edda';
+							div.style.padding = '10px';
+							div.style.borderRadius = '5px';
+							div.innerHTML = '<strong>✅ Sucesso!</strong> ' + data.message +
+								'<br><small>Aluno está com status: <b>' + data.status + '</b></small>' +
+								'<br><a href="/" class="btn btn-sm btn-success" style="margin-top:8px;">Ir para Home</a>';
+						} else {
+							div.style.background = '#f8d7da';
+							div.style.padding = '10px';
+							div.innerHTML = '<strong>❌ Erro:</strong> ' + data.error;
+						}
+						btnSimular.disabled = false;
+						btnSimular.innerText = '🧪 SIMULAR PAGAMENTO APROVADO (DEV)';
+					})
+					.catch(() => {
+						alert('Erro de conexão com o servidor.');
+						btnSimular.disabled = false;
+					});
+				});
+			}
+		});
+		</script>
+
+		<!-- WhatsApp Floating Button -->
+		<a href="https://wa.me/5584999470586" class="whatsapp-float" target="_blank" title="Fale conosco no WhatsApp">
+			<i class="icon-whatsapp"></i>
+		</a>
+
+	</body>
+</html>

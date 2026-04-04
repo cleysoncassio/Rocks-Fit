@@ -19,7 +19,10 @@
 	<!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
 	<link rel="shortcut icon" href="favicon.ico">
 
-	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,900' rel='stylesheet' type='text/css'>
+	<!-- Google Fonts -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
 
 	<!-- Animate.css -->
 	<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
@@ -31,7 +34,7 @@
 	<!-- Superfish -->
 	<link rel="stylesheet" href="{% static 'css/superfish.css' %}">
 	<!-- Custom Style -->
-	<link rel="stylesheet" href="{% static 'css/style.css' %}">
+	<link rel="stylesheet" href="{% static 'css/style.css' %}?v=2">
 	<!-- Bootstrap SCSS -->
 	<link rel="stylesheet" href="{% static 'sass/bootstrap.scss' %}">
 	<link rel="stylesheet" href="{% static 'sass/bootstrap/Style.css' %}">
@@ -70,14 +73,13 @@
 									<li><a href="{% url 'trainers' %}">Professores</a></li>
 									<li><a href="{% url 'about' %}">Sobre nós</a></li>
 									<li><a href="{% url 'contact' %}">Contato</a></li>
-									<li><a href="{% url 'blog' %}">Nosso Blog</a></li>
 								</ul>
 							</nav>
 						</div>
 					</div>
 				</header>
 				<!-- end:fh5co-header -->
-				<div class="fh5co-parallax" style="background-image: url({% static 'images/home-image-5.jpg' %});"
+				<div class="fh5co-parallax" style="background-image: url({% if site_config.programs_background %}{{ site_config.programs_background.url }}{% else %}{% static 'images/home-image-5.jpg' %}{% endif %});"
 					data-stellar-background-ratio="0.5">
 					<div class="overlay"></div>
 					<div class="container">
@@ -105,82 +107,26 @@
 							</div>
 						</div>
 						<div class="row">
-							<div class="pricing">
+							<div class="pricing" style="width: 100%; display: flex; flex-wrap: wrap; justify-content: center;">
+								{% for plan in plans %}
 								<div class="col-md-3 animate-box">
-									<div class="price-box animate-box">
-										<h2 class="pricing-plan">Diária</h2>
-										<div class="price"><sup class="currency">R$</sup>10<small>/DIÁRIA</small></div>
-										<p>Para quem quer conhecer</p>
+									<div class="price-box animate-box {% cycle 'plan-orange' 'plan-black' 'plan-gray' 'plan-white' %} {% if plan.is_popular %}popular{% endif %}">
+										<h2 class="pricing-plan {% if plan.is_popular %}pricing-plan-offer{% endif %}">{{ plan.name }} {% if plan.is_popular %}<span>MAIS VENDIDO</span>{% endif %}</h2>
+										<div class="price"><sup class="currency">R$</sup>{{ plan.price|floatformat:"-2" }}<small>{{ plan.period }}</small></div>
+										<p>{{ plan.description }}</p>
 										<ul class="classes">
-											<li>Musculação</li>
-											<li class="color">Acompanhamento Profissional</li>
-											<li>Aeróbico</li>
-											<li class="color">01 Treino Funcional</li>
+											{% for feature in plan.get_features_list %}
+											<li class="{% cycle '' 'color' %}">{{ feature }}</li>
+											{% endfor %}
 										</ul>
-										<a href="https://loja.infinitepay.io/workplacevirgilio/zfy3125-diaria"
-											class="btn btn-default">PAGAR</a>
+										<a href="{% url 'checkout' plan.id %}" class="btn {% if plan.is_popular %}btn-select-plan btn-sm{% else %}btn-default{% endif %}">
+											{% if plan.button1_text %}{{ plan.button1_text }}{% else %}Assinar Agora{% endif %}
+										</a>
 									</div>
 								</div>
-
-								<div class="col-md-3 animate-box">
-									<div class="price-box animate-box">
-										<h2 class="pricing-plan">MENSAL</h2>
-										<div class="price"><sup class="currency">R$</sup>60,00<small>/mensal</small>
-										</div>
-										<p>O valor total cobrado será de R$ 65,00 incluindo matrícula. </p>
-										<ul class="classes">
-											<li>Musculação</li>
-											<li class="color">Treino Funcional 2x por Semana</li>
-											<li>aulão cardio conforme agendamento</li>
-											<li class="color">Elíptico</li>
-											<li class="color">Acompanhamento Profissional</li>
-										</ul>
-										<a href="https://loja.infinitepay.io/workplacevirgilio/mup2504-musculacao-mensal-esteira-matricula"
-											class="btn btn-default">COM ESTEIRA</a>
-										<a href="https://loja.infinitepay.io/workplacevirgilio/cgg1637-musculacao-mensal-matricula"
-											class="btn btn-default">SEM ESTEIRA</a>
-									</div>
-								</div>
-
-								<div class="col-md-3 animate-box">
-									<div class="price-box animate-box popular">
-										<h2 class="pricing-plan pricing-plan-offer">TRIMESTRAL <span>MAIS VENDIDO</span>
-										</h2>
-										<div class="price"><sup class="currency">R$</sup>55,00<small>/TRIMESTRAL</small>
-										</div>
-										<p>O valor total cobrado será de R$ 170,00, incluindo matrícula.</p>
-										<ul class="classes">
-											<li>Musculação</li>
-											<li class="color">Treino Funcional 2x por Semana</li>
-											<li>aulão cardio conforme agendamento</li>
-											<li class="color">Elíptico</li>
-											<li class="color">Acompanhamento Profissional</li>
-										</ul>
-										<a href="https://loja.infinitepay.io/workplacevirgilio/sfz1150-musculacao-trimestral-esteira-matricula"
-											class="btn btn-select-plan btn-sm">COM ESTEIRA</a>
-										<a href="https://loja.infinitepay.io/workplacevirgilio/trm4676-musculacao-trimestral-esteira-matricula"
-											class="btn btn-select-plan btn-sm">SEM ESTEIRA</a>
-
-									</div>
-								</div>
-
-								<div class="col-md-3 animate-box">
-									<div class="price-box animate-box">
-										<h2 class="pricing-plan">Unlimited</h2>
-										<div class="price"><sup class="currency">$</sup>50,00<small>/semestral</small>
-										</div>
-										<p>O valor total cobrado será de R$ 305,00, incluindo matrícula. </p>
-										<ul class="classes">
-											<li>Musculação</li>
-											<li class="color">Treino Funcional 2x por Semana</li>
-											<li>aulão cardio conforme agendamento</li>
-											<li class="color">Elíptico</li>
-											<li class="color">Acompanhamento Profissional</li>
-										</ul>
-										<a href="#" class="btn btn-default">COM ESTEIRA</a>
-										<a href="#" class="btn btn-default">SEM ESTEIRA</a>
-									</div>
-								</div>
+								{% empty %}
+								<div class="col-md-12 text-center"><p>Nenhum plano cadastrado ainda.</p></div>
+								{% endfor %}
 							</div>
 						</div>
 					</div>
@@ -190,45 +136,38 @@
 				<div id="footer">
 					<div class="container">
 						<div class="row">
-							<div class="col-md-4 animate-box">
+							<div class="col-md-6 animate-box">
 								<h3 class="section-title">Sobre Nós</h3>
 								<p>Na Academia Rocks Fit, estamos comprometidos em fornecer um ambiente acolhedor e
-									motivador para todos os nossos membros. Nossa missão é ajudar você a alcançar seus
-									objetivos de fitness com o apoio de nossos treinadores especializados e instalações
-									de última geração.</p>
+									motivador para todos os nossos membros. Nossa missão é ajudar você a alcançar
+									seus objetivos de fitness com o apoio de nossos treinadores especializados.</p>
 							</div>
 
-							<div class="col-md-4 animate-box">
+							<div class="col-md-6 animate-box">
 								<h3 class="section-title">Nosso Endereço</h3>
 								<ul class="contact-info">
-									<li><i class="icon-map-marker"></i>Rua Cel. Flaminio, 32 - Santos Reis, Natal-RN
+									<li>
+										<a href="https://maps.app.goo.gl/Be3J1ArwZGgvtkan6" target="_blank" style="color:rgba(255,255,255,0.6)">
+											<i class="icon-map-marker" style="color: #ff4d4d; margin-right: 10px;"></i>Rua Cel. Flaminio, 32 - Santos Reis, Natal-RN
+										</a>
 									</li>
-									<li><i class="icon-phone"></i>+55 84 99805-9947</li>
-									<li><i class="icon-envelope"></i><a
-											href="mailto:academiarocksfit@gmail.com">academiarocksfit@gmail.com</a></li>
-									<li><i class="icon-globe2"></i><a
-											href="http://www.rocksfit.com">www.rocksfit.com</a></li>
+									<li><i class="icon-phone"></i><a href="https://wa.me/5584999470586" target="_blank" style="color:rgba(255,255,255,0.6)">+55 84 99947-0586</a></li>
+									<li><i class="icon-envelope"></i><a href="mailto:academiarocksfit@gmail.com" style="color:rgba(255,255,255,0.6)">academiarocksfit@gmail.com</a></li>
 								</ul>
-							</div>
-
-							<div class="col-md-4 animate-box">
-								<h3 class="section-title">Nossa Localização</h3>
-								<iframe
-								src="https://storage.googleapis.com/maps-solutions-6rgx896oqq/locator-plus/0hnf/locator-plus.html"
-								width="100%" height="300px" style="border:0;" loading="lazy">
-							</iframe>
 							</div>
 
 							<div class="row copy-right">
 								<div class="col-md-6 col-md-offset-3 text-center">
-									<p class="fh5co-social-icons">
-										<a href="#"><i class="icon-twitter2"></i></a>
-										<a
-											href="https://www.facebook.com/profile.php?id=100007946404693&mibextid=ZbWKwL"><i
-												class="icon-facebook2"></i></a>
-										<a href="https://www.instagram.com/academiarocksfit?igsh=d3hjMW9kdmp6Y2Qw"><i
-												class="icon-instagram"></i></a>
+									<p class="fh5co-social-icons" style="margin-bottom: 5px;">
+										<a href="https://www.linkedin.com/in/cleyson-cassio-060ab9213/" target="_blank"><i class="icon-linkedin"></i></a>
+										<a href="https://www.instagram.com/cleysoncassio/" target="_blank"><i class="icon-instagram"></i></a>
 										<a href="#"><i class="icon-youtube"></i></a>
+									</p>
+									<div style="margin-bottom: 10px;">
+										<img src="{% static 'images/cleyson-logo.png' %}" alt="Cleyson Cassio Logo" style="height: 80px; filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.3));">
+									</div>
+									<p style="font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 0;">
+										&copy; 2026 Rocks-Fit. Desenvolvido por Eng. de Software <strong>Cleyson Cassio</strong>
 									</p>
 								</div>
 							</div>
@@ -242,21 +181,21 @@
 		<!-- jQuery -->
 	
 	
-		<script src="js/jquery.min.js"></script>
+		<script src="{% static 'js/jquery.min.js' %}"></script>
 		<!-- jQuery Easing -->
-		<script src="js/jquery.easing.1.3.js"></script>
+		<script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
 		<!-- Bootstrap -->
-		<script src="js/bootstrap.min.js"></script>
+		<script src="{% static 'js/bootstrap.min.js' %}"></script>
 		<!-- Waypoints -->
-		<script src="js/jquery.waypoints.min.js"></script>
+		<script src="{% static 'js/jquery.waypoints.min.js' %}"></script>
 		<!-- Stellar -->
-		<script src="js/jquery.stellar.min.js"></script>
+		<script src="{% static 'js/jquery.stellar.min.js' %}"></script>
 		<!-- Superfish -->
-		<script src="js/hoverIntent.js"></script>
-		<script src="js/superfish.js"></script>
+		<script src="{% static 'js/hoverIntent.js' %}"></script>
+		<script src="{% static 'js/superfish.js' %}"></script>
 	
 		<!-- Main JS (Do not remove) -->
-		<script src="js/main.js"></script>
+		<script src="{% static 'js/main.js' %}"></script>
 	
 		</body>
 	</html>

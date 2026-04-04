@@ -1,0 +1,9 @@
+{% load static %}
+<div style="display: flex; gap: 8px; font-size: 16px;">
+    <a href="{{ urls.top }}{{query_string}}" title="Mover para o começo" style="text-decoration: none; color: #4CAF50;">
+        <span style="font-size: 18px; font-weight: bold;">&#x2B06;</span> <!-- Seta para cima (Topo) -->
+    </a>
+    <a href="{{ urls.down }}{{query_string}}" title="Mover para baixo" style="text-decoration: none; color: #2196F3;">
+        <span style="font-size: 18px; font-weight: bold;">&#x2B07;</span> <!-- Seta para baixo -->
+    </a>
+</div>

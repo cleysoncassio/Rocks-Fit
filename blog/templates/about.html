@@ -66,7 +66,7 @@
 			</header>		
 		</div>
 		<!-- end:fh5co-header -->
-		<div class="fh5co-parallax" style="background-image: url('{% static 'images/rks1.jpeg' %}');">
+		<div class="fh5co-parallax" style="background-image: url('{% if site_config.about_background %}{{ site_config.about_background.url }}{% else %}{% static 'images/rks1.jpeg' %}{% endif %}');">
 			<div class="overlay-section"> <data-stellar-background-ratio="0.5">
 			<div class="overlay"></div>
 			<div class="container">
@@ -114,12 +114,10 @@
 									<ul class="contact-info">
 										<li><i class="icon-map-marker"></i>Rua Cel. Flaminio, 32 - Santos Reis, Natal-RN
 										</li>
-										<li><i class="icon-phone"></i>+55 84 99805-9947</li>
+										<li><i class="icon-phone"></i>+55 84 99947-0586</li>
 										<li><i class="icon-envelope"></i><a
 												href="mailto:academiarocksfit@gmail.com">academiarocksfit@gmail.com</a></li>
-										<li><i class="icon-globe2"></i><a
-												href="http://www.rocksfit.com">www.rocksfit.com</a></li>
-									</ul>
+										</ul>
 								</div>
 	
 								<div class="col-md-4 animate-box">

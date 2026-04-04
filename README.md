@@ -96,7 +96,7 @@ Este projeto está licenciado sob a MIT License.
 
 ## ✉️ Contato
 
-Para quaisquer dúvidas ou sugestões, sinta-se à vontade para entrar em contato através do e-mail: cleysoncassio@gmail.com whatsapp: + 55 84 99805-9947
+Para quaisquer dúvidas ou sugestões, sinta-se à vontade para entrar em contato através do e-mail: cleysoncassio@gmail.com whatsapp: + 55 84 99947-0586
 
 Divirta-se e mantenha-se em forma! 💪
 

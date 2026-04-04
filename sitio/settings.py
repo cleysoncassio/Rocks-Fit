@@ -1,9 +1,9 @@
-from functools import partial
 import os
 from pathlib import Path
+
 import dj_database_url
+from decouple import Csv, config
 from dotenv import load_dotenv
-from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,11 +14,16 @@ load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
+STONE_SECRET_KEY = os.getenv("STONE_SECRET_KEY", "sk_test_placeholder_sua_chave")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = ["*"] if DEBUG else config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = (
+    ["*"]
+    if DEBUG
+    else config("ALLOWED_HOSTS", cast=lambda v: [s.strip() for s in v.split(",")])
+)
 
 # Application definition
 
@@ -31,10 +36,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "sass_processor",
+    "ordered_model",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -48,7 +55,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # URLs do projeto
 ROOT_URLCONF = "sitio.urls"
 
-INTERNAL_IPS = config('INTERNAL_IPS', cast=Csv(), default='127.0.0.1')
+INTERNAL_IPS = config("INTERNAL_IPS", cast=Csv(), default="127.0.0.1")
 
 GS_BUCKET_NAME = "<your-bucket-name>"
 
@@ -63,6 +70,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "blog.context_processors.site_settings",
             ],
         },
     },
@@ -73,24 +81,17 @@ WSGI_APPLICATION = "sitio.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-default_db_url = 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')
-parse_database = partial(dj_database_url.parse)
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rks',
-        'USER': 'cleysoncassio',
-        'PASSWORD': '123456',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    "default": config(
+        "DATABASE_URL",
+        default="sqlite:///" + os.path.join(BASE_DIR, "db.sqlite3"),
+        cast=dj_database_url.parse,
+    )
 }
 
-#PARA ACESSAR O PGADMIN WEB:
+# PARA ACESSAR O PGADMIN WEB:
 # pgadmin4
-# http://http://127.0.0.1:5050 
-
+# http://http://127.0.0.1:5050
 
 
 # Password validation
@@ -136,6 +137,16 @@ SASS_PROCESSOR_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "blog/templates/base/static")]
 
+# WhiteNoise storage to serve compressed and versioned static files
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 # Arquivos de mídia
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
@@ -147,3 +158,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Configurações de email (exemplo usando console backend)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Security audit for deployment
+# python manage.py check --deploy
+
+WHITENOISE_MANIFEST_STRICT = False
+
+# Configurações do Controle de Acesso (Catraca)
+CATRACA_SYNC_TOKEN = "rocksfit@2024"

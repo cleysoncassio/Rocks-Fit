@@ -66,7 +66,7 @@
 			</header>		
 		</div>
 		<!-- end:fh5co-header -->
-		<div class="fh5co-parallax" style="background-image: url({% static 'images/home-image-5.jpg' %});" data-stellar-background-ratio="0.5">
+		<div class="fh5co-parallax" style="background-image: url({% if site_config.schedule_background %}{{ site_config.schedule_background.url }}{% else %}{% static 'images/home-image-5.jpg' %}{% endif %});" data-stellar-background-ratio="0.5">
 			<div class="overlay"></div>
 			<div class="container">
 				<div class="row">
@@ -94,33 +94,20 @@
 					</div>
 				</div>
 				<div class="row text-center">
+					{% for program in programs %}
 					<div class="col-md-4 col-sm-6">
 						<div class="program animate-box">
-							<img src="{% static 'images/fit-dumbell.svg' %}" alt="fit-dumbell">
-							<h3>Musculação</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and
-								Consonantia, there live the blind texts. </p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
+							{% if program.image %}
+								<img src="{{ program.image.url }}" alt="{{ program.name }}">
+							{% else %}
+								<img src="{% static 'images/fit-dumbell.svg' %}" alt="fit-dumbell">
+							{% endif %}
+							<h3>{{ program.name }}</h3>
+							<p>{{ program.description }}</p>
+							<span><a href="{% url 'programs' %}" class="btn btn-default">Começar</a></span>
 						</div>
 					</div>
-					<div class="col-md-4 col-sm-6">
-						<div class="program animate-box">
-							<img src="{% static 'images/fit-yoga.svg' %}" alt="">
-							<h3>Funcional</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and
-								Consonantia, there live the blind texts. </p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
-						</div>
-					</div>
-					<div class="col-md-4 col-sm-6">
-						<div class="program animate-box">
-							<img src="{% static 'images/fit-cycling.svg' %}" alt="">
-							<h3>Cardio Dance</h3>
-							<p>Far far away, behind the word mountains, far from the countries Vokalia and
-								Consonantia, there live the blind texts. </p>
-							<span><a href="#" class="btn btn-default">Join Now</a></span>
-						</div>
-				
+					{% endfor %}
 				</div>
 			</div>
 		</div>
@@ -141,11 +128,9 @@
 							<ul class="contact-info">
 								<li><i class="icon-map-marker"></i>Rua Cel. Flaminio, 32 - Santos Reis, Natal-RN
 								</li>
-								<li><i class="icon-phone"></i>+55 84 99805-9947</li>
+								<li><i class="icon-phone"></i>+55 84 99947-0586</li>
 								<li><i class="icon-envelope"></i><a
 										href="mailto:academiarocksfit@gmail.com">academiarocksfit@gmail.com</a></li>
-								<li><i class="icon-globe2"></i><a
-										href="http://www.rocksfit.com">www.rocksfit.com</a></li>
 							</ul>
 						</div>
 

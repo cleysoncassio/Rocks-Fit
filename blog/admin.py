@@ -1,12 +1,29 @@
 from django import forms
 from django.contrib import admin
-from .models import BlogPost
-from .models import ContactInfo, ContactMessage, Trainer, Program, Schedule, Event
+from ordered_model.admin import OrderedModelAdmin
+
+from .models import (ContactInfo, ContactMessage, Program,
+                     Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso, SiteConfiguration)
+
+
+@admin.register(SiteConfiguration)
+class SiteConfigurationAdmin(admin.ModelAdmin):
+    # This ensures only one instance is manageable, or at least makes it easier
+    def has_add_permission(self, request):
+        if self.model.objects.count() >= 1:
+            return False
+        return super().has_add_permission(request)
+
+@admin.register(Plan)
+class PlanAdmin(OrderedModelAdmin):
+    list_display = ("name", "price", "period", "is_popular", "move_up_down_links")
+    search_fields = ("name", "description")
+    list_filter = ("is_popular",)
 
 
 @admin.register(Program)
-class ProgramAdmin(admin.ModelAdmin):
-    list_display = ("name", "description")
+class ProgramAdmin(OrderedModelAdmin):
+    list_display = ("name", "description", "move_up_down_links")
     search_fields = ["name"]
     list_filter = ("name",)
 
@@ -19,9 +36,10 @@ class TrainerAdmin(admin.ModelAdmin):
 
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ("program", "Trainers", "day", "start_time", "end_time")
-    list_filter = ("day", "program", "Trainers")
-    search_fields = ["program__name", "Trainer__name"]
+    list_display = ("day", "shift", "start_time", "end_time", "trainer", "program")
+    list_filter = ("day", "shift", "trainer", "program")
+    search_fields = ("trainer__name", "program__name")
+    ordering = ("day", "start_time")
 
 
 @admin.register(ContactInfo)
@@ -37,55 +55,29 @@ class ContactMessageAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
 
-class BlogPostAdmin(admin.ModelAdmin):
-    # Exibe os campos listados na visualização de lista no admin
-    list_display = ("title", "author", "posted_on", "comments_count")
 
-    # Adiciona um campo de busca para os campos indicados
-    search_fields = ("title", "author", "content")
+@admin.register(Aluno)
+class AlunoAdmin(admin.ModelAdmin):
+    list_display = ("matricula", "nome_completo", "cpf", "whatsapp", "data_cadastro", "ver_foto")
+    search_fields = ("matricula", "nome_completo", "cpf", "whatsapp")
+    list_filter = ("data_cadastro",)
+    readonly_fields = ("matricula", "data_cadastro")
 
-    # Adiciona filtros laterais para datas e autores
-    list_filter = ("posted_on", "author")
+    def ver_foto(self, obj):
+        from django.utils.html import format_html
+        if obj.foto:
+            return format_html('<img src="{}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />', obj.foto.url)
+        return "Sem Foto"
+    ver_foto.short_description = "Foto"
 
-    # Ordena os posts por data de postagem, do mais recente ao mais antigo
-    ordering = ("-posted_on",)
+@admin.register(PagamentoHistorico)
+class PagamentoHistoricoAdmin(admin.ModelAdmin):
+    list_display = ("aluno", "plano", "status", "data_pagamento", "metodo_pagamento")
+    list_filter = ("status", "metodo_pagamento", "data_pagamento")
+    search_fields = ("aluno__nome_completo", "aluno__matricula", "transacao_id")
 
-    # Campos que aparecem na tela de detalhes
-    fieldsets = (
-        (None, {"fields": ("title", "author", "content", "image")}),
-        (
-            "Metadata",
-            {
-                "fields": ("posted_on", "comments_count"),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    # Campos somente leitura
-    readonly_fields = ("posted_on",)
-
-
-admin.site.register(BlogPost, BlogPostAdmin)
-
-
-class EventForm(forms.ModelForm):
-    class Meta:
-        model = Event
-        fields = ["title", "author", "description", "event_date", "comments_count"]
-
-    def clean_event_date(self):
-        event_date = self.cleaned_data.get("event_date")
-        if not event_date:
-            raise forms.ValidationError("The event date cannot be empty.")
-        return event_date
-
-
-@admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
-    form = EventForm
-    list_display = ("title", "author", "event_date", "comments_count")
-    search_fields = ("title", "author", "description")
-    list_filter = ("event_date", "author")
-    ordering = ("-event_date",)
-    readonly_fields = ("comments_count",)
+@admin.register(ControleAcesso)
+class ControleAcessoAdmin(admin.ModelAdmin):
+    list_display = ("aluno", "data_vencimento", "status_catraca")
+    list_filter = ("status_catraca", "data_vencimento")
+    search_fields = ("aluno__nome_completo", "aluno__matricula")

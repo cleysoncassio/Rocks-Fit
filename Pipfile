@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 django = "*"
 requires = "*"
-requests = "*"
 python-dotenv = "*"
 django-sass-processor = "*"
 pillow = "*"
@@ -14,6 +13,9 @@ gunicorn = "*"
 dj-database-url = "*"
 pytest-django = "*"
 python-decouple = "*"
+psycopg2-binary = "*"
+requests = "*"
+django-ordered-model = "*"
 
 [dev-packages]
 flake8 = "*"

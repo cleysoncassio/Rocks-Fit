@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA DE SEGURANÇA - ACESSO BLOQUEADO</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #ff0000;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+            overflow: hidden;
+        }
+        .container {
+            border: 2px solid #ff0000;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            animation: blink 1s infinite;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .ip-info {
+            background: #1a0000;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px dashed #ff0000;
+            font-weight: bold;
+        }
+        .warning-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        .log {
+            text-align: left;
+            font-size: 10px;
+            color: #660000;
+            margin-top: 30px;
+            max-height: 100px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="warning-icon">⚠️</div>
+        <h1>ACESSO NÃO AUTORIZADO</h1>
+        <p>Esta tentativa de acesso foi detectada pelo sistema de segurança avançado da Rocks-Fit.</p>
+        <p>Violações de diretório em áreas administrativas são monitoradas em tempo real.</p>
+        
+        <div class="ip-info">
+            PROTOCOLO DE RASTREAMENTO ATIVADO<br>
+            ENDEREÇO IP REGISTRADO: {{ ip }}<br>
+            LOCALIZAÇÃO: SENDO DETERMINADA...
+        </div>
+
+        <p style="margin-top: 30px; font-size: 12px; color: #888;">
+            Seu acesso foi bloqueado permanentemente. Seus dados foram encaminhados para a equipe de segurança cibernética do desenvolvedor.
+        </p>
+
+        <div class="log">
+            [SYS_LOG] Unauthorized POST/GET attempt at /admin/<br>
+            [SYS_LOG] User Agent: {{ request.META.HTTP_USER_AGENT }}<br>
+            [SYS_LOG] Encryption: AES-256 Active<br>
+            [SYS_LOG] Traceback: Remote_Node_Detected<br>
+            [SYS_LOG] Status: Blacklisted
+        </div>
+    </div>
+</body>
+</html>
