@@ -25,10 +25,11 @@ ALLOWED_HOSTS = (
     else config("ALLOWED_HOSTS", default="academiarocksfit.com.br,www.academiarocksfit.com.br", cast=lambda v: [s.strip() for s in v.split(",")])
 )
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://academiarocksfit.com.br",
-    "https://www.academiarocksfit.com.br",
-]
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="https://academiarocksfit.com.br,https://www.academiarocksfit.com.br",
+    cast=lambda v: [s.strip() for s in v.split(",")],
+)
 
 # Application definition
 
