@@ -17,13 +17,18 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 STONE_SECRET_KEY = os.getenv("STONE_SECRET_KEY", "sk_test_placeholder_sua_chave")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=True, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = (
-    ["*"]
+    ["*", "academiarocksfit.com.br", "www.academiarocksfit.com.br"]
     if DEBUG
-    else config("ALLOWED_HOSTS", cast=lambda v: [s.strip() for s in v.split(",")])
+    else config("ALLOWED_HOSTS", default="academiarocksfit.com.br,www.academiarocksfit.com.br", cast=lambda v: [s.strip() for s in v.split(",")])
 )
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://academiarocksfit.com.br",
+    "https://www.academiarocksfit.com.br",
+]
 
 # Application definition
 
@@ -37,15 +42,19 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "sass_processor",
     "ordered_model",
+    "axes",
+    "csp",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "axes.middleware.AxesMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -166,3 +175,47 @@ WHITENOISE_MANIFEST_STRICT = False
 
 # Configurações do Controle de Acesso (Catraca)
 CATRACA_SYNC_TOKEN = "rocksfit@2024"
+
+# --- CONFIGURACOES DE SEGURANCA ADICIONAIS ---
+
+if not DEBUG:
+    # Seguranca HTTPS forçada em Producao
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 ano
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Outros cabecalhos
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Django-Axes (Protecao Brute Force)
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+AXES_FAILURE_LIMIT = 5  # Bloqueia após 5 tentativas
+AXES_COOLOFF_TIME = 1   # Bloqueio dura 1 hora
+AXES_LOCKOUT_TEMPLATE = "base/fake_admin.html"  # Usa o honeypot como tela de bloqueio
+AXES_RESET_ON_SUCCESS = True
+
+# Django-CSP (Content Security Policy)
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'default-src': ("'self'",),
+        'style-src': ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com"),
+        'script-src': ("'self'", "'unsafe-inline'", "https://www.googletagmanager.com"),
+        'font-src': ("'self'", "https://fonts.gstatic.com"),
+        'img-src': ("'self'", "data:", "https://maps.google.com"),
+        'frame-src': ("'self'", "https://www.googletagmanager.com", "https://www.google.com"),
+    }
+}
+
+# Ratelimit (Geral)
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'

@@ -1,9 +1,10 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django_ratelimit.decorators import ratelimit
 import json
 
-from blog.models import ContactInfo, Program, Schedule, Trainer, Plan, Aluno, PagamentoHistorico
+from blog.models import ContactInfo, Program, Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso
 from .services import processar_vencimento_catraca
 from .forms import ContactForm
 
@@ -72,6 +73,7 @@ def fake_admin(request):
     
     return render(request, "base/fake_admin.html", {"ip": ip})
 
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
 def contact(request):
     contact_info = ContactInfo.objects.first()
     if request.method == "POST":
@@ -91,6 +93,9 @@ def trainers(request):
 
 def about(request):
     return render(request, "about.html")
+
+def tools(request):
+    return render(request, "tools.html")
 
 
 def checkout_view(request, plan_id):
@@ -116,17 +121,15 @@ def process_payment_api(request):
                 defaults={
                     'nome_completo': post_data.get('nome_completo'),
                     'email': post_data.get('email'),
-                    'whatsapp': post_data.get('whatsapp')
+                    'whatsapp': post_data.get('whatsapp'),
+                    'data_nascimento': post_data.get('data_nascimento')
                 }
             )
             
-            # Se o aluno já existia ou acabou de ser criado, atualizamos a foto se enviada
-            if 'foto' in files_data:
-                aluno.foto = files_data['foto']
-                aluno.save()
-            
             plano = get_object_or_404(Plan, id=post_data.get('plan_id'))
             payment_method = post_data.get('payment_method', 'local')
+            
+            acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
             
             historico = PagamentoHistorico.objects.create(
                 aluno=aluno,
@@ -136,52 +139,26 @@ def process_payment_api(request):
             )
             
             if payment_method == 'infinitepay':
-                import requests
-                # Configurações da InfinitePay
+                # Inicialmente bloqueado até confirmar pagamento
+                acesso.status_catraca = 'bloqueado'
+                acesso.save()
+                # Link direto para a plataforma InfinityPay da loja
+                # Formato: https://pay.infinitepay.io/TAG_DA_LOJA
                 INFINITEPAY_TAG = "rocks-fit" 
                 
-                # Limpar CPF para enviar apenas números
-                cpf_limpo = ''.join(filter(str.isdigit, aluno.cpf))
+                # Opcional: Adicionar o valor ao link se a InfinityPay suportar no formato de query param
+                # ou apenas redirecionar para a página principal da loja na InfinityPay
+                payment_url = f"https://pay.infinitepay.io/{INFINITEPAY_TAG}"
                 
-                # URL do Webhook (Ajuste para o seu domínio real)
-                webhook_url = request.build_absolute_uri('/api/infinitepay-webhook/')
+                # Salvar registro como pendente
+                historico.transacao_id = f"INF-{aluno.cpf}"
+                historico.save()
                 
-                payload = {
-                    "handle": INFINITEPAY_TAG,
-                    "order_nsu": cpf_limpo, # Usando CPF como identificador conforme solicitado
-                    "webhook_url": webhook_url,
-                    "customer": {
-                        "name": aluno.nome_completo,
-                        "email": aluno.email
-                    },
-                    "items": [
-                        {
-                            "name": f"Plano {plano.name} - Rocks Fit",
-                            "price": int(plano.price * 100), # Converter para centavos
-                            "quantity": 1
-                        }
-                    ],
-                    "redirect_url": request.build_absolute_uri('/') # Volta para a home
-                }
-                
-                try:
-                    # Trazendo o link de pagamento
-                    response = requests.post("https://api.infinitepay.io/invoices/public/checkout/links", json=payload)
-                    data = response.json()
-                    
-                    if response.status_code == 201 or 'url' in data:
-                        # Salvar ID da fatura se retornado
-                        historico.transacao_id = str(data.get('id', ''))
-                        historico.save()
-                        return JsonResponse({'success': True, 'action': 'redirect', 'url': data['url']})
-                    else:
-                        return JsonResponse({'success': False, 'error': f"Erro na InfinitePay: {data.get('message', 'Erro desconhecido')}"}, status=400)
-                except Exception as e:
-                    return JsonResponse({'success': False, 'error': f"Erro de conexão com InfinitePay: {str(e)}"}, status=500)
+                return JsonResponse({'success': True, 'action': 'redirect', 'url': payment_url})
 
             if payment_method == 'local':
                 import urllib.parse
-                whatsapp_number = "5511999999999" # Fallback
+                whatsapp_number = "5584999470586" # Fallback oficial Rocks-Fit
                 contact = ContactInfo.objects.first()
                 if contact and contact.phone:
                     num = ''.join(filter(str.isdigit, contact.phone))
@@ -189,7 +166,12 @@ def process_payment_api(request):
                         num = "55" + num
                     whatsapp_number = num
 
-                msg = f"Olá! Acabei de me cadastrar (Matrícula: {aluno.matricula}). Meu nome é {aluno.nome_completo} e quero pagar o plano *{plano.name}*."
+                # Status: Aguardando Pix manual
+                acesso.status_catraca = 'aguardando_pagamento'
+                acesso.plano_pendente = plano
+                acesso.save()
+
+                msg = f"Olá! Acabei de me cadastrar (Matrícula: {aluno.matricula}). Meu nome é {aluno.nome_completo} e quero pagar o plano *{plano.name}* via PIX. Por favor, me envie a *Chave PIX* da academia."
                 wpp_url = f"https://wa.me/{whatsapp_number}?text={urllib.parse.quote(msg)}"
                 return JsonResponse({'success': True, 'action': 'redirect', 'url': wpp_url})
             
@@ -227,7 +209,12 @@ def dev_simular_pagamento(request):
 
         aluno, _ = Aluno.objects.get_or_create(
             cpf=cpf_limpo,
-            defaults={'nome_completo': nome, 'email': email, 'whatsapp': whatsapp}
+            defaults={
+                'nome_completo': nome, 
+                'email': email, 
+                'whatsapp': whatsapp,
+                'data_nascimento': request.POST.get('data_nascimento', '1990-01-01')
+            }
         )
 
         PagamentoHistorico.objects.create(
@@ -449,6 +436,10 @@ def aluno_list_full_api(request):
                 status_pagamento = "PAGO (Aguard. Biometria)"
                 borda_cor = "laranja"
                 vencimento = "Ativação na 1ª entrada"
+            elif ac.status_catraca == 'aguardando_pagamento':
+                status_pagamento = "AGUARDANDO PIX (WhatsApp)"
+                borda_cor = "amarelo"
+                vencimento = "Pendente"
             elif ac.data_vencimento:
                 vencimento = ac.data_vencimento.strftime('%d/%m/%Y')
                 if ac.data_vencimento >= hoje:
@@ -457,6 +448,9 @@ def aluno_list_full_api(request):
                 else:
                     status_pagamento = "INATIVO (VENCIDO)"
                     borda_cor = "vermelho"
+            else:
+                 status_pagamento = "BLOQUEADO (Não Pago)"
+                 borda_cor = "vermelho"
 
         foto_url = request.build_absolute_uri(a.foto.url) if a.foto else None
 
