@@ -164,9 +164,28 @@ class Aluno(models.Model):
         if not self.matricula:
             # Geração automática: RF + Ano + Sequencial
             ano_atual = datetime.datetime.now().year
-            ultimo_aluno = Aluno.objects.order_by('-id').first()
-            proximo_id = (ultimo_aluno.id + 1) if ultimo_aluno else 1
-            self.matricula = f"RF{ano_atual}{proximo_id:04d}"
+            prefixo = f"RF{ano_atual}"
+            
+            # Buscar a maior matrícula do ano atual
+            ultimo_aluno = Aluno.objects.filter(matricula__startswith=prefixo).order_by('-matricula').first()
+            
+            if ultimo_aluno and ultimo_aluno.matricula:
+                try:
+                    # Tenta extrair o número da última matrícula e somar 1
+                    ultimo_numero = int(ultimo_aluno.matricula[len(prefixo):])
+                    proximo_numero = ultimo_numero + 1
+                except (ValueError, IndexError):
+                    proximo_numero = 1
+            else:
+                proximo_numero = 1
+                
+            self.matricula = f"{prefixo}{proximo_numero:04d}"
+            
+            # Garantir unicidade final em caso de corrida
+            while Aluno.objects.filter(matricula=self.matricula).exists():
+                proximo_numero += 1
+                self.matricula = f"{prefixo}{proximo_numero:04d}"
+
         super().save(*args, **kwargs)
 
     @property
@@ -207,6 +226,7 @@ class ControleAcesso(models.Model):
     STATUS_CATRACA_CHOICES = [
         ('liberado', 'Liberado'),
         ('aguardando_biometria', 'Aguardando Biometria (Pago)'),
+        ('aguardando_pagamento', 'Aguardando Confirmação de Pagamento (PIX)'),
         ('bloqueado', 'Bloqueado'),
     ]
     aluno = models.OneToOneField(Aluno, on_delete=models.CASCADE, related_name='acesso', verbose_name="Aluno")
@@ -245,6 +265,7 @@ class SiteConfiguration(models.Model):
 
     # Logos
     intro_logo = models.ImageField(upload_to='site_images/', blank=True, null=True, verbose_name="Logo da Introdução")
+    footer_logo = models.ImageField(upload_to='site_images/', blank=True, null=True, verbose_name="Logo do Rodapé")
 
     def __str__(self):
         return "Fotos do Site"

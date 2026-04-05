@@ -1,0 +1,88 @@
+{% load static %}
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row copy-right">
+                <div class="col-md-12 text-center">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
+                        <img src="{% if site_config.footer_logo %}{{ site_config.footer_logo.url }}{% else %}{% static 'images/cleyson-logo.png' %}{% endif %}" alt="Academia Rocks Fit Logo" style="height: 100px; filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.3)); margin-bottom: 10px;">
+                        
+                        <p class="copyright-text" style="margin: 0; text-align: center;">
+                            &copy; 2026 Rocks-Fit.<br>Desenvolvido por <strong>Cleyson Cassio</strong> - Eng. de Software
+                        </p>
+
+                        <p class="fh5co-social-icons" style="margin: 0; display: flex; gap: 15px; justify-content: center;">
+                            <a href="https://www.linkedin.com/in/cleyson-cassio-060ab9213/" target="_blank"><i class="icon-linkedin"></i></a>
+                            <a href="https://www.instagram.com/cleysoncassio/" target="_blank"><i class="icon-instagram"></i></a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- end container -->
+    </div> <!-- end footer div -->
+</footer>
+
+<script>
+    $(document).ready(function() {
+        var currentPath = window.location.pathname;
+        $('.mobile-nav a').each(function() {
+            if ($(this).attr('href') === currentPath) {
+                $(this).addClass('active');
+            } else {
+                $(this).removeClass('active');
+            }
+        });
+    });
+</script>
+
+<!-- Bottom Nav for Mobile -->
+<nav class="mobile-nav">
+    <a href="{% url 'home' %}" class="nav-item">
+        <i class="icon-home2"></i>
+        <span>Início</span>
+    </a>
+    <a href="{% url 'programs' %}" class="nav-item">
+        <i class="icon-calendar2"></i>
+        <span>Planos</span>
+    </a>
+    <a href="{% url 'schedule' %}" class="nav-item">
+        <i class="icon-trophy2"></i>
+        <span>Modalidades</span>
+    </a>
+</nav>
+
+<!-- Floating Buttons -->
+<a href="https://maps.app.goo.gl/xcdf4qc962zJoX4UA" class="location-float" target="_blank" title="Veja nossa localização">
+    <i class="icon-map-marker"></i>
+</a>
+
+<a href="https://wa.me/5584999470586" class="whatsapp-float" target="_blank" title="Fale conosco no WhatsApp">
+    <i class="icon-whatsapp"></i>
+</a>
+
+<!-- Floating Share Button -->
+<a href="javascript:void(0);" id="share-float-btn" class="share-float" title="Compartilhar">
+    <i class="icon-share"></i>
+</a>
+
+<script>
+    document.getElementById('share-float-btn').addEventListener('click', function() {
+        const shareData = {
+            title: 'Rocks-Fit - Ferramentas de Saúde',
+            text: '📈 Melhore sua performance com as Ferramentas de Saúde da Rocks-Fit! 🚀\nCalcule seu IMC, TMB e Macros aqui:',
+            url: window.location.origin + '/ferramentas/'
+        };
+
+        if (navigator.share) {
+            navigator.share(shareData).catch(err => console.log('Erro ao compartilhar:', err));
+        } else {
+            const tempInput = document.createElement('input');
+            tempInput.value = shareData.text + ' ' + shareData.url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            alert('✅ Link de compartilhamento copiado! Envie para seus amigos.');
+        }
+    });
+</script>

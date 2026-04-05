@@ -1,0 +1,509 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Ferramentas de Saúde - Rocks-Fit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animate.css' %}">
+    <link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'css/superfish.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260405">
+    <style>
+        .tool-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 30px 30px;
+            border-radius: 15px;
+            height: 100%;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: visible;
+        }
+        .step-badge {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #FF7A00; /* Laranja Oficial */
+            color: #000000; /* Preto Sólido */
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(255, 122, 0, 0.4);
+            z-index: 10;
+        }
+        .step-locked {
+            opacity: 0.3;
+            pointer-events: none;
+            filter: grayscale(1) blur(1px);
+        }
+        .step-locked::after {
+            content: '🔒 Bloqueado';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 700;
+            color: #fff;
+            z-index: 5;
+            font-size: 14px;
+        }
+        .tool-card:hover:not(.step-locked) {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-5px);
+            border-color: #FF7A00;
+        }
+        .btn-calculate {
+            width: 100%;
+            background: #FF7A00; /* Botão Laranja */
+            color: #000000; /* Texto Preto */
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        .btn-calculate:hover {
+            background: #E06900; /* Laranja mais escuro no hover */
+            box-shadow: 0 4px 15px rgba(255, 122, 0, 0.4);
+            transform: scale(1.02);
+        }
+        .tool-card h3 {
+            color: #808080; /* Cinza Oficial */
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        .tool-result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            background: rgba(255, 122, 0, 0.1);
+            border: 2px solid #FF7A00;
+            box-shadow: 0 0 20px rgba(255, 122, 0, 0.3);
+            animation: fadeIn 0.5s ease;
+        }
+        .result-value {
+            display: block;
+            font-size: 32px;
+            font-weight: 900;
+            color: #FF7A00;
+            line-height: 1;
+        }
+        .result-label {
+            display: block;
+            font-size: 14px;
+            color: #fff;
+            margin-top: 5px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .result-phrase {
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 15px;
+            font-style: italic;
+            line-height: 1.4;
+        }
+        .overweight-rate {
+            color: #FF7A00;
+            font-weight: 700;
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+        }
+        .tool-icon {
+            font-size: 30px; 
+            color: #FF7A00; 
+            margin-bottom: 15px;
+        }
+        .small-muted {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 10px;
+        }
+        .tool-form input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-family: 'Outfit', sans-serif;
+        }
+        .btn-share {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #FF7A00; /* Laranja Sólido */
+            color: #000; /* Ícone Preto */
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 5;
+            box-shadow: 0 4px 10px rgba(255, 122, 0, 0.4);
+        }
+        .btn-share:hover {
+            background: #fff;
+            color: #FF7A00;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 122, 0, 0.6);
+        }
+        .btn-share i {
+            font-size: 14px;
+        }
+        .tool-form select {
+            width: 100% !important;
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: #fff !important;
+            padding: 10px !important;
+            border-radius: 5px !important;
+            margin-bottom: 10px !important;
+            height: auto !important;
+        }
+        .tool-form select option {
+            background: #18181B; /* Fundo escuro sólido para as opções */
+            color: #fff;
+            padding: 10px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="fh5co-wrapper">
+        <div id="fh5co-page">
+            {% include 'base/nav_header.html' %}
+
+            <div class="fh5co-parallax" style="background-image: url('{% static 'images/home-image-3.jpg' %}');" data-stellar-background-ratio="0.5">
+                <div class="overlay"></div>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-8 col-md-offset-2 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table" style="height: 480px;">
+                            <div class="fh5co-intro fh5co-table-cell animate-box">
+                                <h1 class="text-center">Ferramentas de Saúde</h1>
+                                <p>Análise detalhada do seu perfil com as cores oficiais da Rocks-Fit. Comece agora!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fh5co-tools-section" style="padding: 100px 0;">
+                <div class="container">
+                    <div class="row">
+                        <!-- IMC -->
+                        <div class="col-md-3 col-sm-6 animate-box">
+                            <div id="card-step-1" class="tool-card">
+                                <div class="step-badge">Passo 1</div>
+                                <div class="tool-icon"><i class="icon-params"></i></div>
+                                <h3>Calculadora IMC</h3>
+                                <div class="tool-form">
+                                    <label>Altura (cm)</label>
+                                    <input type="number" id="imc-height" class="sync-height" placeholder="Ex: 175">
+                                    <label>Peso (kg)</label>
+                                    <input type="number" id="imc-weight" class="sync-weight" placeholder="Ex: 80">
+                                </div>
+                                <button class="btn-calculate" onclick="calculateIMC()">Calcular IMC</button>
+                                <div class="tool-result" id="imc-result-box" style="display: none; position: relative;">
+                                    <button class="btn-share" onclick="shareResult('IMC')" title="Compartilhar Resultado"><i class="icon-share"></i> Compartilhar</button>
+                                    <span class="result-value" id="imc-val">0</span>
+                                    <span class="result-label" id="imc-status">Normal</span>
+                                    <span class="overweight-rate" id="imc-rate-box" style="display: none;">Excesso: <span id="imc-rate">0</span>%</span>
+                                    <p class="result-phrase" id="imc-phrase"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TMB -->
+                        <div class="col-md-3 col-sm-6 animate-box">
+                            <div id="card-step-2" class="tool-card step-locked">
+                                <div class="step-badge">Passo 2</div>
+                                <div class="tool-icon"><i class="icon-energy"></i></div>
+                                <h3>Taxa Metabólica</h3>
+                                <div class="tool-form">
+                                    <label>Sexo</label>
+                                    <select id="tmb-gender" class="form-control">
+                                        <option value="male">Masculino</option>
+                                        <option value="female">Feminino</option>
+                                    </select>
+                                    <label>Peso (kg)</label>
+                                    <input type="number" id="tmb-weight" class="sync-weight" placeholder="Peso (kg)">
+                                    <label>Altura (cm)</label>
+                                    <input type="number" id="tmb-height" class="sync-height" placeholder="Altura (cm)">
+                                    <label>Idade (anos)</label>
+                                    <input type="number" id="tmb-age" placeholder="Idade">
+                                    <label>Atividade</label>
+                                    <select id="tmb-activity" class="form-control">
+                                        <option value="1.2">Sedentário</option>
+                                        <option value="1.375">Leve (1-3 d/s)</option>
+                                        <option value="1.55">Moderado (3-5 d/s)</option>
+                                        <option value="1.725">Intenso (6-7 d/s)</option>
+                                    </select>
+                                </div>
+                                <button class="btn-calculate" onclick="calculateTMB()">Calcular TMB</button>
+                                <div class="tool-result" id="tmb-result-box" style="display: none; position: relative;">
+                                    <button class="btn-share" onclick="shareResult('TMB')" title="Compartilhar Resultado"><i class="icon-share"></i> Compartilhar</button>
+                                    <span class="result-value" id="tmb-val">0</span>
+                                    <span class="result-label">Calorias/Dia</span>
+                                    <p class="result-phrase">Este é o combustível necessário para manter seu corpo funcionando nas condições atuais.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MACROS -->
+                        <div class="col-md-3 col-sm-6 animate-box">
+                            <div id="card-step-3" class="tool-card step-locked">
+                                <div class="step-badge">Passo 3</div>
+                                <div class="tool-icon"><i class="icon-food"></i></div>
+                                <h3>Distribuição Macros</h3>
+                                <div class="tool-form">
+                                    <label>Calorias Calculadas</label>
+                                    <input type="number" id="macro-calories" readonly style="background: rgba(255,255,255,0.1); border-color: #FF7A00;" placeholder="Passo 2 obrigatório">
+                                    <label>Objetivo</label>
+                                    <select id="macro-goal" class="form-control" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+                                        <option value="maintenance">Manter Peso</option>
+                                        <option value="cutting">Perder Gordura</option>
+                                        <option value="bulking">Ganhar Músculo</option>
+                                    </select>
+                                </div>
+                                <button class="btn-calculate" onclick="calculateMacros()">Dividir Macros</button>
+                                <div class="tool-result" id="macro-result-box" style="display: none; padding: 25px 15px; position: relative;">
+                                    <button class="btn-share" onclick="shareResult('Macros')" title="Compartilhar Resultado"><i class="icon-share"></i> Compartilhar</button>
+                                    <div style="display: flex; flex-direction: column; gap: 15px; text-align: left; margin-bottom: 20px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 122, 0, 0.2); padding-bottom: 8px;">
+                                            <span style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Proteína</span>
+                                            <span style="color: #FF7A00; font-weight: 900; font-size: 18px;"><span id="macro-p-val">0</span>g</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 122, 0, 0.2); padding-bottom: 8px;">
+                                            <span style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Carboidrato</span>
+                                            <span style="color: #FF7A00; font-weight: 900; font-size: 18px;"><span id="macro-c-val">0</span>g</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <span style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Gordura</span>
+                                            <span style="color: #FF7A00; font-weight: 900; font-size: 18px;"><span id="macro-f-val">0</span>g</span>
+                                        </div>
+                                    </div>
+                                    <p class="result-phrase" style="font-size: 12px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 15px;">
+                                        Esta divisão é a base do seu resultado físico. Combine com treinos intensos na Rocks-Fit para transformar seu corpo!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ÁGUA -->
+                        <div class="col-md-3 col-sm-6 animate-box">
+                            <div id="card-step-4" class="tool-card step-locked">
+                                <div class="step-badge">Passo 4</div>
+                                <div class="tool-icon"><i class="icon-drop"></i></div>
+                                <h3>Hidratação</h3>
+                                <div class="tool-form">
+                                    <p style="font-size: 14px; margin-bottom: 20px;">A água é a base para a síntese proteica e performance.</p>
+                                    <label>Seu Peso (kg)</label>
+                                    <input type="number" id="water-weight" class="sync-weight" placeholder="Ex: 80">
+                                </div>
+                                <button class="btn-calculate" onclick="calculateWater()">Calcular Água</button>
+                                <div class="tool-result" id="water-result-box" style="display: none; position: relative;">
+                                    <button class="btn-share" onclick="shareResult('Agua')" title="Compartilhar Resultado"><i class="icon-share"></i> Compartilhar</button>
+                                    <span class="result-value" id="water-val">0</span>
+                                    <span class="result-label">Litros/Dia</span>
+                                    <p class="result-phrase">Beba de forma fracionada ao longo do dia para máxima absorção.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% include 'base/footer.html' %}
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/jquery.waypoints.min.js' %}"></script>
+    <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+    <script src="{% static 'js/hoverIntent.js' %}"></script>
+    <script src="{% static 'js/superfish.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
+    <script>
+        // Sincronização Inteligente de Dados
+        document.querySelectorAll('.sync-weight').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const val = e.target.value;
+                document.querySelectorAll('.sync-weight').forEach(el => el.value = val);
+            });
+        });
+
+        document.querySelectorAll('.sync-height').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const val = e.target.value;
+                document.querySelectorAll('.sync-height').forEach(el => el.value = val);
+            });
+        });
+
+        function unlockStep(stepId) {
+            const nextStep = document.getElementById('card-step-' + stepId);
+            if (nextStep) {
+                nextStep.classList.remove('step-locked');
+                if (window.innerWidth < 768) {
+                    nextStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        function calculateIMC() {
+            const weight = parseFloat(document.getElementById('imc-weight').value);
+            const height = parseFloat(document.getElementById('imc-height').value) / 100;
+            if (weight && height) {
+                const imc = (weight / (height * height)).toFixed(1);
+                document.getElementById('imc-val').innerText = imc;
+                
+                let status = "Normal";
+                let phrase = "";
+                let rateBox = document.getElementById('imc-rate-box');
+                
+                if (imc < 18.5) {
+                    status = "Abaixo do peso";
+                    phrase = "Foque em uma dieta hipercalórica e treinos de força para ganhar massa com saúde.";
+                    rateBox.style.display = 'none';
+                } else if (imc < 25) {
+                    status = "Normal";
+                    phrase = "Excelente! Você está no peso ideal. Vamos manter o foco nos treinos de definição.";
+                    rateBox.style.display = 'none';
+                } else if (imc < 30) {
+                    status = "Sobrepeso";
+                    const rate = (((imc - 25) / 25) * 100).toFixed(1);
+                    document.getElementById('imc-rate').innerText = rate;
+                    rateBox.style.display = 'block';
+                    phrase = "Você está levemente acima do ideal. Pequenos ajustes na Rocks-Fit trarão grandes resultados!";
+                } else {
+                    status = "Obesidade";
+                    const rate = (((imc - 25) / 25) * 100).toFixed(1);
+                    document.getElementById('imc-rate').innerText = rate;
+                    rateBox.style.display = 'block';
+                    phrase = "Atenção necessária. Foco total em cardio e reequilíbrio alimentar para transformar sua saúde.";
+                }
+                
+                document.getElementById('imc-status').innerText = status;
+                document.getElementById('imc-phrase').innerText = phrase;
+                document.getElementById('imc-result-box').style.display = 'block';
+                unlockStep(2);
+            }
+        }
+        
+        function calculateTMB() {
+            const gender = document.getElementById('tmb-gender').value;
+            const weight = parseFloat(document.getElementById('tmb-weight').value);
+            const height = parseFloat(document.getElementById('tmb-height').value);
+            const age = parseInt(document.getElementById('tmb-age').value);
+            const activity = parseFloat(document.getElementById('tmb-activity').value);
+            if (weight && height && age) {
+                let tmb = 0;
+                if (gender === 'male') tmb = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+                else tmb = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+                const total = Math.round(tmb * activity);
+                document.getElementById('tmb-val').innerText = total;
+                document.getElementById('tmb-result-box').style.display = 'block';
+                document.getElementById('macro-calories').value = total;
+                unlockStep(3);
+            }
+        }
+
+        function calculateMacros() {
+            const calories = parseFloat(document.getElementById('macro-calories').value);
+            const goal = document.getElementById('macro-goal').value;
+            if (calories) {
+                let targetCals = calories;
+                if (goal === 'cutting') targetCals -= 500;
+                else if (goal === 'bulking') targetCals += 500;
+                const p = Math.round((targetCals * 0.30) / 4);
+                const c = Math.round((targetCals * 0.45) / 4);
+                const g = Math.round((targetCals * 0.25) / 9);
+                document.getElementById('macro-p-val').innerText = p;
+                document.getElementById('macro-c-val').innerText = c;
+                document.getElementById('macro-f-val').innerText = g;
+                document.getElementById('macro-result-box').style.display = 'block';
+                unlockStep(4);
+            }
+        }
+
+        function calculateWater() {
+            const weight = parseFloat(document.getElementById('water-weight').value);
+            if (weight) {
+                const liters = ((weight * 35) / 1000).toFixed(1);
+                document.getElementById('water-val').innerText = liters;
+                document.getElementById('water-result-box').style.display = 'block';
+            }
+        }
+
+        function shareResult(type) {
+            let message = "";
+            const siteUrl = window.location.href;
+            
+            if (type === 'IMC') {
+                const val = document.getElementById('imc-val').innerText;
+                const status = document.getElementById('imc-status').innerText;
+                message = `📊 Meu IMC na Rocks-Fit: ${val} (${status}). Calcule o seu também! Rocks-Fit 🚀\n\nLink: ${siteUrl}`;
+            } else if (type === 'TMB') {
+                const val = document.getElementById('tmb-val').innerText;
+                message = `🔥 Minha Taxa Metabólica na Rocks-Fit: ${val} kcal/dia. Confira a sua!\n\nLink: ${siteUrl}`;
+            } else if (type === 'Macros') {
+                const p = document.getElementById('macro-p-val').innerText;
+                const c = document.getElementById('macro-c-val').innerText;
+                const f = document.getElementById('macro-f-val').innerText;
+                message = `🥗 Meus Macros na Rocks-Fit:\n💪 Proteína: ${p}g\n🍞 Carbo: ${c}g\n🥑 Gordura: ${f}g\n\nPlaneje sua dieta aqui: ${siteUrl}`;
+            } else if (type === 'Agua') {
+                const val = document.getElementById('water-val').innerText;
+                message = `💧 Minha meta de hidratação na Rocks-Fit: ${val} litros/dia. Beba água!\n\nLink: ${siteUrl}`;
+            }
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Meu Resultado Rocks-Fit',
+                    text: message,
+                    url: siteUrl
+                }).catch(err => console.log('Erro ao compartilhar:', err));
+            } else {
+                const el = document.createElement('textarea');
+                el.value = message;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                alert('✅ Resultado copiado para o clipboard! Cole onde desejar (WhatsApp, Instagram, etc).');
+            }
+        }
+    </script>
+</body>
+</html>

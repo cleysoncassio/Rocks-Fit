@@ -11,6 +11,7 @@ urlpatterns = [
         "trainers/", views.trainers, name="trainers"
     ),  # Adicione a view 'trainers' se não estiver no seu projeto
     path("about/", views.about, name="about"),
+    path("ferramentas/", views.tools, name="tools"),
     path("checkout/<int:plan_id>/", views.checkout_view, name="checkout"),
     path("api/process-payment/", views.process_payment_api, name="process_payment"),
     path("api/infinitepay-webhook/", views.infinitepay_webhook, name="infinitepay_webhook"),

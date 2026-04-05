@@ -52,33 +52,7 @@
 <body>
 	<div id="fh5co-wrapper">
 		<div id="fh5co-page">
-			<div id="fh5co-header">
-				<header id="fh5co-header-section">
-					<div class="container">
-						<div class="nav-header">
-							<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle"><i></i></a>
-							<h1 id="fh5co-logo"><a href="{% url 'home' %}">Rocks-<span>Fit</span></a></h1>
-							<!-- START #fh5co-menu-wrap -->
-							<nav id="fh5co-menu-wrap" role="navigation">
-								<ul class="sf-menu" id="fh5co-primary-menu">
-									<li class="active">
-										<a href="{% url 'home' %}">Início</a>
-									</li>
-									<li>
-										<a href="{% url 'programs' %}">Nossos Planos </a>
-									</li>
-									<li>
-										<a href="{% url 'schedule' %}">Modalidades</a>
-									</li>
-									<li><a href="{% url 'trainers' %}">Professores</a></li>
-									<li><a href="{% url 'about' %}">Sobre nós</a></li>
-									<li><a href="{% url 'contact' %}">Contato</a></li>
-								</ul>
-							</nav>
-						</div>
-					</div>
-				</header>
-				<!-- end:fh5co-header -->
+			{% include 'base/nav_header.html' %}
 				<div class="fh5co-parallax" style="background-image: url({% if site_config.programs_background %}{{ site_config.programs_background.url }}{% else %}{% static 'images/home-image-5.jpg' %}{% endif %});"
 					data-stellar-background-ratio="0.5">
 					<div class="overlay"></div>
@@ -132,46 +106,7 @@
 					</div>
 				</div> <!--FIM: NOSSOS PLANOS -->
 			</div>
-			<footer>
-				<div id="footer">
-					<div class="container">
-						<div class="row">
-							<div class="col-md-6 animate-box">
-								<h3 class="section-title">Sobre Nós</h3>
-								<p>Na Academia Rocks Fit, estamos comprometidos em fornecer um ambiente acolhedor e
-									motivador para todos os nossos membros. Nossa missão é ajudar você a alcançar
-									seus objetivos de fitness com o apoio de nossos treinadores especializados.</p>
-							</div>
-
-							<div class="col-md-6 animate-box">
-								<h3 class="section-title">Nosso Endereço</h3>
-								<ul class="contact-info">
-									<li>
-										<a href="https://maps.app.goo.gl/Be3J1ArwZGgvtkan6" target="_blank" style="color:rgba(255,255,255,0.6)">
-											<i class="icon-map-marker" style="color: #ff4d4d; margin-right: 10px;"></i>Rua Cel. Flaminio, 32 - Santos Reis, Natal-RN
-										</a>
-									</li>
-									<li><i class="icon-phone"></i><a href="https://wa.me/5584999470586" target="_blank" style="color:rgba(255,255,255,0.6)">+55 84 99947-0586</a></li>
-									<li><i class="icon-envelope"></i><a href="mailto:academiarocksfit@gmail.com" style="color:rgba(255,255,255,0.6)">academiarocksfit@gmail.com</a></li>
-								</ul>
-							</div>
-
-							<div class="row copy-right">
-								<div class="col-md-6 col-md-offset-3 text-center">
-									<p class="fh5co-social-icons" style="margin-bottom: 5px;">
-										<a href="https://www.linkedin.com/in/cleyson-cassio-060ab9213/" target="_blank"><i class="icon-linkedin"></i></a>
-										<a href="https://www.instagram.com/cleysoncassio/" target="_blank"><i class="icon-instagram"></i></a>
-										<a href="#"><i class="icon-youtube"></i></a>
-									</p>
-									<div style="margin-bottom: 10px;">
-										<img src="{% static 'images/cleyson-logo.png' %}" alt="Cleyson Cassio Logo" style="height: 80px; filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.3));">
-									</div>
-									<p style="font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 0;">
-										&copy; 2026 Rocks-Fit. Desenvolvido por Eng. de Software <strong>Cleyson Cassio</strong>
-									</p>
-								</div>
-							</div>
-			</footer>
+	{% include 'base/footer.html' %}
 		</div>
 		<!-- END fh5co-page -->
 	

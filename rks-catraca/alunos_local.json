@@ -21,6 +21,17 @@
             "foto_url": "/media/alunos/fotos/Cleyson-foto_9kUb1xM.jpeg",
             "tem_foto": true,
             "tem_digital": false
+        },
+        {
+            "id": 40,
+            "nome": "francisca dulce da silva ",
+            "matricula": "RF20260004",
+            "cpf": "32244967468",
+            "status": "AGUARDANDO_PAGAMENTO",
+            "vencimento": "SEM VENCIMENTO",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
         }
     ]
 }

@@ -37,111 +37,38 @@
 	<body>
 		<div id="fh5co-wrapper">
 		<div id="fh5co-page">
-		<div id="fh5co-header">
-			<header id="fh5co-header-section">
-				<div class="container">
-					<div class="nav-header">
-						<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle"><i></i></a>
-						<h1 id="fh5co-logo"><a href="{% url 'home' %}">Rocks-<span>Fit</span></a></h1>
-						<!-- START #fh5co-menu-wrap -->
-						<nav id="fh5co-menu-wrap" role="navigation">
-							<ul class="sf-menu" id="fh5co-primary-menu">
-							<li class="active">
-										<a href="{% url 'home' %}">Início</a>
-									</li>
-									<li>
-										<a href="{% url 'programs' %}">Nossos Planos </a>
-									</li>
-									<li>
-										<a href="{% url 'schedule' %}">Modalidades</a>
-									</li>
-									<li><a href="{% url 'trainers' %}">Professores</a></li>
-									<li><a href="{% url 'about' %}">Sobre nós</a></li>
-									<li><a href="{% url 'contact' %}">Contato</a></li>
-									<li><a href="{% url 'blog' %}">Nosso Blog</a></li>
-							</ul>
-						</nav>
-					</div>
-				</div>
-			</header>		
-		</div>
-		<!-- end:fh5co-header -->
-		<div class="fh5co-parallax" style="background-image: url('{% if site_config.about_background %}{{ site_config.about_background.url }}{% else %}{% static 'images/rks1.jpeg' %}{% endif %}');">
-			<div class="overlay-section"> <data-stellar-background-ratio="0.5">
+		{% include 'base/nav_header.html' %}
+		
+		<div class="fh5co-parallax" style="background-image: url('{% if site_config.about_background %}{{ site_config.about_background.url }}{% else %}{% static 'images/rks1.jpeg' %}{% endif %}');" data-stellar-background-ratio="0.5">
 			<div class="overlay"></div>
 			<div class="container">
 				<div class="row">
 					<div class="col-md-8 col-md-offset-2 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table">
 						<div class="fh5co-intro fh5co-table-cell animate-box">
 							<h1 class="text-center">Sobre a Rocks-Fit</h1>
-							<p>Fundado em 14 de fevereiro de 2014</p>
+							<p class="hero-subtitle">Fundado em 14 de fevereiro de 2014</p>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div><!-- end: fh5co-parallax -->
-		<!-- end:fh5co-hero -->
+
 		<div id="fh5co-team-section">
 			<div class="container">
 				<div class="row about">
-					<div class="col-md-12 col-md-offset-0">
-						<img class="img-responsive animate-box" src="images/home-image-3.jpg" alt="Sobre a Rocks-Fit">
+					<div class="col-md-10 col-md-offset-1 text-center animate-box about-content">
+							
+							<p>Fundada em <strong>14 de fevereiro de 2014</strong>, a Rocks Fit nasceu da paixão em transformar vidas através do fitness. Inspirada pela resistência e solidez das rochas, nossa academia foi criada para ser um verdadeiro símbolo de força, perseverança e superação.</p>
+							
+							<p>Nosso compromisso inicial permanece o mesmo: proporcionar uma experiência de treinamento que não só desafie o corpo, mas também motive e empodere a mente. Cada detalhe da Rocks Fit foi cuidadosamente planejado para criar um ambiente onde a determinação é o combustível para todas as conquistas.</p>
+
+							<p>O nome <strong>"Rocks Fit"</strong> traduz nossa filosofia central: cultivar a resiliência e a robustez necessárias para encarar qualquer desafio. Venha nos conhecer e descubra como a força das rochas pode inspirar a sua jornada rumo a uma vida mais saudável!</p>
+						</div>
 					</div>
-					<div class="col-md-12 col-md-offset-0 animate-box">
-						<p>A Rocks Fit nasceu em 14 de fevereiro de 2014, uma data marcada pela nossa paixão em transformar vidas através do fitness. Inspirada pela resistência e solidez das rochas, nossa academia foi criada para ser um verdadeiro símbolo de força e perseverança.</p>
-						<blockquote>
-						<p>Nosso compromisso é proporcionar uma experiência de treinamento que não só desafie, mas também motive e empodere. Cada aspecto da Rocks Fit foi cuidadosamente planejado para criar um ambiente onde a determinação e a superação são as bases de todas as conquistas.Desde o início, nossa academia foi projetada com um conceito único, inspirado pela força e durabilidade das rochas. O nome "Rocks Fit" traduz nossa filosofia: rochas fortes, simbolizando a resiliência e a robustez que desejamos cultivar em cada um de nossos membros.</p>
-						</blockquote>
-						<p>Venha nos conhecer e descubra como a força das rochas pode inspirar a sua jornada fitness!</p>
-					</div>
 				</div>
 				</div>
 				</div>
-				<footer>
-					<div id="footer">
-						<div class="container">
-							<div class="row">
-								<div class="col-md-4 animate-box">
-									<h3 class="section-title">Sobre Nós</h3>
-									<p>Na Academia Rocks Fit, estamos comprometidos em fornecer um ambiente acolhedor e
-										motivador para todos os nossos membros. Nossa missão é ajudar você a alcançar seus
-										objetivos de fitness com o apoio de nossos treinadores especializados e instalações
-										de última geração.</p>
-								</div>
-	
-								<div class="col-md-4 animate-box">
-									<h3 class="section-title">Nosso Endereço</h3>
-									<ul class="contact-info">
-										<li><i class="icon-map-marker"></i>Rua Cel. Flaminio, 32 - Santos Reis, Natal-RN
-										</li>
-										<li><i class="icon-phone"></i>+55 84 99947-0586</li>
-										<li><i class="icon-envelope"></i><a
-												href="mailto:academiarocksfit@gmail.com">academiarocksfit@gmail.com</a></li>
-										</ul>
-								</div>
-	
-								<div class="col-md-4 animate-box">
-									<h3 class="section-title">Nossa Localização</h3>
-									<iframe
-									src="https://storage.googleapis.com/maps-solutions-6rgx896oqq/locator-plus/0hnf/locator-plus.html"
-									width="100%" height="300px" style="border:0;" loading="lazy">
-								</iframe>
-								</div>
-	
-								<div class="row copy-right">
-									<div class="col-md-6 col-md-offset-3 text-center">
-										<p class="fh5co-social-icons">
-											<a href="#"><i class="icon-twitter2"></i></a>
-											<a
-												href="https://www.facebook.com/profile.php?id=100007946404693&mibextid=ZbWKwL"><i
-													class="icon-facebook2"></i></a>
-											<a href="https://www.instagram.com/academiarocksfit?igsh=d3hjMW9kdmp6Y2Qw"><i
-													class="icon-instagram"></i></a>
-											<a href="#"><i class="icon-youtube"></i></a>
-										</p>
-									</div>
-								</div>
-				</footer>
+		{% include 'base/footer.html' %}
 	</div>
 	<!-- END fh5co-page -->
 
