@@ -210,16 +210,13 @@ AXES_LOCKOUT_TEMPLATE = "base/fake_admin.html"  # Usa o honeypot como tela de bl
 AXES_RESET_ON_SUCCESS = True
 
 # Django-CSP (Content Security Policy)
-CONTENT_SECURITY_POLICY = {
-    'DIRECTIVES': {
-        'default-src': ("'self'",),
-        'style-src': ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com"),
-        'script-src': ("'self'", "'unsafe-inline'", "https://www.googletagmanager.com"),
-        'font-src': ("'self'", "https://fonts.gstatic.com"),
-        'img-src': ("'self'", "data:", "https://maps.google.com"),
-        'frame-src': ("'self'", "https://www.googletagmanager.com", "https://www.google.com"),
-    }
-}
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com")
+CSP_STYLE_SRC_ATTR = ("'self'", "'unsafe-inline'")
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://www.googletagmanager.com")
+CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
+CSP_IMG_SRC = ("'self'", "data:", "https://maps.google.com")
+CSP_FRAME_SRC = ("'self'", "https://www.googletagmanager.com", "https://www.google.com")
 
 # Ratelimit (Geral)
 RATELIMIT_ENABLE = True
