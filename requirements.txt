@@ -15,7 +15,9 @@ dj-database-url==2.2.0
 Django==5.1
 django-axes==6.4.0
 django-csp==3.8
+django-ipware==7.0.1
 django-ordered-model==3.7.4
+django-ratelimit==4.1.0
 django-sass-processor==1.4.1
 firebase_admin==7.3.0
 flake8==7.1.1
