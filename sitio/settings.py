@@ -22,7 +22,11 @@ DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = (
     ["*", "academiarocksfit.com.br", "www.academiarocksfit.com.br"]
     if DEBUG
-    else config("ALLOWED_HOSTS", default="academiarocksfit.com.br,www.academiarocksfit.com.br", cast=lambda v: [s.strip() for s in v.split(",")])
+    else config(
+        "ALLOWED_HOSTS",
+        default="academiarocksfit.com.br,www.academiarocksfit.com.br,.hostman.site,localhost,127.0.0.1",
+        cast=lambda v: [s.strip() for s in v.split(",")],
+    )
 )
 
 CSRF_TRUSTED_ORIGINS = config(
