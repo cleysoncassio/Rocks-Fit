@@ -10,7 +10,5 @@ handlers:
 
 env_variables:
   DJANGO_SETTINGS_MODULE: "sitio.settings"
-  SECRET_KEY: "<your-secret-key>"
-  DATABASE_URL: "https://www.academiarocksfit.com.br"
 
 
