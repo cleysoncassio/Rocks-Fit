@@ -17,7 +17,7 @@
 	<link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,700,900' rel='stylesheet' type='text/css'>
 	
 	<!-- Animate.css -->
-	<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+	<link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
 	<link rel="stylesheet" href="{% static 'css/animate.css' %}">
 	<!-- Icomoon Icon Fonts -->
 	<link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
@@ -28,11 +28,9 @@
 	<!-- Custom Style -->
 	<link rel="stylesheet" href="{% static 'css/style.css' %}">
 	<!-- Bootstrap SCSS -->
-	<link rel="stylesheet" href="{% static 'sass/bootstrap.scss' %}">
-	<link rel="stylesheet" href="{% static 'sass/bootstrap/Style.css' %}">
 
 	<!-- Modernizr JS -->
-	<script src="js/modernizr-2.6.2.min.js"></script>
+	<script src="{% static 'js/modernizr-2.6.2.min.js' %}"></script>
 
 	</head>
 	<body>
@@ -94,21 +92,21 @@
 	<!-- jQuery -->
 
 
-	<script src="js/jquery.min.js"></script>
+	<script src="{% static 'js/jquery.min.js' %}"></script>
 	<!-- jQuery Easing -->
-	<script src="js/jquery.easing.1.3.js"></script>
+	<script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
 	<!-- Bootstrap -->
-	<script src="js/bootstrap.min.js"></script>
+	<script src="{% static 'js/bootstrap.min.js' %}"></script>
 	<!-- Waypoints -->
-	<script src="js/jquery.waypoints.min.js"></script>
+	<script src="{% static 'js/jquery.waypoints.min.js' %}"></script>
 	<!-- Stellar -->
-	<script src="js/jquery.stellar.min.js"></script>
+	<script src="{% static 'js/jquery.stellar.min.js' %}"></script>
 	<!-- Superfish -->
-	<script src="js/hoverIntent.js"></script>
-	<script src="js/superfish.js"></script>
+	<script src="{% static 'js/hoverIntent.js' %}"></script>
+	<script src="{% static 'js/superfish.js' %}"></script>
 
 	<!-- Main JS (Do not remove) -->
-	<script src="js/main.js"></script>
+	<script src="{% static 'js/main.js' %}"></script>
 
 	</body>
 </html>

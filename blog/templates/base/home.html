@@ -24,7 +24,7 @@
 	<meta name="author" content="Cleyson Cassio" />
 
 	<!-- Favicon -->
-	<link rel="shortcut icon" href="{% static 'favicon.ico' %}">
+	<link rel="shortcut icon" href="{% static 'images/rks01.png' %}">
 
 	<!-- Google Fonts -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,9 +69,7 @@
 	<link rel="stylesheet" href="{% static 'css/superfish.css' %}">
 	<!-- Custom Style -->
 	<link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260405">
-	<!-- Bootstrap SCSS -->
-	<link rel="stylesheet" href="{% static 'sass/bootstrap.scss' %}">
-	<link rel="stylesheet" href="{% static 'sass/bootstrap/Style.css' %}?v=20260405">
+	<!-- Style CSS will be handled by static/css/style.css which is already included -->
 
 	<!-- Modernizr JS -->
 	<script src="{% static 'js/modernizr-2.6.2.min.js' %}"></script>
@@ -228,7 +226,7 @@
 						<div
 							class="col-md-8 col-md-offset-2 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table">
 							<div class="fh5co-intro fh5co-table-cell animate-box">
-								<img src="{% if site_config.intro_logo %}{{ site_config.intro_logo.url }}{% else %}{% static 'images/rks01.png' %}{% endif %}" alt="">
+								<img src="{% if site_config.intro_logo %}{{ site_config.intro_logo.url }}{% else %}{% static 'images/rks01.png' %}{% endif %}" alt="Rocks-Fit Logo" style="max-width: 160px; height: auto;">
 							</div>
 						</div>
 					</div>

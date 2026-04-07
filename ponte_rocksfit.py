@@ -295,7 +295,7 @@ class AppRecepcao(ctk.CTk):
         self.logo_f = ctk.CTkFrame(self.header, fg_color="transparent")
         self.logo_f.grid(row=0, column=0, sticky="w", padx=30, pady=10)
         try:
-            self.logo_img = ctk.CTkImage(Image.open(CAMINHO_LOGO), size=(80, 80))
+            self.logo_img = ctk.CTkImage(Image.open(CAMINHO_LOGO), size=(60, 60))
             ctk.CTkLabel(self.logo_f, image=self.logo_img, text="").pack(side="left")
         except:
             ctk.CTkLabel(self.logo_f, text="ROCKS FIT", font=("Impact", 36), text_color=COR_LARANJA).pack(side="left")
