@@ -186,6 +186,7 @@ CATRACA_SYNC_TOKEN = "rocksfit@2024"
 if not DEBUG:
     # Seguranca HTTPS forçada em Producao
     SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     
