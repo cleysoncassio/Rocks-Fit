@@ -209,14 +209,19 @@ AXES_COOLOFF_TIME = 1   # Bloqueio dura 1 hora
 AXES_LOCKOUT_TEMPLATE = "base/fake_admin.html"  # Usa o honeypot como tela de bloqueio
 AXES_RESET_ON_SUCCESS = True
 
-# Django-CSP (Content Security Policy)
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com")
-CSP_STYLE_SRC_ATTR = ("'self'", "'unsafe-inline'")
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://www.googletagmanager.com")
-CSP_IMG_SRC = ("'self'", "data:", "https://maps.google.com")
-CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
-CSP_FRAME_SRC = ("'self'", "https://www.googletagmanager.com", "https://www.google.com")
+
+# Configuração atualizada do Django-CSP (Versão 4.0+)
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'default-src': ("'self'",),
+        'font-src': ("'self'", 'https://fonts.gstatic.com'),
+        'frame-src': ("'self'", 'https://www.googletagmanager.com', 'https://www.google.com'),
+        'img-src': ("'self'", 'data:', 'https://maps.google.com'),
+        'script-src': ("'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'),
+        'style-src-attr': ("'self'", "'unsafe-inline'")
+    }
+}
 
 # Ratelimit (Geral)
 RATELIMIT_ENABLE = True
