@@ -17,7 +17,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 STONE_SECRET_KEY = os.getenv("STONE_SECRET_KEY", "sk_test_placeholder_sua_chave")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=True, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = (
     ["*", "academiarocksfit.com.br", "www.academiarocksfit.com.br"]
