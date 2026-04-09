@@ -22,7 +22,9 @@ echo "Coletando arquivos estáticos..."
 python3 manage.py collectstatic --no-input
 
 # 4. Inicialização do Gunicorn com 'exec'
-# O 'exec' faz com que o Gunicorn receba os sinais de parada (SIGTERM) do Hostman
+# Garantimos que a porta não tenha zeros à esquerda para evitar erros
+PORT=$(echo "$PORT" | sed 's/^0*//')
+PORT=${PORT:-8000}
 echo "Lançando Gunicorn na porta $PORT..."
 exec gunicorn sitio.wsgi:application \
     --bind 0.0.0.0:$PORT \

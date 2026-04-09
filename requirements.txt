@@ -12,7 +12,7 @@ click==8.1.7
 coverage==7.6.1
 cryptography==46.0.6
 dj-database-url==2.2.0
-Django==5.1
+Django==5.2.13
 django-axes==6.4.0
 django-csp>=4.0
 django-ipware==7.0.1
