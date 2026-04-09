@@ -13,29 +13,30 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
-STONE_SECRET_KEY = os.getenv("STONE_SECRET_KEY", "sk_test_placeholder_sua_chave")
+SECRET_KEY = config("SECRET_KEY", default="django-insecure-placeholder")
+STONE_SECRET_KEY = config("STONE_SECRET_KEY", default="sk_test_placeholder_sua_chave")
 
-# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = config("DEBUG", default=False, cast=bool)
+
+# Pega o que está no painel da Hostman
+env_hosts = config("ALLOWED_HOSTS", default="academiarocksfit.com.br,www.academiarocksfit.com.br")
+
 if DEBUG:
-    # Em desenvolvimento local, liberamos tudo
     ALLOWED_HOSTS = ["*"]
 else:
-    # Em produção (Hostman)
-    # 1. Pegamos os domínios da variável de ambiente
-    ALLOWED_HOSTS = [s.strip() for s in ALLOWED_HOSTS_ENV.split(",") if s.strip()]
+    # Transforma a string do painel em lista e garante que não haja espaços
+    ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(",") if h.strip()]
     
-    # 2. DICA DE OURO: Adicionamos o "*" temporariamente se houver erro de porta,
-    # ou garantimos que endereços internos comuns de nuvem funcionem.
-    # Para resolver seu problema AGORA, a melhor prática no Hostman é:
+    # Se você colocou '*' no painel, ele vai entrar aqui e liberar o Health Check
+    # Se a lista estiver vazia por algum erro de env, garantimos o domínio
     if not ALLOWED_HOSTS:
-        ALLOWED_HOSTS = ["academiarocksfit.com.br", "www.academiarocksfit.com.br", ".hostman.site"]
+        ALLOWED_HOSTS = ["academiarocksfit.com.br", "www.academiarocksfit.com.br"]
 
-CSRF_TRUSTED_ORIGINS = config(
-    "CSRF_TRUSTED_ORIGINS",
-    default="https://academiarocksfit.com.br,https://www.academiarocksfit.com.br",
-    cast=lambda v: [s.strip() for s in v.split(",")],
-)
+# IMPORTANTE: Para o domínio profissional funcionar com formulários (Login da Academia)
+CSRF_TRUSTED_ORIGINS = [
+    "https://academiarocksfit.com.br",
+    "https://www.academiarocksfit.com.br"
+]
 
 # Application definition
 
