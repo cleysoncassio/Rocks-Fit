@@ -18,25 +18,29 @@ STONE_SECRET_KEY = config("STONE_SECRET_KEY", default="sk_test_placeholder_sua_c
 
 DEBUG = config("DEBUG", default=False, cast=bool)
 
-# Pega o que está no painel da Hostman
-env_hosts = config("ALLOWED_HOSTS", default="academiarocksfit.com.br,www.academiarocksfit.com.br")
+# Pega o que está no painel da Hostman (tenta os dois nomes padrão)
+env_hosts = config("ALLOWED_HOSTS", default=config("DJANGO_ALLOWED_HOSTS", default=""))
 
 if DEBUG:
     ALLOWED_HOSTS = ["*"]
 else:
-    # Transforma a string do painel em lista e garante que não haja espaços
-    ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(",") if h.strip()]
-    
-    # Se você colocou '*' no painel, ele vai entrar aqui e liberar o Health Check
-    # Se a lista estiver vazia por algum erro de env, garantimos o domínio
-    if not ALLOWED_HOSTS:
-        ALLOWED_HOSTS = ["academiarocksfit.com.br", "www.academiarocksfit.com.br"]
+    # 1. Domínios base vindos do painel
+    if env_hosts:
+        ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(",") if h.strip()]
+    else:
+        ALLOWED_HOSTS = ["academiarocksfit.com.br", "www.academiarocksfit.com.br", ".hostman.site"]
+
+    # 2. ESSENCIAL: IPs internos e locais para Health Checks e comunicação da plataforma
+    for ip in ["127.0.0.1", "localhost", "195.133.93.36", "192.168.0.4"]:
+        if ip not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(ip)
 
 # IMPORTANTE: Para o domínio profissional funcionar com formulários (Login da Academia)
-CSRF_TRUSTED_ORIGINS = [
-    "https://academiarocksfit.com.br",
-    "https://www.academiarocksfit.com.br"
-]
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="https://academiarocksfit.com.br,https://www.academiarocksfit.com.br",
+    cast=lambda v: [s.strip() for s in v.split(",") if s.strip()],
+)
 
 # Application definition
 
@@ -160,7 +164,9 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        # Usamos ManifestStaticFilesStorage em vez de CompressedManifestStaticFilesStorage
+        # para evitar o "PermissionError: [Errno 13]" ao tentar criar arquivos .gz na Hostman.
+        "BACKEND": "whitenoise.storage.ManifestStaticFilesStorage",
     },
 }
 
