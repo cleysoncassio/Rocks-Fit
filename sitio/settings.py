@@ -17,17 +17,19 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 STONE_SECRET_KEY = os.getenv("STONE_SECRET_KEY", "sk_test_placeholder_sua_chave")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=False, cast=bool)
-
-ALLOWED_HOSTS = (
-    ["*", "academiarocksfit.com.br", "www.academiarocksfit.com.br"]
-    if DEBUG
-    else config(
-        "ALLOWED_HOSTS",
-        default="academiarocksfit.com.br,www.academiarocksfit.com.br,.hostman.site,localhost,127.0.0.1",
-        cast=lambda v: [s.strip() for s in v.split(",")],
-    )
-)
+if DEBUG:
+    # Em desenvolvimento local, liberamos tudo
+    ALLOWED_HOSTS = ["*"]
+else:
+    # Em produção (Hostman)
+    # 1. Pegamos os domínios da variável de ambiente
+    ALLOWED_HOSTS = [s.strip() for s in ALLOWED_HOSTS_ENV.split(",") if s.strip()]
+    
+    # 2. DICA DE OURO: Adicionamos o "*" temporariamente se houver erro de porta,
+    # ou garantimos que endereços internos comuns de nuvem funcionem.
+    # Para resolver seu problema AGORA, a melhor prática no Hostman é:
+    if not ALLOWED_HOSTS:
+        ALLOWED_HOSTS = ["academiarocksfit.com.br", "www.academiarocksfit.com.br", ".hostman.site"]
 
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
