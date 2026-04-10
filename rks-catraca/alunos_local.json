@@ -1,29 +1,29 @@
 {
     "alunos": [
         {
-            "id": 2,
+            "id": 1,
             "nome": "Teste Matricula",
             "matricula": "RF20260002",
             "cpf": "11122233344",
-            "status": "INATIVO",
-            "vencimento": "SEM PLANO",
+            "status": "BLOQUEADO",
+            "vencimento": "SEM VENCIMENTO",
             "foto_url": null,
             "tem_foto": false,
             "tem_digital": false
         },
         {
-            "id": 1,
+            "id": 2,
             "nome": "cleyson cassio",
             "matricula": "RF20260003",
             "cpf": "00903993406",
             "status": "LIBERADO",
             "vencimento": "03/04/2026",
-            "foto_url": "/media/alunos/fotos/Cleyson-foto_9kUb1xM.jpeg",
-            "tem_foto": true,
+            "foto_url": null,
+            "tem_foto": false,
             "tem_digital": false
         },
         {
-            "id": 40,
+            "id": 3,
             "nome": "francisca dulce da silva ",
             "matricula": "RF20260004",
             "cpf": "32244967468",
