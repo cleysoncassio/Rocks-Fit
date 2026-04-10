@@ -4,7 +4,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sitio.settings")
 django.setup()
 
-from blog.models import Program, Trainer, BlogPost, ContactInfo, Schedule
+from blog.models import Program, Trainer, ContactInfo, Schedule
 from django.utils import timezone
 from datetime import time
 
@@ -65,17 +65,7 @@ def populate():
             if created:
                 print(f"Created Schedule: {schedule}")
 
-    # Create Blog Posts
-    posts = [
-        {"title": "Benefícios da Musculação", "author": "Carlos Silva", "content": "A musculação traz diversos benefícios para a saúde..."},
-        {"title": "Dicas de Alimentação", "author": "Nutri Rocks", "content": "Uma alimentação balanceada é fundamental..."},
-        {"title": "Como manter a motivação", "author": "Pedro Oliveira", "content": "Manter a constância nos treinos pode ser difícil..."},
-    ]
-
-    for post_data in posts:
-        post, created = BlogPost.objects.get_or_create(title=post_data["title"], defaults=post_data)
-        if created:
-            print(f"Created Post: {post.title}")
+    print("Population complete!")
 
 if __name__ == "__main__":
     populate()
