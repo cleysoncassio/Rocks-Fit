@@ -1,0 +1,222 @@
+[
+{
+  "model": "blog.program",
+  "pk": 1,
+  "fields": {
+    "order": 1,
+    "name": "Treino Funcional",
+    "description": "Melhore sua resistência e condicionamento físico",
+    "image": "programs/funcional.jpg",
+    "join_url": "https://wa.me/seutelefone"
+  }
+},
+{
+  "model": "blog.program",
+  "pk": 2,
+  "fields": {
+    "order": 2,
+    "name": "Musculação",
+    "description": "Fortalecimento muscular e hipertrofia.",
+    "image": "",
+    "join_url": null
+  }
+},
+{
+  "model": "blog.program",
+  "pk": 3,
+  "fields": {
+    "order": 3,
+    "name": "Funcional",
+    "description": "Melhora do condicionamento físico geral.",
+    "image": "",
+    "join_url": null
+  }
+},
+{
+  "model": "blog.program",
+  "pk": 4,
+  "fields": {
+    "order": 4,
+    "name": "Cardio Dance",
+    "description": "Aulas de dança para queimar calorias.",
+    "image": "",
+    "join_url": null
+  }
+},
+{
+  "model": "blog.trainer",
+  "pk": 1,
+  "fields": {
+    "name": "Carlos Silva",
+    "title": "Instrutor Chefe - Musculação",
+    "description": "Profissional com 10 anos de experiência em treinamento funcional",
+    "image": "trainers/carlos.jpg",
+    "instagram_url": "https://instagram.com/carlosfit"
+  }
+},
+{
+  "model": "blog.trainer",
+  "pk": 2,
+  "fields": {
+    "name": "Ana Souza",
+    "title": "Instrutora de Dança",
+    "description": "Especialista em ritmos latinos.",
+    "image": "",
+    "instagram_url": null
+  }
+},
+{
+  "model": "blog.trainer",
+  "pk": 3,
+  "fields": {
+    "name": "Pedro Oliveira",
+    "title": "Coach Funcional",
+    "description": "Foco em alta performance.",
+    "image": "",
+    "instagram_url": null
+  }
+},
+{
+  "model": "blog.schedule",
+  "pk": 1,
+  "fields": {
+    "day": "monday",
+    "shift": "manha",
+    "start_time": "08:00:00",
+    "end_time": "09:00:00",
+    "program": 2,
+    "trainer": 1
+  }
+},
+{
+  "model": "blog.schedule",
+  "pk": 2,
+  "fields": {
+    "day": "wednesday",
+    "shift": "manha",
+    "start_time": "18:00:00",
+    "end_time": "19:00:00",
+    "program": 3,
+    "trainer": 3
+  }
+},
+{
+  "model": "blog.schedule",
+  "pk": 3,
+  "fields": {
+    "day": "friday",
+    "shift": "manha",
+    "start_time": "19:00:00",
+    "end_time": "20:00:00",
+    "program": 4,
+    "trainer": 2
+  }
+},
+{
+  "model": "blog.contactinfo",
+  "pk": 1,
+  "fields": {
+    "address": "Rua Exemplo, 123 - Centro, São Paulo - SP",
+    "phone": "(11) 99999-9999",
+    "email": "contato@academiarocksfit.com.br",
+    "website": "https://www.academiarocksfit.com.br"
+  }
+},
+{
+  "model": "blog.plan",
+  "pk": 1,
+  "fields": {
+    "order": 1,
+    "name": "Plano Mensal",
+    "plan_type": "mensal",
+    "duration_days": 30,
+    "price": "99.90",
+    "period": "mês",
+    "description": "Acesso ilimitado a todas as aulas",
+    "is_popular": true,
+    "features": "Aulas de musculação, cardio, funcional",
+    "button1_text": "Assinar",
+    "button1_url": "/assinar",
+    "button2_text": null,
+    "button2_url": null
+  }
+},
+{
+  "model": "blog.aluno",
+  "pk": 1,
+  "fields": {
+    "matricula": "RF20260002",
+    "nome_completo": "Teste Matricula",
+    "cpf": "11122233344",
+    "data_nascimento": null,
+    "email": "11122233344@rocksfit.com",
+    "whatsapp": "00000000000",
+    "foto": "",
+    "digital": null,
+    "data_cadastro": "2026-04-10T02:13:06.481Z"
+  }
+},
+{
+  "model": "blog.aluno",
+  "pk": 2,
+  "fields": {
+    "matricula": "RF20260003",
+    "nome_completo": "cleyson cassio",
+    "cpf": "00903993406",
+    "data_nascimento": null,
+    "email": "00903993406@rocksfit.com",
+    "whatsapp": "00000000000",
+    "foto": "",
+    "digital": null,
+    "data_cadastro": "2026-04-10T02:13:09.871Z"
+  }
+},
+{
+  "model": "blog.aluno",
+  "pk": 3,
+  "fields": {
+    "matricula": "RF20260004",
+    "nome_completo": "francisca dulce da silva ",
+    "cpf": "32244967468",
+    "data_nascimento": null,
+    "email": "32244967468@rocksfit.com",
+    "whatsapp": "00000000000",
+    "foto": "",
+    "digital": null,
+    "data_cadastro": "2026-04-10T02:13:12.854Z"
+  }
+},
+{
+  "model": "blog.controleacesso",
+  "pk": 1,
+  "fields": {
+    "aluno": 1,
+    "data_vencimento": null,
+    "status_catraca": "bloqueado",
+    "abrir_catraca_agora": false,
+    "plano_pendente": null
+  }
+},
+{
+  "model": "blog.controleacesso",
+  "pk": 2,
+  "fields": {
+    "aluno": 2,
+    "data_vencimento": "2026-04-03",
+    "status_catraca": "liberado",
+    "abrir_catraca_agora": false,
+    "plano_pendente": null
+  }
+},
+{
+  "model": "blog.controleacesso",
+  "pk": 3,
+  "fields": {
+    "aluno": 3,
+    "data_vencimento": null,
+    "status_catraca": "aguardando_pagamento",
+    "abrir_catraca_agora": false,
+    "plano_pendente": null
+  }
+}
+]
