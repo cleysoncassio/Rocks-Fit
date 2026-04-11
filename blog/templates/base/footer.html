@@ -45,9 +45,9 @@
         <i class="icon-calendar2"></i>
         <span>Planos</span>
     </a>
-    <a href="{% url 'schedule' %}" class="nav-item">
-        <i class="icon-trophy2"></i>
-        <span>Modalidades</span>
+    <a href="{% url 'tools' %}" class="nav-item">
+        <i class="fa-solid fa-dumbbell"></i>
+        <span>Ferramentas</span>
     </a>
 </nav>
 
@@ -60,29 +60,11 @@
     <i class="icon-whatsapp"></i>
 </a>
 
-<!-- Floating Share Button -->
-<a href="javascript:void(0);" id="share-float-btn" class="share-float" title="Compartilhar">
-    <i class="icon-share"></i>
+<!-- Floating Health Tools Button -->
+<a href="{% url 'tools' %}" id="tools-float-btn" class="tools-float" title="Ferramentas de Saúde">
+    <i class="fa-solid fa-dumbbell"></i>
 </a>
 
 <script>
-    document.getElementById('share-float-btn').addEventListener('click', function() {
-        const shareData = {
-            title: 'Rocks-Fit - Ferramentas de Saúde',
-            text: '📈 Melhore sua performance com as Ferramentas de Saúde da Rocks-Fit! 🚀\nCalcule seu IMC, TMB e Macros aqui:',
-            url: window.location.origin + '/ferramentas/'
-        };
-
-        if (navigator.share) {
-            navigator.share(shareData).catch(err => console.log('Erro ao compartilhar:', err));
-        } else {
-            const tempInput = document.createElement('input');
-            tempInput.value = shareData.text + ' ' + shareData.url;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            alert('✅ Link de compartilhamento copiado! Envie para seus amigos.');
-        }
-    });
+    // Share logic removed as requested to prioritize Tools button icon.
 </script>

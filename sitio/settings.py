@@ -16,7 +16,7 @@ load_dotenv()
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-placeholder")
 STONE_SECRET_KEY = config("STONE_SECRET_KEY", default="sk_test_placeholder_sua_chave")
 
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = config("DEBUG", default=True, cast=bool)
 
 # Pega o que está no painel da Hostman (tenta os dois nomes padrão)
 env_hosts = config("ALLOWED_HOSTS", default=config("DJANGO_ALLOWED_HOSTS", default=""))
@@ -224,11 +224,11 @@ AXES_RESET_ON_SUCCESS = True
 CONTENT_SECURITY_POLICY = {
     'DIRECTIVES': {
         'default-src': ("'self'",),
-        'font-src': ("'self'", 'https://fonts.gstatic.com'),
+        'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
         'frame-src': ("'self'", 'https://www.googletagmanager.com', 'https://www.google.com'),
-        'img-src': ("'self'", 'data:', 'https://maps.google.com'),
+        'img-src': ("'self'", 'data:', 'https://maps.google.com', 'https://www.googletagmanager.com'),
         'script-src': ("'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'),
-        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'),
         'style-src-attr': ("'self'", "'unsafe-inline'")
     }
 }
