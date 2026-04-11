@@ -10,6 +10,7 @@
 * 	Rocks-Fit Modern Transformation System
 *
 * ======================================================= */
+/* CSS_VERSION_TOOLS_V1 */
 :root {
   --base-bg: #09090B;
   --surface-bg: #18181B;
@@ -1910,8 +1911,8 @@ html {
   }
 }
 
-/* Share Floating Button */
-.share-float {
+/* Health Tools Floating Button */
+.tools-float {
   position: fixed;
   width: 60px;
   height: 60px;
@@ -1929,12 +1930,12 @@ html {
   justify-content: center;
   text-decoration: none;
   transition: all 0.3s ease;
-  animation: pulse-share 2s infinite;
+  animation: pulse-tools 2s infinite;
   cursor: pointer;
 }
 
 @media screen and (max-width: 768px) {
-  .share-float {
+  .tools-float {
     bottom: 240px !important; /* Stacks above mobile WhatsApp icon */
     width: 50px;
     height: 50px;
@@ -1942,14 +1943,14 @@ html {
   }
 }
 
-.share-float:hover {
+.tools-float:hover {
   transform: scale(1.1);
-  color: #000;
+  color: #000 !important;
   background-color: #fff;
   box-shadow: 0 6px 15px rgba(255,122,0,0.5);
 }
 
-@keyframes pulse-share {
+@keyframes pulse-tools {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 122, 0, 0.7);
   }
