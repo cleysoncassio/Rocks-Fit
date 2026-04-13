@@ -1,0 +1,74 @@
+Watching for file changes with StatReloader
+[13/Apr/2026 16:49:06] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:11] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:16] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:19] code 400, message Bad request version ('Ä`Á5q\x98´')
+[13/Apr/2026 16:49:19] You're accessing the development server over HTTPS, but it only supports HTTP.
+[13/Apr/2026 16:49:19] code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x06')
+[13/Apr/2026 16:49:19] You're accessing the development server over HTTPS, but it only supports HTTP.
+[13/Apr/2026 16:49:21] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:26] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:31] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:31] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:36] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:41] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:46] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:51] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:49:56] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:01] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:06] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:08] code 400, message Bad request version ('\x02h2\x08http/1.1\x00\x05\x00\x05\x01\x00\x00\x00\x00\x00\x12\x00\x00\x00')
+[13/Apr/2026 16:50:08] You're accessing the development server over HTTPS, but it only supports HTTP.
+[13/Apr/2026 16:50:08] code 400, message Bad request syntax ('\x16\x03\x01\x07\x00\x01\x00\x06ü\x03\x03')
+[13/Apr/2026 16:50:08] You're accessing the development server over HTTPS, but it only supports HTTP.
+[13/Apr/2026 16:50:11] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:16] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:21] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:26] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:27] code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x00\x17\x00\x00\x00+\x00\x07\x06\x1a\x1a\x03\x04\x03\x03\x00')
+[13/Apr/2026 16:50:27] You're accessing the development server over HTTPS, but it only supports HTTP.
+[13/Apr/2026 16:50:27] code 400, message Bad request version ('\x08¹\x95\\u²;jûÿ')
+[13/Apr/2026 16:50:27] You're accessing the development server over HTTPS, but it only supports HTTP.
+[13/Apr/2026 16:50:31] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:36] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:41] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:43] "GET / HTTP/1.1" 200 20944
+[13/Apr/2026 16:50:43] "GET /static/js/bootstrap.min.js HTTP/1.1" 200 36816
+[13/Apr/2026 16:50:43] "GET /static/css/superfish.css HTTP/1.1" 200 2719
+[13/Apr/2026 16:50:43] "GET /static/css/icomoon.css HTTP/1.1" 200 51282
+[13/Apr/2026 16:50:43] "GET /static/css/style.css?v=20260405 HTTP/1.1" 200 44564
+[13/Apr/2026 16:50:43] "GET /static/css/animate.css HTTP/1.1" 200 71392
+[13/Apr/2026 16:50:43] "GET /static/js/hoverIntent.js HTTP/1.1" 200 4938
+[13/Apr/2026 16:50:43] "GET /static/js/jquery.easing.1.3.js HTTP/1.1" 200 8111
+[13/Apr/2026 16:50:43] "GET /static/js/jquery.stellar.min.js HTTP/1.1" 200 12597
+[13/Apr/2026 16:50:43] "GET /static/js/google_map.js HTTP/1.1" 200 2678
+[13/Apr/2026 16:50:43] "GET /static/js/jquery.min.js HTTP/1.1" 200 84387
+[13/Apr/2026 16:50:43] "GET /static/css/bootstrap.css HTTP/1.1" 200 149276
+[13/Apr/2026 16:50:43] "GET /static/js/jquery.waypoints.min.js HTTP/1.1" 200 8835
+[13/Apr/2026 16:50:43] "GET /static/js/main.js HTTP/1.1" 200 2578
+[13/Apr/2026 16:50:43] "GET /static/js/superfish.js HTTP/1.1" 200 7211
+[13/Apr/2026 16:50:43] "GET /static/js/modernizr-2.6.2.min.js HTTP/1.1" 200 15413
+[13/Apr/2026 16:50:43] "GET /static/js/respond.min.js HTTP/1.1" 200 4378
+[13/Apr/2026 16:50:43] "GET /static/images/rks01.png HTTP/1.1" 200 147578
+[13/Apr/2026 16:50:43] "GET /static/images/fit-dumbell.svg HTTP/1.1" 200 2960
+[13/Apr/2026 16:50:43] "GET /static/images/cleyson-logo.png HTTP/1.1" 404 1996
+[13/Apr/2026 16:50:46] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:51] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:50:56] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:01] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:03] "GET /static/images/1009.jpg HTTP/1.1" 200 114066
+[13/Apr/2026 16:51:03] "GET /static/images/trainer-1.png HTTP/1.1" 404 1987
+[13/Apr/2026 16:51:03] "GET /static/images/ps.jpg HTTP/1.1" 200 102433
+[13/Apr/2026 16:51:03] "GET /static/fonts/icomoon/icomoon.ttf?srf3rx HTTP/1.1" 200 224464
+[13/Apr/2026 16:51:06] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:11] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:16] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:21] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:26] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:31] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:36] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:41] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:46] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:51] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:51:56] "POST /webhook/whatsapp/ HTTP/1.1" 200 16
+[13/Apr/2026 16:52:01] "POST /webhook/whatsapp/ HTTP/1.1" 200 16

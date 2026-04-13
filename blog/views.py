@@ -142,13 +142,17 @@ def process_payment_api(request):
                 # Inicialmente bloqueado até confirmar pagamento
                 acesso.status_catraca = 'bloqueado'
                 acesso.save()
-                # Link direto para a plataforma InfinityPay da loja
-                # Formato: https://pay.infinitepay.io/TAG_DA_LOJA
-                INFINITEPAY_TAG = "rocks-fit" 
-                
-                # Opcional: Adicionar o valor ao link se a InfinityPay suportar no formato de query param
-                # ou apenas redirecionar para a página principal da loja na InfinityPay
-                payment_url = f"https://pay.infinitepay.io/{INFINITEPAY_TAG}"
+                # Tenta usar o link de pagamento exclusivo do plano configurado no admin. 
+                # Se não houver, usa o link fallback padrão da loja.
+                if plano.infinitepay_link:
+                    payment_url = plano.infinitepay_link
+                elif plano.button1_url and 'infinitepay.io' in plano.button1_url:
+                    payment_url = plano.button1_url
+                elif plano.button2_url and 'infinitepay.io' in plano.button2_url:
+                    payment_url = plano.button2_url
+                else:
+                    INFINITEPAY_TAG = "rocks-fit" 
+                    payment_url = f"https://pay.infinitepay.io/{INFINITEPAY_TAG}"
                 
                 # Salvar registro como pendente
                 historico.transacao_id = f"INF-{aluno.cpf}"
@@ -505,32 +509,5 @@ def aluno_update_data_api(request):
 
 @csrf_exempt
 def whatsapp_webhook(request):
-    """
-    Recebe notificações e mensagens do WhatsApp (Meta Cloud API).
-    GET: Verificação inicial (Hub Challenge).
-    POST: Eventos de mensagem, leitura, etc.
-    """
-    if request.method == "GET":
-        mode = request.GET.get("hub.mode")
-        token = request.GET.get("hub.verify_token")
-        challenge = request.GET.get("hub.challenge")
-        
-        # O TOKEN_VERIFICACAO abaixo deve ser o mesmo configurado no Painel do Desenvolvedor da Meta
-        VERIFY_TOKEN = "rocks_fit_verification" 
-        
-        if mode == "subscribe" and token == VERIFY_TOKEN:
-            from django.http import HttpResponse
-            return HttpResponse(challenge)
-        return HttpResponse("Erro de Verificação", status=403)
-
-    if request.method == "POST":
-        try:
-            payload = json.loads(request.body)
-            # Aqui você pode processar a mensagem se quiser automatizar algo futuramente.
-            # Por enquanto, apenas retornamos 200 para parar o erro 404.
-            print(f"--- Recebido Webhook WhatsApp: {payload}")
-            return JsonResponse({"status": "received"})
-        except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)}, status=400)
-
-    return JsonResponse({"error": "Method not allowed"}, status=405)
+    """Endpoint 'buraco negro' para silenciar as insistentes requisições de webhook do WhatsApp que geram erro 400."""
+    return JsonResponse({'status': 'ok'})

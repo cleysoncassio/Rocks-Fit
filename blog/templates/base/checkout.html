@@ -89,8 +89,8 @@
 							<div id="checkout-messages" class="alert alert-danger" style="display:none;"></div>
 
 							<div class="form-group text-center">
-								<button type="button" id="btn-pagar" class="btn btn-primary" style="padding: 15px 30px; width:100%; margin-bottom: 10px; font-weight: 700;">Pagar Agora via Cartão (InfinityPay) - R$ {{ plan.price }}</button>
-								<button type="button" id="btn-pix" class="btn btn-success" style="padding: 15px 30px; width:100%; background-color: #25d366; border-color: #25d366; font-weight: 700;">Pagar no PIX (WhatsApp) - R$ {{ plan.price }}</button>
+								<button type="button" id="btn-pagar" class="btn btn-primary" style="padding: 15px 30px; width:100%; margin-bottom: 10px; font-weight: 700;">{% if plan.button1_text %}{{ plan.button1_text }}{% else %}Pagar Agora via Cartão (InfinityPay) - R$ {{ plan.price }}{% endif %}</button>
+								<button type="button" id="btn-pix" class="btn btn-success" style="padding: 15px 30px; width:100%; background-color: #25d366; border-color: #25d366; font-weight: 700;">{% if plan.button2_text %}{{ plan.button2_text }}{% else %}Pagar no PIX (WhatsApp) - R$ {{ plan.price }}{% endif %}</button>
 							</div>
 
 
@@ -170,8 +170,8 @@
 						messages.style.display = 'block';
 						btnPagar.disabled = false;
 						btnPix.disabled = false;
-						btnPagar.innerText = "Pagar Agora via Cartão (InfinityPay) - R$ {{ plan.price }}";
-						btnPix.innerText = "Pagar no PIX (WhatsApp) - R$ {{ plan.price }}";
+						btnPagar.innerText = "{% if plan.button1_text %}{{ plan.button1_text|escapejs }}{% else %}Pagar Agora via Cartão (InfinityPay) - R$ {{ plan.price }}{% endif %}";
+						btnPix.innerText = "{% if plan.button2_text %}{{ plan.button2_text|escapejs }}{% else %}Pagar no PIX (WhatsApp) - R$ {{ plan.price }}{% endif %}";
 					}
 				})
 				.catch(err => {

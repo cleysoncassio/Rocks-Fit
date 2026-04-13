@@ -60,11 +60,28 @@
     <i class="icon-whatsapp"></i>
 </a>
 
-<!-- Floating Health Tools Button -->
-<a href="{% url 'tools' %}" id="tools-float-btn" class="tools-float" title="Ferramentas de Saúde">
-    <i class="fa-solid fa-dumbbell"></i>
+<!-- Floating Share Button -->
+<a href="javascript:void(0);" onclick="shareSite()" class="share-float" title="Compartilhar Ferramentas Fitness">
+    <i class="icon-share"></i>
 </a>
 
 <script>
-    // Share logic removed as requested to prioritize Tools button icon.
+    function shareSite() {
+        const siteUrl = window.location.origin + "{% url 'tools' %}";
+        if (navigator.share) {
+            navigator.share({
+                title: 'Ferramentas Fitness - Rocks-Fit',
+                text: 'Confira as melhores ferramentas fitness da Rocks-Fit para alcançar sua melhor versão:',
+                url: siteUrl
+            }).catch(err => console.log('Erro ao compartilhar:', err));
+        } else {
+            const el = document.createElement('textarea');
+            el.value = `Ferramentas Fitness - Rocks-Fit! 🚀\nLink: ${siteUrl}`;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert('✅ Link copiado! Compartilhe as ferramentas fitness com seus amigos.');
+        }
+    }
 </script>

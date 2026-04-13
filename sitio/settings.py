@@ -16,34 +16,93 @@ load_dotenv()
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-placeholder")
 STONE_SECRET_KEY = config("STONE_SECRET_KEY", default="sk_test_placeholder_sua_chave")
 
-DEBUG = config("DEBUG", default=True, cast=bool)
+# ALTERADO: padrão seguro é False (produção), ative True apenas no desenvolvimento local
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 # Pega o que está no painel da Hostman (tenta os dois nomes padrão)
 env_hosts = config("ALLOWED_HOSTS", default=config("DJANGO_ALLOWED_HOSTS", default=""))
 
+# ALLOWED_HOSTS corrigido e simplificado
 if DEBUG:
     ALLOWED_HOSTS = ["*"]
 else:
-    # 1. Domínios base vindos do painel
+    # Domínios base vindos do painel da Hostman
     if env_hosts:
         ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(",") if h.strip()]
     else:
-        ALLOWED_HOSTS = ["academiarocksfit.com.br", "www.academiarocksfit.com.br", ".hostman.site"]
-
-    # 2. ESSENCIAL: IPs internos e locais para Health Checks e comunicação da plataforma
-    for ip in ["127.0.0.1", "localhost", "195.133.93.36", "192.168.0.4"]:
+        # Fallback seguro - ATUALIZE SE SEUS DOMÍNIOS MUDAREM
+        ALLOWED_HOSTS = [
+            "academiarocksfit.com.br",
+            "www.academiarocksfit.com.br",
+            ".hostman.site",
+            "195.133.93.36",
+        ]
+    
+    # IPs para health checks da Hostman
+    for ip in ["127.0.0.1", "localhost", "192.168.0.4"]:
         if ip not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(ip)
 
 # IMPORTANTE: Para o domínio profissional funcionar com formulários (Login da Academia)
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
-    default="https://academiarocksfit.com.br,https://www.academiarocksfit.com.br",
+    default="https://academiarocksfit.com.br,https://www.academiarocksfit.com.br,https://*.hostman.site",
     cast=lambda v: [s.strip() for s in v.split(",") if s.strip()],
 )
 
-# Application definition
+# --- CONFIGURAÇÕES DE SEGURANÇA (Ajustadas para Desenvolvimento/Produção) ---
+if not DEBUG:
+    # Seguranca HTTPS forçada em Producao
+    import sys
+    is_runserver = 'runserver' in sys.argv
+    
+    # Redireciona para HTTPS apenas se não for runserver local
+    SECURE_SSL_REDIRECT = not is_runserver
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    
+    # HSTS (Apenas em produção real, não no runserver)
+    if not is_runserver:
+        SECURE_HSTS_SECONDS = 31536000  # 1 ano
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+        SECURE_HSTS_PRELOAD = True
+    else:
+        SECURE_HSTS_SECONDS = 0
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+        SECURE_HSTS_PRELOAD = False
 
+    SESSION_COOKIE_SECURE = not is_runserver
+    CSRF_COOKIE_SECURE = not is_runserver
+    
+    # Outros cabecalhos
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # Política de Referer
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+    
+    # Impedir que o site seja embutido em iframes (clickjacking)
+    X_FRAME_OPTIONS = 'DENY'
+else:
+    # --- CONFIGURAÇÕES ESPECÍFICAS PARA DESENVOLVIMENTO LOCAL ---
+    # Desabilita redirecionamento SSL (o servidor de desenvolvimento não suporta HTTPS)
+    SECURE_SSL_REDIRECT = False
+    
+    # Permite cookies HTTP em desenvolvimento (para testes locais)
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    
+    # Desabilita cabeçalhos de segurança que não se aplicam ao desenvolvimento
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    SECURE_BROWSER_XSS_FILTER = False
+    SECURE_CONTENT_TYPE_NOSNIFF = False
+    
+    # Configuração para evitar problemas com webhooks que tentam HTTPS
+    # Isso resolve o erro "You're accessing the development server over HTTPS"
+    SECURE_PROXY_SSL_HEADER = None
+
+# Application definition
 INSTALLED_APPS = [
     "blog",
     "django.contrib.admin",
@@ -190,24 +249,6 @@ WHITENOISE_MANIFEST_STRICT = False
 # Configurações do Controle de Acesso (Catraca)
 CATRACA_SYNC_TOKEN = "rocksfit@2024"
 
-# --- CONFIGURACOES DE SEGURANCA ADICIONAIS ---
-
-if not DEBUG:
-    # Seguranca HTTPS forçada em Producao
-    SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    
-    # HSTS (HTTP Strict Transport Security)
-    SECURE_HSTS_SECONDS = 31536000  # 1 ano
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-
-    # Outros cabecalhos
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-
 # Django-Axes (Protecao Brute Force)
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesBackend',
@@ -236,3 +277,4 @@ CONTENT_SECURITY_POLICY = {
 # Ratelimit (Geral)
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
+RATELIMIT_CACHE_PREFIX = 'ratelimit'
