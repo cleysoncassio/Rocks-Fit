@@ -135,6 +135,7 @@ class Plan(OrderedModel):
     button1_url = models.URLField(blank=True, null=True, verbose_name="Link do Botão 1")
     button2_text = models.CharField(max_length=50, blank=True, null=True, verbose_name="Texto do Botão 2")
     button2_url = models.URLField(blank=True, null=True, verbose_name="Link do Botão 2")
+    infinitepay_link = models.URLField(blank=True, null=True, verbose_name="Link InfinitePay (Checkout)", help_text="Link específico de pagamento deste plano na InfinitePay (ex: https://invoice.infinitepay.io/plans/rocks-fit/...)")
 
     @property
     def get_features_list(self):
