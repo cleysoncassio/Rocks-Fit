@@ -92,7 +92,7 @@
 											{% endfor %}
 										</ul>
 										<a href="{% url 'checkout' plan.id %}" class="btn {% if plan.is_popular %}btn-select-plan btn-sm{% else %}btn-default{% endif %}">
-											{% if plan.button1_text %}{{ plan.button1_text }}{% else %}Assinar Agora{% endif %}
+										{% if plan.card_button_text %}{{ plan.card_button_text }}{% else %}Assinar Agora{% endif %}
 										</a>
 									</div>
 								</div>

@@ -35,6 +35,13 @@ class Program(OrderedModel):
     name = models.CharField(max_length=100)
     description = models.TextField()
     image = models.ImageField(upload_to="program_images/", blank=True, null=True)
+    icon = models.ImageField(
+        upload_to="program_icons/",
+        blank=True,
+        null=True,
+        verbose_name="Ícone da Modalidade",
+        help_text="Envie um ícone (PNG/SVG) para representar esta modalidade nos horários e cards."
+    )
     join_url = models.URLField(blank=True, null=True)
 
     def __str__(self):
@@ -131,9 +138,10 @@ class Plan(OrderedModel):
     description = models.TextField(verbose_name="Descrição Curta")
     is_popular = models.BooleanField(default=False, verbose_name="Mais Vendido?")
     features = models.TextField(verbose_name="Benefícios", help_text="Insira cada benefício em uma nova linha.")
-    button1_text = models.CharField(max_length=50, blank=True, null=True, verbose_name="Texto do Botão 1")
+    card_button_text = models.CharField(max_length=50, blank=True, null=True, verbose_name="Texto do Botão no Card", help_text="Texto exibido no botão do card de planos (ex: 'Assinar Agora'). Padrão: Assinar Agora")
+    button1_text = models.CharField(max_length=100, blank=True, null=True, verbose_name="Texto do Botão InfinitePay (Checkout)", help_text="Texto do botão de pagamento via cartão na página de checkout.")
     button1_url = models.URLField(blank=True, null=True, verbose_name="Link do Botão 1")
-    button2_text = models.CharField(max_length=50, blank=True, null=True, verbose_name="Texto do Botão 2")
+    button2_text = models.CharField(max_length=100, blank=True, null=True, verbose_name="Texto do Botão PIX (Checkout)", help_text="Texto do botão de pagamento via PIX na página de checkout.")
     button2_url = models.URLField(blank=True, null=True, verbose_name="Link do Botão 2")
     infinitepay_link = models.URLField(blank=True, null=True, verbose_name="Link InfinitePay (Checkout)", help_text="Link específico de pagamento deste plano na InfinitePay (ex: https://invoice.infinitepay.io/plans/rocks-fit/...)")
 

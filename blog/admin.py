@@ -23,9 +23,16 @@ class PlanAdmin(OrderedModelAdmin):
 
 @admin.register(Program)
 class ProgramAdmin(OrderedModelAdmin):
-    list_display = ("name", "description", "move_up_down_links")
+    list_display = ("name", "ver_icone", "description", "move_up_down_links")
     search_fields = ["name"]
     list_filter = ("name",)
+
+    def ver_icone(self, obj):
+        from django.utils.html import format_html
+        if obj.icon:
+            return format_html('<img src="{}" style="width: 40px; height: 40px; object-fit: contain; background: #222; border-radius: 8px; padding: 4px;" />', obj.icon.url)
+        return "Sem Ícone"
+    ver_icone.short_description = "Ícone"
 
 
 @admin.register(Trainer)
