@@ -87,6 +87,17 @@
             "foto_url": null,
             "tem_foto": false,
             "tem_digital": false
+        },
+        {
+            "id": 9,
+            "nome": "teste",
+            "matricula": "RF20260010",
+            "cpf": "111.222.555-47",
+            "status": "BLOQUEADO",
+            "vencimento": "SEM VENCIMENTO",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
         }
     ]
 }

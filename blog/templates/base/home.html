@@ -152,8 +152,8 @@
 											{% endfor %}
 										</ul>
 										<a href="{% url 'checkout' plan.id %}" class="btn {% if plan.is_popular %}btn-select-plan btn-sm{% else %}btn-default{% endif %}">
-											{% if plan.button1_text %}{{ plan.button1_text }}{% else %}Assinar Agora{% endif %}
-										</a>
+								{% if plan.card_button_text %}{{ plan.card_button_text }}{% else %}Assinar Agora{% endif %}
+							</a>
 									</div>
 								</div>
 								{% empty %}
@@ -191,7 +191,9 @@
 											{% for schedule in day.schedules %}
 											<div class="class-row">
 												<div class="class-icon">
-													{% if schedule.program.image %}
+													{% if schedule.program.icon %}
+														<img src="{{ schedule.program.icon.url }}" alt="{{ schedule.program.name }}">
+													{% elif schedule.program.image %}
 														<img src="{{ schedule.program.image.url }}" alt="{{ schedule.program.name }}">
 													{% else %}
 														<i class="icon-notification" style="color: #4ADE80; font-size: 20px;"></i>
@@ -248,7 +250,9 @@
 						{% for program in programs %}
 						<div class="col-md-4 col-sm-6">
 							<div class="program animate-box">
-								{% if program.image %}
+								{% if program.icon %}
+									<img src="{{ program.icon.url }}" alt="{{ program.name }}">
+								{% elif program.image %}
 									<img src="{{ program.image.url }}" alt="{{ program.name }}">
 								{% else %}
 									<img src="{% static 'images/fit-dumbell.svg' %}" alt="fit-dumbell">
