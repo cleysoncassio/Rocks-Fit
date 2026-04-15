@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import include, path
 from blog import views
 
-from sitio import settings
+from django.conf import settings
 
 urlpatterns = [
     path("7becomb/", admin.site.urls),
