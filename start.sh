@@ -1,19 +1,12 @@
 #!/bin/sh
+# start.sh — Executado pela Hostman para iniciar o serviço (PRODUÇÃO)
+export DJANGO_SETTINGS_MODULE=sitio.settings.production
 
-# Se a variável BUILD_MODE estiver definida, executa apenas tarefas de build
-if [ "$BUILD_MODE" = "true" ]; then
-    echo "=== MODO BUILD ==="
-    pip install --upgrade pip
-    pip install -r requirements.txt
-    python3 manage.py collectstatic --noinput
-    exit 0
-fi
+echo "=== ROCKS-FIT: INICIANDO PRODUÇÃO ==="
 
-# === MODO RUNTIME (Start Command) ===
-echo "=== MODO RUNTIME ==="
-
-# Configurar permissões
+# Configurar permissões do banco
 python3 -c "
+import django; django.setup()
 from django.db import connection
 try:
     with connection.cursor() as cursor:
@@ -23,15 +16,16 @@ try:
 except: pass
 "
 
-# Migrações
+# Migrações pendentes
 python3 manage.py migrate --no-input
 
-# Dados iniciais
+# Dados iniciais (somente se vazio)
 if [ -f "dados_blog.json" ]; then
     python3 -c "
-from django.core.management import call_command
+import django; django.setup()
 from blog.models import Program
 if Program.objects.count() == 0:
+    from django.core.management import call_command
     call_command('loaddata', 'dados_blog.json')
 "
 fi
