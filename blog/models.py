@@ -276,12 +276,16 @@ class SiteConfiguration(models.Model):
     intro_logo = models.ImageField(upload_to='site_images/', blank=True, null=True, verbose_name="Logo da Introdução")
     footer_logo = models.ImageField(upload_to='site_images/', blank=True, null=True, verbose_name="Logo do Rodapé")
 
+    # PIX Configuration
+    pix_key = models.CharField(max_length=255, blank=True, null=True, verbose_name="Chave PIX")
+    pix_qrcode = models.ImageField(upload_to='pix/', blank=True, null=True, verbose_name="QR Code do PIX (Imagem)")
+
     def __str__(self):
-        return "Fotos do Site"
+        return "Configurações do Site"
 
     class Meta:
-        verbose_name = "Design: Fotos do Site"
-        verbose_name_plural = "00. Design: Fotos do Site"
+        verbose_name = "Configuração do Site"
+        verbose_name_plural = "00. Configurações do Site"
 
 # --- 🚀 SINCRONIZAÇÃO LOCAL (rks-catraca) ---
 from django.db.models.signals import post_save

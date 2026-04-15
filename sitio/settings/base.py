@@ -4,7 +4,6 @@ Não use este arquivo diretamente — use development.py ou production.py.
 """
 import os
 from pathlib import Path
-
 from decouple import Csv, config
 from dotenv import load_dotenv
 
@@ -12,13 +11,12 @@ from dotenv import load_dotenv
 # Agora BASE_DIR aponta para a raiz do projeto (2 níveis acima: settings/ → sitio/ → projeto/)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Carrega .env da raiz do projeto
+# Carrega .env da raiz do projeto para variáveis locais
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-placeholder")
 STONE_SECRET_KEY = config("STONE_SECRET_KEY", default="sk_test_placeholder_sua_chave")
-
 
 # Application definition
 INSTALLED_APPS = [
@@ -33,10 +31,13 @@ INSTALLED_APPS = [
     "ordered_model",
     "axes",
     "csp",
+    "corsheaders",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "csp.middleware.CSPMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -48,13 +49,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-
-# URLs do projeto
 ROOT_URLCONF = "sitio.urls"
 
 INTERNAL_IPS = config("INTERNAL_IPS", cast=Csv(), default="127.0.0.1")
-
-GS_BUCKET_NAME = "<your-bucket-name>"
 
 TEMPLATES = [
     {
@@ -75,7 +72,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "sitio.wsgi.application"
 
-
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -84,13 +80,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-
 # Internationalization
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = "America/Sao_Paulo"
 USE_I18N = True
 USE_TZ = True
-
 
 # Static files
 STATIC_URL = "/static/"
@@ -110,27 +104,21 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        # ManifestStaticFilesStorage em vez de CompressedManifest
-        # para evitar "PermissionError: [Errno 13]" na Hostman.
         "BACKEND": "whitenoise.storage.ManifestStaticFilesStorage",
     },
 }
 
 WHITENOISE_MANIFEST_STRICT = False
 
-
 # Arquivos de mídia
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
-
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
 # Configurações do Controle de Acesso (Catraca)
 CATRACA_SYNC_TOKEN = "rocksfit@2024"
-
 
 # Django-Axes (Proteção Brute Force)
 AUTHENTICATION_BACKENDS = [
@@ -138,13 +126,12 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-AXES_FAILURE_LIMIT = 5   # Bloqueia após 5 tentativas
-AXES_COOLOFF_TIME = 1    # Bloqueio dura 1 hora
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1
 AXES_LOCKOUT_TEMPLATE = "base/fake_admin.html"
 AXES_RESET_ON_SUCCESS = True
 
-
-# Configuração do Django-CSP (Versão 4.0+)
+# Configuração do Django-CSP
 CONTENT_SECURITY_POLICY = {
     'DIRECTIVES': {
         'default-src': ("'self'",),
@@ -157,8 +144,10 @@ CONTENT_SECURITY_POLICY = {
     }
 }
 
-
-# Ratelimit (Geral)
+# Ratelimit
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_CACHE_PREFIX = 'ratelimit'
+
+# CORS Settings
+CORS_ALLOW_ALL_ORIGINS = True  # Para desenvolvimento do App do Aluno

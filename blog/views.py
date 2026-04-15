@@ -100,10 +100,13 @@ def tools(request):
 
 def checkout_view(request, plan_id):
     from django.conf import settings
+    from .models import SiteConfiguration
     plan = get_object_or_404(Plan, id=plan_id)
+    site_config = SiteConfiguration.objects.first()
     return render(request, "base/checkout.html", {
         "plan": plan,
-        "debug": settings.DEBUG
+        "debug": settings.DEBUG,
+        "site_config": site_config,
     })
 
 @csrf_exempt
@@ -175,7 +178,7 @@ def process_payment_api(request):
                 acesso.plano_pendente = plano
                 acesso.save()
 
-                msg = f"Olá! Acabei de me cadastrar (Matrícula: {aluno.matricula}). Meu nome é {aluno.nome_completo} e quero pagar o plano *{plano.name}* via PIX. Por favor, me envie a *Chave PIX* da academia."
+                msg = f"Olá! Acabei de me cadastrar (Matrícula: {aluno.matricula}). Meu nome é {aluno.nome_completo}. Vou pagar o plano *{plano.name}* via PIX e em seguida enviarei o comprovante aqui."
                 wpp_url = f"https://wa.me/{whatsapp_number}?text={urllib.parse.quote(msg)}"
                 return JsonResponse({'success': True, 'action': 'redirect', 'url': wpp_url})
             

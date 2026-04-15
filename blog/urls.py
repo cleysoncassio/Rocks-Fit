@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, api_views
 
 urlpatterns = [
     path("", views.home, name="home"),
@@ -22,4 +22,9 @@ urlpatterns = [
     path("api/aluno-update-data/", views.aluno_update_data_api, name="aluno_update_data"),
     path("api/dev/simular-pagamento/", views.dev_simular_pagamento, name="dev_simular_pagamento"),
     path("webhook/whatsapp/", views.whatsapp_webhook, name="whatsapp_webhook_blackhole"),
+
+    # API para o App do Aluno
+    path("api/app/login/", api_views.aluno_login, name="app_aluno_login"),
+    path("api/app/schedule/", api_views.get_gym_schedule, name="app_gym_schedule"),
+    path("api/app/profile/<int:aluno_id>/", api_views.aluno_profile, name="app_aluno_profile"),
 ]
