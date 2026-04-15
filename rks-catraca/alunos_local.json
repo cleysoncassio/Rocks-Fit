@@ -98,6 +98,17 @@
             "foto_url": null,
             "tem_foto": false,
             "tem_digital": false
+        },
+        {
+            "id": 10,
+            "nome": "teste",
+            "matricula": "RF20260011",
+            "cpf": "154.789.663-22",
+            "status": "AGUARDANDO_PAGAMENTO",
+            "vencimento": "SEM VENCIMENTO",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
         }
     ]
 }

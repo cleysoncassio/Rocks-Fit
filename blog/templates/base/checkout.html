@@ -211,6 +211,8 @@
 
 		<script>
 		document.addEventListener('DOMContentLoaded', function() {
+			const PIX_KEY = "{{ site_config.pix_key|default:'' }}";
+
 			// === MÁSCARA DE CPF 000.000.000-00 ===
 			const cpfInput = document.getElementById('cpf');
 
@@ -393,8 +395,34 @@
 				.then(response => response.json())
 				.then(data => {
 					if (data.success && data.action === 'redirect') {
-						btn.innerText = "Redirecionando...";
-						window.location.href = data.url;
+						if (method === 'local' && PIX_KEY) {
+							// Tentar copiar para o clipboard antes de redirecionar
+							const copyToClipboard = (text) => {
+								if (navigator.clipboard && navigator.clipboard.writeText) {
+									return navigator.clipboard.writeText(text);
+								} else {
+									const textArea = document.createElement("textarea");
+									textArea.value = text;
+									document.body.appendChild(textArea);
+									textArea.select();
+									try {
+										document.execCommand('copy');
+									} catch (err) {}
+									document.body.removeChild(textArea);
+									return Promise.resolve();
+								}
+							};
+
+							copyToClipboard(PIX_KEY).finally(() => {
+								btn.innerText = "Chave Copiada! Redirecionando...";
+								setTimeout(() => {
+									window.location.href = data.url;
+								}, 800);
+							});
+						} else {
+							btn.innerText = "Redirecionando...";
+							window.location.href = data.url;
+						}
 					} else {
 						messages.innerText = "Erro: " + data.error;
 						messages.style.display = 'block';

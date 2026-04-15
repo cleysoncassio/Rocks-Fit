@@ -1,29 +1,19 @@
 """
 Configurações de PRODUÇÃO.
-Usado na Hostman (Gunicorn + PostgreSQL).
-
-Para ativar: DJANGO_SETTINGS_MODULE=sitio.settings.production
+Ativado na Hostman (academiarocksfit.com.br).
 """
 import dj_database_url
-
 from decouple import config
+from .base import *
 
-from .base import *  # noqa: F401,F403
-
-# ============================================================
-#  PRODUÇÃO — DEBUG DESATIVADO
-# ============================================================
 DEBUG = False
 
-
-# ============================================================
-#  HOSTS PERMITIDOS
-# ============================================================
-_env_hosts = config("ALLOWED_HOSTS", default="")
-
-if _env_hosts:
-    ALLOWED_HOSTS = [h.strip() for h in _env_hosts.split(",") if h.strip()]
+# Hosts configurados para produção
+env_hosts = config("ALLOWED_HOSTS", default="")
+if env_hosts:
+    ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(",") if h.strip()]
 else:
+    # Fallback para os domínios conhecidos
     ALLOWED_HOSTS = [
         "academiarocksfit.com.br",
         "www.academiarocksfit.com.br",
@@ -31,56 +21,45 @@ else:
         "195.133.93.36",
     ]
 
-# IPs para health checks da Hostman
+# IPs para health checks e acesso interno
 for ip in ["127.0.0.1", "localhost", "192.168.0.4"]:
     if ip not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(ip)
 
-
-# ============================================================
-#  CSRF
-# ============================================================
+# CSRF Trust
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
     default="https://academiarocksfit.com.br,https://www.academiarocksfit.com.br,https://*.hostman.site",
     cast=lambda v: [s.strip() for s in v.split(",") if s.strip()],
 )
 
-
-# ============================================================
-#  BANCO DE DADOS — PostgreSQL (via DATABASE_URL)
-# ============================================================
+# Banco de Dados PostgreSQL (DATABASE_URL fornecido pela Hostman)
 DATABASES = {
     "default": dj_database_url.config(
         default=config("DATABASE_URL", default=""),
         conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 
-
-# ============================================================
-#  SEGURANÇA HTTPS — tudo ativado
-# ============================================================
+# Segurança HTTPS total em Produção
 SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# HSTS (1 ano)
-SECURE_HSTS_SECONDS = 31536000
+# HSTS
+SECURE_HSTS_SECONDS = 31536000  # 1 ano
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
-# Cookies seguros
+# Cookies Seguros
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# Cabeçalhos de segurança
+# Outros cabeçalhos de segurança
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 X_FRAME_OPTIONS = 'DENY'
 
-
-# ============================================================
-#  E-MAIL (configurar quando necessário)
-# ============================================================
+# Email backend (Pode ser alterado para SMTP conforme necessário)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
