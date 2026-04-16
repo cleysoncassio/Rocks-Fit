@@ -139,7 +139,8 @@ CONTENT_SECURITY_POLICY = {
         'default-src': ("'self'",),
         'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
         'frame-src': ("'self'", 'https://www.googletagmanager.com', 'https://www.google.com'),
-        'img-src': ("'self'", 'data:', 'https://maps.google.com', 'https://www.googletagmanager.com'),
+        'img-src': ("'self'", 'data:', 'https://res.cloudinary.com', 'https://maps.google.com', 'https://maps.gstatic.com', 'https://www.googletagmanager.com'),
+        'connect-src': ("'self'", 'https://res.cloudinary.com', 'https://www.googletagmanager.com'),
         'script-src': ("'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'),
         'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'),
         'style-src-attr': ("'self'", "'unsafe-inline'")
