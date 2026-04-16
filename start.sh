@@ -32,5 +32,5 @@ fi
 
 # Gunicorn
 PORT=$(echo "$PORT" | sed 's/^0*//')
-PORT=${PORT:-8000}
+PORT=${PORT:-800}
 exec gunicorn sitio.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-level info --access-logfile - --error-logfile -
