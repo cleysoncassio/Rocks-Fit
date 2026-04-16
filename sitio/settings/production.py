@@ -6,7 +6,8 @@ import dj_database_url
 from decouple import config
 from .base import *
 
-DEBUG = True # ATIVADO TEMPORARIAMENTE PARA DEBUGAR ERRO 500
+# Configurações de segurança: DEBUG deve ser False em produção
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 # Hosts configurados para produção
 env_hosts = config("ALLOWED_HOSTS", default="")
@@ -43,7 +44,7 @@ DATABASES = {
 }
 
 # Segurança HTTPS total em Produção
-SECURE_SSL_REDIRECT = False # Desativado temporariamente para debugar erro 500
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # HSTS
