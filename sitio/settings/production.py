@@ -38,8 +38,8 @@ DATABASES = {
     )
 }
 
-# Segurança HTTPS total em Produção
-SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
+# Segurança HTTPS: Desativado por padrão no código (recomendado ativar via variável de ambiente na Hostman)
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # HSTS
@@ -75,12 +75,12 @@ LOGGING = {
     },
 }
 
-# Configuração de Storage de Produção (WhiteNoise com Manifesto e Compressão)
+# Configuração de Storage de Produção (Mais tolerante para evitar Erro 500)
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
