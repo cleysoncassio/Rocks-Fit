@@ -3,16 +3,20 @@ from django.contrib import admin
 from ordered_model.admin import OrderedModelAdmin
 
 from .models import (ContactInfo, ContactMessage, Program,
-                     Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso, SiteConfiguration, SocialMedia)
+                     Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso, SiteConfiguration, TrainerSocial, DeveloperSocial)
 
 
-class SocialMediaInline(admin.TabularInline):
-    model = SocialMedia
+class TrainerSocialInline(admin.TabularInline):
+    model = TrainerSocial
+    extra = 1
+
+class DeveloperSocialInline(admin.TabularInline):
+    model = DeveloperSocial
     extra = 1
 
 @admin.register(SiteConfiguration)
 class SiteConfigurationAdmin(admin.ModelAdmin):
-    inlines = [SocialMediaInline]
+    inlines = [DeveloperSocialInline]
     def has_add_permission(self, request):
         if self.model.objects.count() >= 1:
             return False
@@ -40,15 +44,18 @@ class ProgramAdmin(OrderedModelAdmin):
 
 
 @admin.register(Trainer)
-class TrainerAdmin(admin.ModelAdmin):
-    list_display = ("name", "title")
+class TrainerAdmin(OrderedModelAdmin):
+    list_display = ("name", "title", "move_up_down_links")
     search_fields = ("name",)
-    inlines = [SocialMediaInline]
+    inlines = [TrainerSocialInline]
 
-@admin.register(SocialMedia)
-class SocialMediaAdmin(admin.ModelAdmin):
-    list_display = ("name", "link", "trainer", "site_config")
-    list_filter = ("name", "trainer", "site_config")
+@admin.register(TrainerSocial)
+class TrainerSocialAdmin(admin.ModelAdmin):
+    list_display = ("name", "link", "trainer")
+
+@admin.register(DeveloperSocial)
+class DeveloperSocialAdmin(admin.ModelAdmin):
+    list_display = ("name", "link")
 
 
 @admin.register(Schedule)

@@ -52,7 +52,7 @@ class Program(OrderedModel):
         verbose_name_plural = "05. Academia: Modalidades"
 
 
-class Trainer(models.Model):
+class Trainer(OrderedModel):
     name = models.CharField(max_length=100)
     title = models.CharField(
         max_length=100, blank=True, null=True
@@ -63,7 +63,7 @@ class Trainer(models.Model):
     def __str__(self):
         return self.name
 
-    class Meta:
+    class Meta(OrderedModel.Meta):
         verbose_name = "Professor"
         verbose_name_plural = "06. Academia: Professores"
 
@@ -286,23 +286,33 @@ class SiteConfiguration(models.Model):
         verbose_name = "Configuração do Site"
         verbose_name_plural = "00. Configurações do Site"
 
-class SocialMedia(models.Model):
-    trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE, related_name='social_links', null=True, blank=True, verbose_name="Professor")
-    site_config = models.ForeignKey(SiteConfiguration, on_delete=models.CASCADE, related_name='social_links', null=True, blank=True, verbose_name="Desenvolvedor (Rodapé)")
-    
+class TrainerSocial(models.Model):
+    trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE, related_name='social_links', verbose_name="Professor")
     name = models.CharField(max_length=50, verbose_name="Nome da Rede (ex: Instagram)")
     link = models.URLField(verbose_name="Link do Perfil")
-    
-    icon_image = models.ImageField(upload_to='social_icons/', blank=True, null=True, verbose_name="Upload de Ícone (PNG/SVG)")
-    icon_url = models.URLField(blank=True, null=True, verbose_name="Ou URL do Ícone (Externo)", help_text="Use caso não queira fazer upload.")
+    icon_image = models.ImageField(upload_to='social_icons/trainers/', blank=True, null=True, verbose_name="Upload de Ícone (PNG/SVG)")
+    icon_url = models.URLField(blank=True, null=True, verbose_name="Ou URL do Ícone (Externo)")
 
     def __str__(self):
-        owner = self.trainer.name if self.trainer else "Desenvolvedor"
-        return f"{self.name} - {owner}"
+        return f"{self.name} - {self.trainer.name}"
 
     class Meta:
-        verbose_name = "Rede Social"
-        verbose_name_plural = "08. Academia: Redes Sociais"
+        verbose_name = "Rede Social do Professor"
+        verbose_name_plural = "08. Academia: Redes Sociais dos Professores"
+
+class DeveloperSocial(models.Model):
+    site_config = models.ForeignKey(SiteConfiguration, on_delete=models.CASCADE, related_name='social_links', verbose_name="Desenvolvedor (Rodapé)")
+    name = models.CharField(max_length=50, verbose_name="Nome da Rede (ex: LinkedIn)")
+    link = models.URLField(verbose_name="Link do Perfil")
+    icon_image = models.ImageField(upload_to='social_icons/dev/', blank=True, null=True, verbose_name="Upload de Ícone (PNG/SVG)")
+    icon_url = models.URLField(blank=True, null=True, verbose_name="Ou URL do Ícone (Externo)")
+
+    def __str__(self):
+        return f"{self.name} - Desenvolvedor"
+
+    class Meta:
+        verbose_name = "Rede Social do Desenvolvedor"
+        verbose_name_plural = "09. Academia: Redes Sociais do Desenvolvedor"
 
 # --- 🚀 SINCRONIZAÇÃO LOCAL (rks-catraca) ---
 from django.db.models.signals import post_save

@@ -10,7 +10,7 @@ from .forms import ContactForm
 
 def home(request):
     from django.utils import timezone
-    trainers_list = Trainer.objects.all()
+    trainers_list = Trainer.objects.all().order_by('order')
     plans_list = Plan.objects.all().order_by('order')
     
     # Horários de Funcionamento
@@ -88,7 +88,7 @@ def contact(request):
     return render(request, "contact.html", {"contact_info": contact_info, "form": form})
 
 def trainers(request):
-    trainers_list = Trainer.objects.all()
+    trainers_list = Trainer.objects.all().order_by('order')
     return render(request, "trainers.html", {"trainers": trainers_list})
 
 def about(request):
