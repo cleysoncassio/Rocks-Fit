@@ -1,5 +1,5 @@
 {% load static %}
-<!DOCTYPE html5>
+<!DOCTYPE html>
 
 <html class="no-js">
 
@@ -290,12 +290,9 @@
 											<span>{{ trainer.title|default:"Professor" }}</span>
 											<p>{{ trainer.description|default:"" }}</p>
 											<p class="fh5co-social-icons">
-												<a href="#"><i class="icon-twitter-with-circle"></i></a>
-												<a href="#"><i class="icon-facebook-with-circle"></i></a>
-												{% if trainer.instagram_url %}
-												<a href="{{ trainer.instagram_url }}"><i
-														class="icon-instagram-with-circle"></i></a>
-												{% endif %}
+											{% if trainer.instagram_url %}
+											<a href="{{ trainer.instagram_url }}"><i class="icon-instagram-with-circle"></i></a>
+											{% endif %}
 											</p>
 										</div>
 									</div>

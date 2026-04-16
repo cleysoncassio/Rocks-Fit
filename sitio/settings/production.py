@@ -75,10 +75,15 @@ LOGGING = {
     },
 }
 
-# Configuração de Storage de Produção (Mais tolerante para evitar Erro 500)
+# Configuração do Cloudinary (Armazenamento de Imagens Persistente)
+CLOUDINARY_STORAGE = {
+    'CLOUDINARY_URL': config("CLOUDINARY_URL", default="cloudinary://<your_api_key>:<your_api_secret>@dcpmp0hjf")
+}
+
+# Configuração de Storage de Produção
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",

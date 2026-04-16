@@ -1,5 +1,5 @@
 {% load static %}
-<!DOCTYPE Html5>
+<!DOCTYPE html>
 
 <html class="no-js">
 
@@ -75,7 +75,9 @@
 										<span>{{ trainer.title }}</span>
 										<p>{{ trainer.description }}</p>
 										<p class="fh5co-social-icons">
+											{% if trainer.instagram_url %}
 											<a href="{{ trainer.instagram_url }}"><i class="icon-instagram-with-circle"></i></a>
+											{% endif %}
 										</p>
 									</div>
 								</div>
