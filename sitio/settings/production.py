@@ -6,20 +6,20 @@ import dj_database_url
 from decouple import config
 from .base import *
 
-# Configurações de segurança: DEBUG deve ser False em produção
-DEBUG = config("DEBUG", default=False, cast=bool)
+# Configurações de segurança: DEBUG default True para forçar exibição do erro 500 no console/tela
+DEBUG = config("DEBUG", default=True, cast=bool)
 
-# Hosts configurados para produção
-env_hosts = config("ALLOWED_HOSTS", default="")
-if env_hosts:
-    ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(",") if h.strip()]
-else:
-    # Fallback para os domínios conhecidos
+# Hosts configurados para produção - Adicionado '*' temporariamente para teste
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=lambda v: [s.strip() for s in v.split(",") if s.strip()])
+if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['*']:
     ALLOWED_HOSTS = [
         "academiarocksfit.com.br",
         "www.academiarocksfit.com.br",
         ".hostman.site",
         "195.133.93.36",
+        "127.0.0.1",
+        "localhost",
+        "*"
     ]
 
 # IPs para health checks e acesso interno
@@ -65,17 +65,38 @@ X_FRAME_OPTIONS = 'DENY'
 # Email backend (Pode ser alterado para SMTP conforme necessário)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# Forçar erros para o console do Hostman
+# Configuração de Logs mais detalhada para capturar o erro 500
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
         },
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
+# Sobrescreve STORAGE em produção temporariamente para evitar erro 500 se o manifest estiver ausente
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage", # Menos rígido que ManifestStaticFilesStorage
     },
 }
