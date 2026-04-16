@@ -1,11 +1,11 @@
 {% load static %}
-<!DOCTYPE html5>
+<!DOCTYPE html>
 <html class="no-js">
 	<head>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<title>Rocks-Fit - Checkout</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
 		<meta name="description" content="Academia Rocks Fit - Checkout" />
 		<meta name="author" content="Cleyson Cassio" />
 
@@ -31,6 +31,8 @@
 				margin: 40px auto;
 				max-width: 700px;
 				box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+				position: relative;
+				z-index: 5; /* Garante que está acima de fundos/parallax */
 			}
 			.checkout-form-card h3 {
 				color: #fff;
@@ -43,6 +45,7 @@
 				font-weight: 600;
 				margin-bottom: 5px;
 				display: block;
+				cursor: pointer;
 			}
 			.checkout-form-card .form-control {
 				background: #16213e;
@@ -50,8 +53,10 @@
 				color: #fff;
 				border-radius: 8px;
 				padding: 12px 15px;
-				font-size: 16px;
+				font-size: 16px !important; /* Mínimo 16px para evitar zoom no iOS */
 				transition: border-color 0.3s;
+				-webkit-user-select: text !important; /* Garante que possa ser selecionado/focado no iOS */
+				user-select: text !important;
 			}
 			.checkout-form-card .form-control:focus {
 				border-color: #f97316;
@@ -149,29 +154,29 @@
 							<div class="checkout-field-row">
 								<div class="checkout-field">
 									<label for="nome_completo">Nome Completo</label>
-									<input type="text" id="nome_completo" class="form-control" placeholder="Seu nome completo" required>
+									<input type="text" id="nome_completo" class="form-control" name="nome_completo" placeholder="Seu nome completo" required autocomplete="name">
 								</div>
 								<div class="checkout-field">
 									<label for="cpf">CPF (Somente Números)</label>
-									<input type="text" id="cpf" class="form-control" placeholder="000.000.000-00" required maxlength="14" inputmode="numeric">
+									<input type="text" id="cpf" class="form-control" name="cpf" placeholder="000.000.000-00" required maxlength="14" inputmode="numeric" autocomplete="off">
 								</div>
 							</div>
 
 							<div class="checkout-field-row">
 								<div class="checkout-field">
 									<label for="email">E-mail</label>
-									<input type="email" id="email" class="form-control" placeholder="exemplo@email.com" required>
+									<input type="email" id="email" class="form-control" name="email" placeholder="exemplo@email.com" required autocomplete="email">
 								</div>
 								<div class="checkout-field">
 									<label for="whatsapp">WhatsApp (DDD + Número)</label>
-									<input type="text" id="whatsapp" class="form-control" placeholder="(84) 99999-9999" required maxlength="15" inputmode="tel">
+									<input type="text" id="whatsapp" class="form-control" name="whatsapp" placeholder="(84) 99999-9999" required maxlength="15" inputmode="tel" autocomplete="tel">
 								</div>
 							</div>
 
 							<div class="checkout-field-row">
 								<div class="checkout-field">
 									<label for="data_nascimento">Data de Nascimento</label>
-									<input type="text" id="data_nascimento" class="form-control" placeholder="DD/MM/AAAA" required maxlength="10" inputmode="numeric" autocomplete="off">
+									<input type="text" id="data_nascimento" class="form-control" name="data_nascimento" placeholder="DD/MM/AAAA" required maxlength="10" inputmode="numeric" autocomplete="bday">
 									<p class="help-block"><small>Digite apenas números. Ex: 16061980 → 16/06/1980</small></p>
 								</div>
 							</div>

@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Ferramentas de Saúde - Rocks-Fit</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
     <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
@@ -24,6 +24,8 @@
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: visible;
+            display: flex;
+            flex-direction: column;
         }
         .step-badge {
             position: absolute;
@@ -33,7 +35,7 @@
             color: #000000; /* Preto Sólido */
             padding: 5px 15px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 900;
             text-transform: uppercase;
             box-shadow: 0 4px 10px rgba(255, 122, 0, 0.4);
@@ -73,50 +75,53 @@
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 20px;
+            margin-top: auto; /* Alinha no final da card */
             transition: all 0.3s ease;
         }
         .btn-calculate:hover {
-            background: #E06900; /* Laranja mais escuro no hover */
+            background: #E06900; 
             box-shadow: 0 4px 15px rgba(255, 122, 0, 0.4);
             transform: scale(1.02);
         }
         .tool-card h3 {
-            color: #808080; /* Cinza Oficial */
+            color: #FF7A00; /* Alterado para realçar o título */
             font-size: 18px;
-            font-weight: 700;
+            font-weight: 900;
             margin-bottom: 15px;
+            text-transform: uppercase;
         }
         .tool-result {
-            margin-top: 25px;
-            padding: 20px;
+            margin-top: 20px;
+            padding: 15px;
             border-radius: 12px;
             text-align: center;
             background: rgba(255, 122, 0, 0.1);
             border: 2px solid #FF7A00;
-            box-shadow: 0 0 20px rgba(255, 122, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 122, 0, 0.2);
             animation: fadeIn 0.5s ease;
+            overflow: hidden;
+            width: 100%;
         }
         .result-value {
             display: block;
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 900;
             color: #FF7A00;
-            line-height: 1;
+            line-height: 1.1;
         }
         .result-label {
             display: block;
-            font-size: 14px;
+            font-size: 13px;
             color: #fff;
             margin-top: 5px;
             text-transform: uppercase;
             font-weight: 700;
         }
         .result-phrase {
-            font-size: 13px;
-            color: rgba(255,255,255,0.8);
-            margin-top: 15px;
-            font-style: italic;
+            font-size: 12px;
+            color: rgba(255,255,255,0.9);
+            margin-top: 10px;
+            font-style: normal;
             line-height: 1.4;
         }
         .overweight-rate {
@@ -124,17 +129,12 @@
             font-weight: 700;
             display: block;
             margin-top: 5px;
-            font-size: 12px;
+            font-size: 11px;
         }
         .tool-icon {
-            font-size: 30px; 
+            font-size: 28px; 
             color: #FF7A00; 
-            margin-bottom: 15px;
-        }
-        .small-muted {
-            font-size: 11px;
-            color: rgba(255,255,255,0.5);
-            margin-top: 10px;
+            margin-bottom: 10px;
         }
         .tool-form input {
             width: 100%;
@@ -143,54 +143,78 @@
             color: #fff;
             padding: 10px;
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             font-family: 'Outfit', sans-serif;
+            font-size: 16px !important; /* Evita zoom no iOS */
+            -webkit-user-select: text !important;
+            user-select: text !important;
         }
         .btn-share {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             background: rgba(255, 122, 0, 0.15);
             color: #FF7A00;
             border: 1px solid rgba(255, 122, 0, 0.4);
-            padding: 8px 18px;
-            border-radius: 25px;
-            font-size: 11px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 10px;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            width: 100%;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 15px;
         }
         .btn-share:hover {
             background: #FF7A00;
             color: #000;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 122, 0, 0.4);
-        }
-        .btn-share i {
-            font-size: 14px;
         }
         .tool-form select {
             width: 100% !important;
-            background: rgba(255,255,255,0.05) !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
+            background: #16213e !important;
+            border: 1px solid #333 !important;
             color: #fff !important;
             padding: 10px !important;
-            border-radius: 5px !important;
-            margin-bottom: 10px !important;
+            border-radius: 8px !important;
+            margin-bottom: 12px !important;
             height: auto !important;
+            font-size: 16px !important;
         }
-        .tool-form select option {
-            background: #18181B; /* Fundo escuro sólido para as opções */
-            color: #fff;
-            padding: 10px;
+        
+        .macro-row {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid rgba(255, 122, 0, 0.2); 
+            padding: 6px 0;
+        }
+        .macro-row span:first-child {
+            font-weight: 700; 
+            text-transform: uppercase; 
+            font-size: 10px;
+            color: #ccc;
+        }
+        .macro-row span:last-child {
+            color: #FF7A00; 
+            font-weight: 900; 
+            font-size: 16px;
+        }
+
+        @media (max-width: 767px) {
+            #fh5co-tools-section {
+                padding: 40px 0 !important;
+            }
+            .tool-card {
+                margin-bottom: 30px;
+                padding: 30px 20px 20px;
+            }
+            .result-value { font-size: 24px; }
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -285,30 +309,30 @@
                                     <label>Calorias Calculadas</label>
                                     <input type="number" id="macro-calories" readonly style="background: rgba(255,255,255,0.1); border-color: #FF7A00;" placeholder="Passo 2 obrigatório">
                                     <label>Objetivo</label>
-                                    <select id="macro-goal" class="form-control" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+                                    <select id="macro-goal" class="form-control">
                                         <option value="maintenance">Manter Peso</option>
                                         <option value="cutting">Perder Gordura</option>
                                         <option value="bulking">Ganhar Músculo</option>
                                     </select>
                                 </div>
                                 <button class="btn-calculate" onclick="calculateMacros()">Dividir Macros</button>
-                                <div class="tool-result" id="macro-result-box" style="display: none; padding: 25px 15px;">
-                                    <div style="display: flex; flex-direction: column; gap: 15px; text-align: left; margin-bottom: 20px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 122, 0, 0.2); padding-bottom: 8px;">
-                                            <span style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Proteína</span>
-                                            <span style="color: #FF7A00; font-weight: 900; font-size: 18px;"><span id="macro-p-val">0</span>g</span>
+                                <div class="tool-result" id="macro-result-box" style="display: none;">
+                                    <div style="display: flex; flex-direction: column; gap: 5px; text-align: left; margin-bottom: 15px;">
+                                        <div class="macro-row">
+                                            <span>Proteína</span>
+                                            <span><span id="macro-p-val">0</span>g</span>
                                         </div>
-                                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 122, 0, 0.2); padding-bottom: 8px;">
-                                            <span style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Carboidrato</span>
-                                            <span style="color: #FF7A00; font-weight: 900; font-size: 18px;"><span id="macro-c-val">0</span>g</span>
+                                        <div class="macro-row">
+                                            <span>Carboidrato</span>
+                                            <span><span id="macro-c-val">0</span>g</span>
                                         </div>
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <span style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Gordura</span>
-                                            <span style="color: #FF7A00; font-weight: 900; font-size: 18px;"><span id="macro-f-val">0</span>g</span>
+                                        <div class="macro-row">
+                                            <span>Gordura</span>
+                                            <span><span id="macro-f-val">0</span>g</span>
                                         </div>
                                     </div>
-                                    <p class="result-phrase" style="font-size: 12px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 15px;">
-                                        Esta divisão é a base do seu resultado físico. Combine com treinos intensos na Rocks-Fit para transformar seu corpo!
+                                    <p class="result-phrase">
+                                        Combine com treinos intensos Rocks-Fit!
                                     </p>
                                     <button class="btn-share" onclick="shareResult('Macros')" title="Compartilhar Resultado"><i class="icon-share"></i> Compartilhar</button>
                                 </div>
