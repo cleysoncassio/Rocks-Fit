@@ -77,7 +77,9 @@ LOGGING = {
 
 # Configuração do Cloudinary (Armazenamento de Imagens Persistente)
 CLOUDINARY_STORAGE = {
-    'CLOUDINARY_URL': config("CLOUDINARY_URL", default="cloudinary://973228675879414:Ggc4LL8P_3FZggiJdu6u4DPjG_A@dcpmp0hjf")
+    'CLOUD_NAME': config("CLOUDINARY_CLOUD_NAME", default="dcpmp0hjf"),
+    'API_KEY': config("CLOUDINARY_API_KEY", default="973228675879414"),
+    'API_SECRET': config("CLOUDINARY_API_SECRET", default="Ggc4LL8P_3FZggiJdu6u4DPjG_A"),
 }
 
 # Configuração de Storage de Produção
