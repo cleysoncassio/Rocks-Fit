@@ -6,24 +6,19 @@ import dj_database_url
 from decouple import config
 from .base import *
 
-# Configurações de segurança: DEBUG default True para forçar exibição do erro 500 no console/tela
-DEBUG = config("DEBUG", default=True, cast=bool)
+# Configurações de segurança: DEBUG deve ser False em produção para segurança e performance
+DEBUG = config("DEBUG", default=False, cast=bool)
 
-# Hosts configurados para produção - Adicionado '*' temporariamente para teste
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=lambda v: [s.strip() for s in v.split(",") if s.strip()])
-if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['*']:
-    ALLOWED_HOSTS = [
-        "academiarocksfit.com.br",
-        "www.academiarocksfit.com.br",
-        ".hostman.site",
-        "195.133.93.36",
-        "127.0.0.1",
-        "localhost",
-        "*"
-    ]
+# Hosts configurados para produção - Restrito aos domínios oficiais
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="academiarocksfit.com.br,www.academiarocksfit.com.br", cast=lambda v: [s.strip() for s in v.split(",") if s.strip()])
 
-# IPs para health checks e acesso interno
-for ip in ["127.0.0.1", "localhost", "192.168.0.4"]:
+# Adiciona fallbacks e IPs necessários para funcionamento/health checks
+for h in ["academiarocksfit.com.br", "www.academiarocksfit.com.br", ".hostman.site", "127.0.0.1", "localhost"]:
+    if h not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(h)
+
+# IPs específicos conhecidos da infraestrutura
+for ip in ["195.133.93.36", "192.168.0.4"]:
     if ip not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(ip)
 
@@ -62,41 +57,30 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 X_FRAME_OPTIONS = 'DENY'
 
-# Email backend (Pode ser alterado para SMTP conforme necessário)
+# Email backend
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# Configuração de Logs mais detalhada para capturar o erro 500
+# Configuração de Logs Padrão para Produção (Limpo e Eficiente)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-    },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
 }
 
-# Sobrescreve STORAGE em produção temporariamente para evitar erro 500 se o manifest estiver ausente
+# Configuração de Storage de Produção (WhiteNoise com Manifesto e Compressão)
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage", # Menos rígido que ManifestStaticFilesStorage
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
