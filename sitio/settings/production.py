@@ -43,7 +43,7 @@ DATABASES = {
 }
 
 # Segurança HTTPS total em Produção
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False # Desativado temporariamente para debugar erro 500
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # HSTS
@@ -63,3 +63,18 @@ X_FRAME_OPTIONS = 'DENY'
 
 # Email backend (Pode ser alterado para SMTP conforme necessário)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Forçar erros para o console do Hostman
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

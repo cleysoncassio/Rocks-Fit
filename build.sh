@@ -1,18 +1,23 @@
 #!/bin/bash
 # build.sh — Executado durante o build na Hostman (PRODUÇÃO)
 
+# Para o script imediatamente em caso de erro
+set -e
+
 # Garante que o Django use as configurações de produção
 export DJANGO_SETTINGS_MODULE=sitio.settings.production
 
 echo "Iniciando build de Producão..."
 
+# Instala dependências
 pip install --upgrade pip
 pip install -r requirements.txt
 
 # Coleta arquivos estáticos
 python3 manage.py collectstatic --noinput
 
-# Aplica migrações
+# Aplica migrações - O BUILD VAI PARAR AQUI SE FALHAR
+echo "Aplicando migrações no banco de dados..."
 python3 manage.py migrate --noinput
 
 # Carrega dados iniciais se o banco estiver vazio
