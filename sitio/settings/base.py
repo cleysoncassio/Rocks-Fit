@@ -137,12 +137,12 @@ AXES_RESET_ON_SUCCESS = True
 CONTENT_SECURITY_POLICY = {
     'DIRECTIVES': {
         'default-src': ("'self'",),
-        'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
+        'font-src': ("'self'", 'https://res.cloudinary.com', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
         'frame-src': ("'self'", 'https://www.googletagmanager.com', 'https://www.google.com'),
         'img-src': ("'self'", 'data:', 'https://res.cloudinary.com', 'https://maps.google.com', 'https://maps.gstatic.com', 'https://www.googletagmanager.com'),
         'connect-src': ("'self'", 'https://res.cloudinary.com', 'https://www.googletagmanager.com'),
-        'script-src': ("'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'),
-        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'),
+        'script-src': ("'self'", "'unsafe-inline'", 'https://res.cloudinary.com', 'https://www.googletagmanager.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://res.cloudinary.com', 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'),
         'style-src-attr': ("'self'", "'unsafe-inline'")
     }
 }
