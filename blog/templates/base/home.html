@@ -290,9 +290,17 @@
 											<span>{{ trainer.title|default:"Professor" }}</span>
 											<p>{{ trainer.description|default:"" }}</p>
 											<p class="fh5co-social-icons">
-											{% if trainer.instagram_url %}
-											<a href="{{ trainer.instagram_url }}"><i class="icon-instagram-with-circle"></i></a>
-											{% endif %}
+											{% for social in trainer.social_links.all %}
+											<a href="{{ social.link }}" target="_blank" title="{{ social.name }}">
+												{% if social.icon_image %}
+													<img src="{{ social.icon_image.url }}" alt="{{ social.name }}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);">
+												{% elif social.icon_url %}
+													<img src="{{ social.icon_url }}" alt="{{ social.name }}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);">
+												{% else %}
+													<i class="icon-link"></i>
+												{% endif %}
+											</a>
+											{% endfor %}
 											</p>
 										</div>
 									</div>
