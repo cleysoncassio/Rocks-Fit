@@ -3,12 +3,16 @@ from django.contrib import admin
 from ordered_model.admin import OrderedModelAdmin
 
 from .models import (ContactInfo, ContactMessage, Program,
-                     Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso, SiteConfiguration)
+                     Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso, SiteConfiguration, SocialMedia)
 
+
+class SocialMediaInline(admin.TabularInline):
+    model = SocialMedia
+    extra = 1
 
 @admin.register(SiteConfiguration)
 class SiteConfigurationAdmin(admin.ModelAdmin):
-    # This ensures only one instance is manageable, or at least makes it easier
+    inlines = [SocialMediaInline]
     def has_add_permission(self, request):
         if self.model.objects.count() >= 1:
             return False
@@ -37,8 +41,14 @@ class ProgramAdmin(OrderedModelAdmin):
 
 @admin.register(Trainer)
 class TrainerAdmin(admin.ModelAdmin):
-    list_display = ("name", "title", "instagram_url")
+    list_display = ("name", "title")
     search_fields = ("name",)
+    inlines = [SocialMediaInline]
+
+@admin.register(SocialMedia)
+class SocialMediaAdmin(admin.ModelAdmin):
+    list_display = ("name", "link", "trainer", "site_config")
+    list_filter = ("name", "trainer", "site_config")
 
 
 @admin.register(Schedule)

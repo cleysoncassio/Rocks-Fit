@@ -12,8 +12,20 @@
                         </p>
 
                         <p class="fh5co-social-icons" style="margin: 0; display: flex; gap: 15px; justify-content: center;">
+                            {% for social in site_config.social_links.all %}
+                            <a href="{{ social.link }}" target="_blank" title="{{ social.name }}">
+                                {% if social.icon_image %}
+                                    <img src="{{ social.icon_image.url }}" alt="{{ social.name }}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);">
+                                {% elif social.icon_url %}
+                                    <img src="{{ social.icon_url }}" alt="{{ social.name }}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);">
+                                {% else %}
+                                    <i class="icon-link"></i>
+                                {% endif %}
+                            </a>
+                            {% empty %}
                             <a href="https://www.linkedin.com/in/cleyson-cassio-060ab9213/" target="_blank"><i class="icon-linkedin"></i></a>
                             <a href="https://www.instagram.com/cleysoncassio/" target="_blank"><i class="icon-instagram"></i></a>
+                            {% endfor %}
                         </p>
                     </div>
                 </div>
