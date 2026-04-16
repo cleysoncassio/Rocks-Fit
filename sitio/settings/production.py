@@ -6,7 +6,7 @@ import dj_database_url
 from decouple import config
 from .base import *
 
-DEBUG = False
+DEBUG = True # ATIVADO TEMPORARIAMENTE PARA DEBUGAR ERRO 500
 
 # Hosts configurados para produção
 env_hosts = config("ALLOWED_HOSTS", default="")
