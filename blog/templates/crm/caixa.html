@@ -1,0 +1,442 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Caixa Progressiva | Rocks-Fit Enterprise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'snow': '#F8FAFC',
+                        'vibrant-orange': '#FF6B00',
+                        'success-green': '#2ECC71',
+                        'danger-red': '#EF4444',
+                        'slate-dark': '#0F172A',
+                    },
+                    borderRadius: { '3xl': '24px', '4xl': '32px' },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-sidebar { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-right: 1px solid rgba(226, 232, 240, 0.8); }
+        .deep-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08); }
+        .lux-card { background: white; border: 1px solid #f1f5f9; border-radius: 24px; transition: all 0.3s ease; }
+        .lux-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+        
+        .pulse-status { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        .drawer-overlay { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); transition: all 0.4s; }
+        .drawer-content { transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .drawer-active .drawer-content { transform: translateX(0); }
+        
+        .btn-gradient-orange { background: linear-gradient(135deg, #FF6B00 0%, #FF8F3D 100%); color: white; }
+        .btn-gradient-green { background: linear-gradient(135deg, #2ECC71 0%, #58D68D 100%); color: white; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .table-row-hover:hover { background-color: #f8fafc; }
+    </style>
+</head>
+<body class="bg-snow font-sans text-slate-dark h-screen flex overflow-hidden">
+
+    <!-- Sidebar de Contexto Financeiro -->
+    <aside id="sidebar" class="w-64 bg-slate-900 flex flex-col p-8 z-50 shadow-2xl transition-all duration-300 relative border-r border-slate-800">
+        <!-- Toggle Button -->
+        <button onclick="toggleSidebar()" class="absolute -right-3 top-10 bg-vibrant-orange text-white h-7 w-7 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-[60]">
+            <i id="toggle-icon" class="fas fa-chevron-left text-[10px]"></i>
+        </button>        <a href="{% url 'crm_dashboard' %}" class="sidebar-brand mb-12 flex flex-col items-center justify-center hover:opacity-80 transition-all border-b border-white/10 pb-12 overflow-hidden">
+            {% if gym_settings.logo %}
+                <img src="{{ gym_settings.logo.url }}" class="max-h-32 w-auto object-contain sidebar-logo transition-all duration-300" alt="{{ gym_settings.name }}">
+            {% else %}
+                <div class="h-16 w-16 bg-vibrant-orange rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl shrink-0">
+                    {{ gym_settings.name|default:"R"|slice:":1" }}
+                </div>
+                <span class="text-2xl font-black tracking-tighter text-white mt-6 sidebar-text shrink-0">{{ gym_settings.name|default:"Rocks-Fit" }}<span class="text-vibrant-orange">.</span></span>
+            {% endif %}
+        </a>
+
+        <!-- Card de Status do Caixa -->
+        <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 mb-8 relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 h-24 w-24 bg-slate-700 rounded-full opacity-50 group-hover:scale-150 transition-all duration-700"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center gap-3 mb-6 sidebar-text">
+                    {% if caixa %}
+                    <div class="h-3 w-3 rounded-full bg-success-green pulse-status"></div>
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-success-green">Caixa Operacional Aberto</span>
+                    {% else %}
+                    <div class="h-3 w-3 rounded-full bg-slate-300"></div>
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Caixa Fechado</span>
+                    {% endif %}
+                </div>
+
+                {% if caixa %}
+                <p class="text-xs text-slate-400 font-medium mb-1 sidebar-text text-center">Responsável</p>
+                <h4 class="text-sm font-bold text-white mb-6 sidebar-text text-center">{{ caixa.operador.get_full_name|default:caixa.operador.username }}</h4>
+
+                <div class="space-y-4 sidebar-text">
+                    <div class="flex justify-between items-center bg-slate-700/50 p-4 rounded-2xl">
+                        <div class="flex items-center gap-3 text-slate-400"><i class="fas fa-money-bill-wave"></i> <span class="text-[10px] font-black uppercase">Dinheiro</span></div>
+                        <span class="text-sm font-black text-white">R$ {{ resumo.dinheiro|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-700/50 p-4 rounded-2xl">
+                        <div class="flex items-center gap-3 text-slate-400"><i class="fas fa-qrcode"></i> <span class="text-[10px] font-black uppercase">PIX</span></div>
+                        <span class="text-sm font-black text-white">R$ {{ resumo.pix|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-700/50 p-4 rounded-2xl">
+                        <div class="flex items-center gap-3 text-slate-400"><i class="fas fa-credit-card"></i> <span class="text-[10px] font-black uppercase">Cartões</span></div>
+                        <span class="text-sm font-black text-white">R$ {{ resumo.cartao|floatformat:2 }}</span>
+                    </div>
+                    
+                    <div class="pt-4 mt-6 border-t border-dashed border-slate-700 flex justify-between items-end">
+                        <span class="text-[10px] font-black text-slate-400 uppercase">Líquido</span>
+                        <span class="text-2xl font-black text-vibrant-orange tracking-tighter">R$ {{ resumo.total|floatformat:2 }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="py-12 text-center sidebar-text">
+                    <i class="fas fa-lock text-slate-700 text-5xl mb-4"></i>
+                    <p class="text-xs font-medium text-slate-400 leading-relaxed">Inicie um novo turno.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Velocity Chart (Sparkline) -->
+        {% if caixa %}
+        <div class="px-2 mb-8 sidebar-text">
+            <h5 class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">Fluxo de Caixa (Transações/h)</h5>
+            <div class="h-12 flex items-end gap-1">
+                {% for vol in resumo.volume_h %}
+                <div class="flex-grow bg-slate-800 rounded-t-sm hover:bg-vibrant-orange transition-all cursor-crosshair h-{{ vol|default:0 }}" 
+                     style="height: {% widthratio vol 10 100 %}%" title="{{ vol }} transações"></div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <nav class="mt-auto space-y-2">
+            <a href="{% url 'crm_dashboard' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl transition-all font-bold text-xs group whitespace-nowrap"><i class="fas fa-arrow-left group-hover:text-vibrant-orange"></i> <span class="sidebar-text">Dashboard</span></a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col bg-snow overflow-y-auto p-12 transition-all duration-300">
+        
+        <!-- Alerts/Messages -->
+        {% if messages %}
+        <div class="mb-10 space-y-4">
+            {% for message in messages %}
+            <div class="p-5 rounded-3xl {% if message.tags == 'success' %}bg-green-50 text-success-green{% else %}bg-blue-50 text-blue-500{% endif %} font-bold text-xs flex justify-between items-center animate-bounce shadow-sm">
+                <span class="flex items-center gap-3"><i class="fas fa-info-circle"></i> {{ message }}</span>
+                <button onclick="this.parentElement.remove()" class="h-8 w-8 rounded-full hover:bg-white/50 transition-all font-black">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Top Console -->
+        <header class="flex justify-between items-start mb-16">
+            <div>
+                <h1 class="text-4xl font-black tracking-tighter text-slate-800">Conciliação Financeira</h1>
+                <p class="text-slate-400 mt-2 font-medium">Multicanal: Site, App e Balcão.</p>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                {% if caixa %}
+                <button onclick="openModal('modal-transacao')" class="btn-gradient-orange px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-orange-500/20 hover:scale-105 transition-all">Novo Lançamento</button>
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="fechar">
+                    <button type="submit" class="bg-white border-2 border-slate-900 text-slate-900 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all">Fechar Turno</button>
+                </form>
+                {% else %}
+                <button onclick="openModal('modal-abrir')" class="btn-gradient-green px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-green-500/20 hover:scale-105 transition-all">Iniciar Jornada de Caixa</button>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if not caixa %}
+        <div class="bg-white rounded-[40px] border-2 border-dashed border-slate-100 p-24 text-center flex flex-col items-center">
+            <div class="h-32 w-32 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 text-5xl mb-8"><i class="fas fa-cash-register"></i></div>
+            <h2 class="text-2xl font-black text-slate-800 mb-4">Acesso Restrito</h2>
+            <p class="text-slate-400 max-w-sm font-medium leading-relaxed mb-12">Para registrar movimentações ou receber faturas pelo PDV, é necessário que o operador inicie um turno oficial.</p>
+            <button onclick="openModal('modal-abrir')" class="bg-slate-900 text-white px-12 py-5 rounded-3xl font-black text-xs uppercase tracking-[0.3em] hover:bg-vibrant-orange hover:scale-105 transition-all shadow-2xl">Abrir Caixa Agora</button>
+        </div>
+        {% else %}
+        
+        <!-- 3. Transactions Matrix & Reconciliation -->
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <h3 class="text-xl font-black text-slate-800 tracking-tighter uppercase">Conciliação Financeira</h3>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sincronização multicanal: Site, App e Balcão</p>
+            </div>
+            
+            <div class="relative w-full max-w-sm">
+                <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                <input type="text" id="search-transactions" placeholder="Pesquisar por descrição, ID ou método..." 
+                    class="w-full bg-white border border-slate-100 rounded-3xl py-4 pl-14 pr-8 text-xs font-bold text-slate-600 focus:ring-4 focus:ring-vibrant-orange/10 outline-none transition-all shadow-sm">
+            </div>
+        </div>
+
+        <div class="bg-white rounded-4xl deep-shadow border border-slate-50 overflow-hidden">
+            <table class="w-full text-left" id="transactions-table">
+                <thead class="bg-slate-50/50 border-b border-slate-100">
+                    <tr>
+                        <th class="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Horário / Canal</th>
+                        <th class="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Histórico & Identificação</th>
+                        <th class="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Forma</th>
+                        <th class="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Montante</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for t in transacoes %}
+                    <tr class="table-row-hover transition-colors transaction-row {% if t.status == 'ESTORNADO' %}opacity-40 grayscale{% endif %}">
+                        <td class="px-10 py-6">
+                            <div class="flex items-center gap-4">
+                                <span class="text-xs font-black text-slate-800">{{ t.data_hora|date:"H:i" }}</span>
+                                {% if t.origem == 'SITE' %}
+                                <span class="h-8 w-8 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xs"><i class="fas fa-globe"></i></span>
+                                {% elif t.origem == 'APP' %}
+                                <span class="h-8 w-8 bg-purple-50 text-purple-500 rounded-xl flex items-center justify-center text-xs"><i class="fas fa-mobile-screen"></i></span>
+                                {% else %}
+                                <span class="h-8 w-8 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center text-xs"><i class="fas fa-fingerprint"></i></span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-10 py-6">
+                            <div class="flex flex-col">
+                                <h4 class="text-sm font-bold text-slate-600 searchable-text {% if t.status == 'ESTORNADO' %}line-through{% endif %}">{{ t.descricao }}</h4>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{{ t.caixa.operador.username }} • ID: #{{ t.id }}</p>
+                                    {% if t.status == 'ESTORNADO' %}
+                                    <span class="bg-red-100 text-red-500 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest">Estornado</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-10 py-6 text-center">
+                            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-50 text-[9px] font-black text-slate-400 uppercase border border-slate-100 searchable-text">
+                                {% if t.metodo == 'DINHEIRO' %}<i class="fas fa-coins text-success-green"></i>{% endif %}
+                                {% if t.metodo == 'PIX' %}<i class="fas fa-bolt text-blue-500"></i>{% endif %}
+                                {% if t.metodo == 'CREDITO' or t.metodo == 'DEBITO' %}<i class="fas fa-credit-card text-purple-500"></i>{% endif %}
+                                {{ t.get_metodo_display }}
+                            </span>
+                        </td>
+                        <td class="px-10 py-6 text-right">
+                            <div class="flex items-center justify-end gap-6">
+                                <div class="flex flex-col items-end">
+                                    <span class="text-lg font-black tracking-tighter {% if t.status == 'ESTORNADO' %}text-slate-300{% elif t.tipo == 'ENTRADA' %}text-success-green{% else %}text-danger-red{% endif %}">
+                                        {% if t.tipo == 'ENTRADA' %}+{% else %}-{% endif %} R$ {{ t.valor|floatformat:2 }}
+                                    </span>
+                                    <span class="text-[8px] font-black uppercase text-slate-300">{{ t.get_tipo_display }}</span>
+                                </div>
+                                
+                                {% if t.status == 'NORMAL' %}
+                                <form method="POST" class="inline" onsubmit="return confirm('Deseja realmente estornar esta transação? Esta ação não pode ser desfeita.')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="acao" value="estorno">
+                                    <input type="hidden" name="transacao_id" value="{{ t.id }}">
+                                    <button type="submit" class="h-8 w-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center text-xs" title="Estornar Valor">
+                                        <i class="fas fa-undo-alt"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-10 py-32 text-center text-slate-300 italic font-medium">O fluxo está estático. Nenhuma transação reconciliada até o momento.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            // Lógica de Filtro Instantâneo
+            document.getElementById('search-transactions').addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase();
+                const rows = document.querySelectorAll('.transaction-row');
+                
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    if (text.includes(term)) {
+                        row.classList.remove('hidden');
+                    } else {
+                        row.classList.add('hidden');
+                    }
+                });
+            });
+        </script>
+        {% endif %}
+    </main>
+
+    <!-- Drawer: Histórico de Caixas (Advanced Filter) -->
+    <div id="drawer-historico" class="fixed inset-0 z-[200] flex justify-end transition-all invisible">
+        <div class="drawer-overlay absolute inset-0 opacity-0 cursor-pointer" onclick="toggleDrawer(false)"></div>
+        <div class="drawer-content w-full max-w-md bg-white h-full relative z-10 p-10 flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-12">
+                <h3 class="text-xl font-black tracking-tighter">Histórico de Fechamento</h3>
+                <button onclick="toggleDrawer(false)" class="text-slate-400 hover:text-slate-900"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="space-y-6 overflow-y-auto no-scrollbar pb-12">
+                {% for c in historico_caixas %}
+                <div class="lux-card p-6 border-l-4 {% if c.saldo_final >= c.saldo_inicial %}border-success-green{% else %}border-danger-red{% endif %}">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ c.fechamento|date:"d M Y" }}</p>
+                            <h4 class="text-sm font-bold text-slate-800">{{ c.operador.username }}</h4>
+                        </div>
+                        <span class="bg-slate-100 text-slate-400 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">{{ c.get_status_display }}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-slate-50">
+                        <div><p class="text-[8px] font-bold text-slate-400 uppercase">Inicial</p><p class="text-xs font-black">R$ {{ c.saldo_inicial }}</p></div>
+                        <div><p class="text-[8px] font-bold text-slate-400 uppercase">Final</p><p class="text-xs font-black">R$ {{ c.saldo_final }}</p></div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="italic text-slate-400 text-center text-sm py-10">Nenhum histórico disponível para exibição.</p>
+                {% endfor %}
+            </div>
+            
+            <button class="mt-auto bg-slate-900 text-white w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl">Exportar Relatório PDF</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Abertura de Caixa -->
+    <div id="modal-abrir" class="hidden fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
+        <div class="bg-white w-full max-w-sm rounded-4xl p-10 shadow-2xl transform transition-all animate-in zoom-in-95 duration-200">
+            <h2 class="text-2xl font-black tracking-tighter mb-4">Conferência Inicial</h2>
+            <p class="text-slate-400 text-xs font-medium mb-8">Insira o saldo de fundo fixo (troco) presente no ponto de venda.</p>
+            
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="abrir">
+                <div class="relative">
+                    <span class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-bold text-lg">R$</span>
+                    <input type="number" step="0.01" name="saldo_inicial" value="0.00" class="w-full bg-slate-50 border-none rounded-3xl py-6 pl-14 pr-6 text-xl font-black focus:ring-4 focus:ring-success-green/20 focus:bg-white transition-all outline-none" required>
+                </div>
+                <button type="submit" class="w-full btn-gradient-green py-5 rounded-3xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl">Confirmar Abertura</button>
+                <button type="button" onclick="closeModal('modal-abrir')" class="w-full text-slate-300 font-black text-[10px] uppercase tracking-widest hover:text-slate-500 transition-all">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Novo Lançamento -->
+    <div id="modal-transacao" class="hidden fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
+        <div class="bg-white w-full max-w-md rounded-4xl p-10 shadow-2xl relative overflow-hidden">
+            <h2 class="text-2xl font-black tracking-tighter mb-10">Registrar Operação</h2>
+            
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="transacao">
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="tipo" value="ENTRADA" checked class="hidden peer">
+                        <div class="p-6 rounded-3xl border-2 border-slate-50 text-center peer-checked:border-success-green peer-checked:bg-green-50/50 transition-all">
+                            <i class="fas fa-plus text-success-green mb-2"></i>
+                            <p class="text-[9px] font-black uppercase text-slate-400">Entrada</p>
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="tipo" value="SAIDA" class="hidden peer">
+                        <div class="p-6 rounded-3xl border-2 border-slate-50 text-center peer-checked:border-danger-red peer-checked:bg-red-50/50 transition-all">
+                            <i class="fas fa-minus text-danger-red mb-2"></i>
+                            <p class="text-[9px] font-black uppercase text-slate-400">Saída</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Valor</label>
+                    <input type="number" step="0.01" name="valor" class="w-full bg-slate-50 rounded-3xl py-4 px-6 font-black text-lg focus:ring-2 focus:ring-slate-900 outline-none transition-all" placeholder="0,00" required>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Descrição</label>
+                    <input type="text" name="descricao" class="w-full bg-slate-50 rounded-3xl py-4 px-6 font-medium text-sm focus:ring-2 focus:ring-slate-900 outline-none transition-all" placeholder="Ex: Venda de Garrafa de Água" required>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Meio de Pagamento</label>
+                    <select name="metodo" class="w-full bg-slate-50 rounded-3xl py-4 px-6 font-bold text-xs focus:ring-2 focus:ring-slate-900 outline-none appearance-none cursor-pointer">
+                        <option value="DINHEIRO">Dinheiro (Espécie)</option>
+                        <option value="PIX">Transferência PIX</option>
+                        <option value="CREDITO">Cartão de Crédito</option>
+                        <option value="DEBITO">Cartão de Débito</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">Sincronizar Lançamento</button>
+                <button type="button" onclick="closeModal('modal-transacao')" class="w-full text-slate-300 font-black text-[10px] uppercase tracking-widest hover:text-slate-500 transition-all">Ignorar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function toggleDrawer(active) {
+            const drawer = document.getElementById('drawer-historico');
+            if (active) {
+                drawer.classList.remove('invisible');
+                document.body.classList.add('drawer-active');
+                setTimeout(() => {
+                    drawer.querySelector('.drawer-overlay').classList.replace('opacity-0', 'opacity-100');
+                }, 10);
+            } else {
+                document.body.classList.remove('drawer-active');
+                drawer.querySelector('.drawer-overlay').classList.replace('opacity-100', 'opacity-0');
+                setTimeout(() => {
+                    drawer.classList.add('invisible');
+                }, 400);
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleIcon = document.getElementById('toggle-icon');
+            const texts = document.querySelectorAll('.sidebar-text');
+            const logo = document.querySelector('.sidebar-logo');
+            
+            if (sidebar.classList.contains('w-64')) {
+                sidebar.classList.replace('w-64', 'w-20');
+                toggleIcon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+                texts.forEach(t => t.classList.add('hidden'));
+                if(logo) logo.classList.add('h-8');
+            } else {
+                sidebar.classList.replace('w-20', 'w-64');
+                toggleIcon.classList.replace('fa-chevron-right', 'fa-chevron-left');
+                texts.forEach(t => t.classList.remove('hidden'));
+                if(logo) logo.classList.remove('h-8');
+            }
+        }
+    </script>
+</body>
+</html>
+

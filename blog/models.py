@@ -10,6 +10,14 @@ class User(AbstractUser):
     birth_date = models.DateField(null=True, blank=True)
     avatar = models.ImageField(upload_to="user_avatars/", null=True, blank=True)
     website = models.URLField(max_length=100, blank=True)
+    
+    ROLE_CHOICES = (
+        ('ADMIN', 'Administrador'),
+        ('SECRETARIA', 'Secretaria'),
+        ('PROFESSOR', 'Professor'),
+        ('ALUNO', 'Aluno'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='ALUNO', verbose_name="Cargo")
 
     # Se você quiser adicionar campos aos grupos e permissões para evitar conflitos
     groups = models.ManyToManyField(
@@ -59,6 +67,8 @@ class Trainer(OrderedModel):
     )  # Para o título como "Professor"
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to="trainer_images/", blank=True, null=True)
+    user = models.OneToOneField('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='trainer_profile', verbose_name="Usuário de Login")
+
 
     def __str__(self):
         return self.name
@@ -90,11 +100,12 @@ class Schedule(models.Model):
     shift = models.CharField(max_length=20, choices=SHIFT_CHOICES, default="manha", verbose_name="Turno")
     start_time = models.TimeField(verbose_name="Início")
     end_time = models.TimeField(verbose_name="Fim")
-    program = models.ForeignKey(Program, on_delete=models.CASCADE, verbose_name="Modalidade")
-    trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE, verbose_name="Professor")
+    program = models.ForeignKey(Program, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Modalidade")
+    trainer = models.ForeignKey(Trainer, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Professor")
 
     def __str__(self):
-        return f"{self.get_day_display()} - {self.get_shift_display()} ({self.trainer.name})"
+        trainer_name = self.trainer.name if self.trainer else "Sem Professor"
+        return f"{self.get_day_display()} - {self.get_shift_display()} ({trainer_name})"
 
     class Meta:
         verbose_name = "Horário de Funcionamento"
@@ -158,15 +169,38 @@ class Plan(OrderedModel):
 import datetime
 
 class Aluno(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='aluno_perfil', verbose_name="Usuário de Login")
     matricula = models.CharField(max_length=20, unique=True, blank=True, null=True, verbose_name="Matrícula")
     nome_completo = models.CharField(max_length=200, verbose_name="Nome Completo")
     cpf = models.CharField(max_length=14, unique=True, verbose_name="CPF")
     data_nascimento = models.DateField(blank=True, null=True, verbose_name="Data de Nascimento")
+    SEXO_CHOICES = (
+        ('M', 'Masculino'),
+        ('F', 'Feminino'),
+        ('O', 'Outro'),
+    )
     email = models.EmailField(verbose_name="E-mail")
     whatsapp = models.CharField(max_length=20, verbose_name="WhatsApp")
+    STATUS_CHOICES = (
+        ('ATIVO', 'Ativo'),
+        ('SUSPENSO', 'Suspenso'),
+        ('INADIMPLENTE', 'Inadimplente'),
+        ('INATIVO', 'Inativo'),
+    )
+    sexo = models.CharField(max_length=1, choices=SEXO_CHOICES, blank=True, null=True, verbose_name="Sexo")
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='ATIVO', verbose_name="Status de Gestão")
+    valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Último Valor Pago")
     foto = models.ImageField(upload_to="alunos/fotos/", blank=True, null=True, verbose_name="Foto (Reconhecimento Facial)")
     digital = models.TextField(blank=True, null=True, verbose_name="Digital (Template Biométrico)")
     data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
+    
+    def is_active_pay(self):
+        """Verifica se o aluno tem pagamento em dia"""
+        from datetime import date
+        hoje = date.today()
+        if hasattr(self, 'acesso') and self.acesso.data_vencimento:
+            return self.acesso.data_vencimento >= hoje
+        return False
 
     def save(self, *args, **kwargs):
         if not self.matricula:
@@ -220,15 +254,56 @@ class PagamentoHistorico(models.Model):
     plano = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, verbose_name="Plano")
     transacao_id = models.CharField(max_length=100, blank=True, null=True, verbose_name="ID da Transação (Referência)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente', verbose_name="Status")
-    metodo_pagamento = models.CharField(max_length=50, blank=True, null=True, verbose_name="Método (Pix/Cartão)")
-    data_pagamento = models.DateTimeField(auto_now_add=True, verbose_name="Data")
+    data_pagamento = models.DateTimeField(auto_now_add=True, verbose_name="Data do Pagamento")
+    valor = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Valor Total")
+    metodo_pagamento = models.CharField(max_length=50, blank=True, null=True, verbose_name="Método de Pagamento")
 
     def __str__(self):
-        return f"Pagamento {self.id} - {self.aluno} - {self.status}"
+        return f"{self.aluno.nome_completo} - {self.plano.name if self.plano else 'Sem Plano'} ({self.status})"
 
     class Meta:
         verbose_name = "Histórico de Pagamento"
-        verbose_name_plural = "02. Gestão: Histórico de Pagamentos"
+        verbose_name_plural = "02. Gestão: Históricos de Pagamentos"
+
+class CaixaTurno(models.Model):
+    STATUS_CHOICES = [('ABERTO', 'Aberto'), ('FECHADO', 'Fechado')]
+    operador = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Operador")
+    abertura = models.DateTimeField(auto_now_add=True)
+    fechamento = models.DateTimeField(null=True, blank=True)
+    saldo_inicial = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Saldo Inicial (Abertura)")
+    saldo_final = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Saldo Final (Fechamento)")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ABERTO')
+    is_automatico = models.BooleanField(default=False, verbose_name="Fechamento Automático?")
+
+    def __str__(self):
+        return f"Caixa {self.id} - {self.operador.username} ({self.status})"
+
+    class Meta:
+        verbose_name = "Turno de Caixa"
+        verbose_name_plural = "10. Financeiro: Turnos de Caixa"
+
+class TransacaoCaixa(models.Model):
+    TIPO_CHOICES = [('ENTRADA', 'Entrada (+)'), ('SAIDA', 'Saída (-)')]
+    ORIGEM_CHOICES = [('MANUAL', 'Manual'), ('SITE', 'Site/Web'), ('APP', 'Aplicativo')]
+    METODO_CHOICES = [('DINHEIRO', 'Dinheiro'), ('PIX', 'PIX'), ('CREDITO', 'Cartão de Crédito'), ('DEBITO', 'Cartão de Débito')]
+    STATUS_CHOICES = [('NORMAL', 'Ativa'), ('ESTORNADO', 'Estornada')]
+    
+    caixa = models.ForeignKey(CaixaTurno, on_delete=models.CASCADE, related_name='transacoes')
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    origem = models.CharField(max_length=10, choices=ORIGEM_CHOICES, default='MANUAL')
+    metodo = models.CharField(max_length=15, choices=METODO_CHOICES)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='NORMAL')
+    descricao = models.CharField(max_length=200)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    data_hora = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        sign = "+" if self.tipo == 'ENTRADA' else "-"
+        return f"{sign} R$ {self.valor} ({self.descricao})"
+
+    class Meta:
+        verbose_name = "Movimentação de Caixa"
+        verbose_name_plural = "11. Financeiro: Movimentações"
 
 class ControleAcesso(models.Model):
     STATUS_CATRACA_CHOICES = [
@@ -247,6 +322,14 @@ class ControleAcesso(models.Model):
         verbose_name="Plano Aguardando 1ª Entrada",
         help_text="Plano pago, aguardando biometria para ativar e calcular vencimento."
     )
+
+    @property
+    def dias_vencimento(self):
+        from datetime import date
+        if self.data_vencimento:
+            diff = self.data_vencimento - date.today()
+            return diff.days
+        return None
 
     def __str__(self):
         return f"Acesso {self.aluno.nome_completo} - {self.status_catraca}"
@@ -343,17 +426,33 @@ def exportar_alunos_json(sender, instance, **kwargs):
                 'cpf': a.cpf,
                 'status': status,
                 'vencimento': vencimento,
+                'liberar_agora': a.acesso.abrir_catraca_agora if hasattr(a, 'acesso') else False,
                 'foto_url': a.foto.url if a.foto else None,
                 'tem_foto': bool(a.foto),
                 'tem_digital': bool(a.digital)
             })
         
-        caminho = "/home/ccs/Modelos/Rocks-Fit/rks-catraca/alunos_local.json"
         with open(caminho, 'w', encoding='utf-8') as f:
             json.dump({'alunos': lista}, f, ensure_ascii=False, indent=4)
+        
+        # Resetar a flag de liberação após exportar (usando update para não redisparar o signal)
+        from blog.models import ControleAcesso
+        ControleAcesso.objects.filter(abrir_catraca_agora=True).update(abrir_catraca_agora=False)
+        
         print(f"[SYNC] Arquivo local atualizado: {len(lista)} alunos.")
     except Exception as e:
         print(f"[SYNC] Erro ao gerar cache local: {e}")
+
+class GymSetting(models.Model):
+    name = models.CharField(max_length=100, default="Rocks-Fit")
+    logo = models.ImageField(upload_to='gym_logos/', blank=True, null=True)
+    
+    def __str__(self):
+        return f"Configurações de {self.name}"
+
+    class Meta:
+        verbose_name = "Configuração da Academia"
+        verbose_name_plural = "Configuração da Academia"
 
 # Também disparar quando o Controle de Acesso mudar (vencimento, etc)
 from django.db.models.signals import post_save

@@ -70,6 +70,17 @@
                         <li class="{% if request.resolver_match.url_name == 'tools' %}active{% endif %}">
                             <a href="{% url 'tools' %}">Ferramentas Grátis</a>
                         </li>
+                        <li class="login-item" style="margin-left: 20px;">
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'crm_dashboard' %}" class="btn-login-header" style="color: rgba(255,255,255,0.6) !important; font-weight: 500 !important; font-size: 14px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-gauge-high"></i> Gestão
+                                </a>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="btn-login-header" style="color: rgba(255,255,255,0.4) !important; font-weight: 500 !important; font-size: 14px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-lock" style="font-size: 12px;"></i> Acesso
+                                </a>
+                            {% endif %}
+                        </li>
                     </ul>
                 </nav>
             </div>

@@ -11,7 +11,7 @@ import base64
 import json
 
 # --- 🚀 GESTÃO ROCKS FIT v2.9.3 ---
-SITE_URL = "http://192.168.0.102:8000"       # IP da rede local (Linux -> Windows)
+SITE_URL = "https://academiarocksfit.com.br"       # Endereço Oficial na Nuvem
 SYNC_TOKEN = "rocksfit@2024"                 
 CATRACA_IP = "169.254.37.150"              
 CATRACA_PORTA = 1001                       

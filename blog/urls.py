@@ -27,4 +27,10 @@ urlpatterns = [
     path("api/app/login/", api_views.aluno_login, name="app_aluno_login"),
     path("api/app/schedule/", api_views.get_gym_schedule, name="app_gym_schedule"),
     path("api/app/profile/<int:aluno_id>/", api_views.aluno_profile, name="app_aluno_profile"),
+    
+    # CRM e Gestão Customizada
+    path("crm/", views.crm_dashboard, name="crm_dashboard"),
+    path('crm/alunos/', views.crm_alunos_list, name='crm_alunos_list'),
+    path('crm/aluno/<int:aluno_id>/', views.crm_aluno_detail, name='crm_aluno_detail'),
+    path('crm/caixa/', views.crm_caixa, name='crm_caixa'),
 ]

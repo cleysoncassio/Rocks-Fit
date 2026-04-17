@@ -109,6 +109,160 @@
             "foto_url": null,
             "tem_foto": false,
             "tem_digital": false
+        },
+        {
+            "id": 11,
+            "nome": "ADNA DEBORA (Ativo)",
+            "matricula": "RF20260012",
+            "cpf": "000.000.000-01",
+            "status": "LIBERADO",
+            "vencimento": "17/05/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 12,
+            "nome": "MARCOS VENANCIO (Inadimplente)",
+            "matricula": "RF20260013",
+            "cpf": "000.000.000-02",
+            "status": "BLOQUEADO",
+            "vencimento": "02/04/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 13,
+            "nome": "PRISCILA MENDES (Suspenso)",
+            "matricula": "RF20260014",
+            "cpf": "000.000.000-03",
+            "status": "BLOQUEADO",
+            "vencimento": "16/06/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 14,
+            "nome": "ROBERTO CARLOS (Inativo)",
+            "matricula": "RF20260015",
+            "cpf": "000.000.000-04",
+            "status": "BLOQUEADO",
+            "vencimento": "29/09/2025",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 15,
+            "nome": "Ricardo Almeida",
+            "matricula": "RF20260016",
+            "cpf": "111.222.333-00",
+            "status": "BLOQUEADO",
+            "vencimento": "13/04/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 16,
+            "nome": "Fernanda Costa",
+            "matricula": "RF20260017",
+            "cpf": "111.222.333-01",
+            "status": "BLOQUEADO",
+            "vencimento": "19/04/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 17,
+            "nome": "Thiago Silva",
+            "matricula": "RF20260018",
+            "cpf": "111.222.333-02",
+            "status": "BLOQUEADO",
+            "vencimento": "07/04/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 18,
+            "nome": "Juliana Rocha",
+            "matricula": "RF20260019",
+            "cpf": "111.222.333-03",
+            "status": "LIBERADO",
+            "vencimento": "11/04/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 19,
+            "nome": "Felipe Santos",
+            "matricula": "RF20260020",
+            "cpf": "111.222.333-04",
+            "status": "LIBERADO",
+            "vencimento": "05/04/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 20,
+            "nome": "Camila Oliveira",
+            "matricula": "RF20260021",
+            "cpf": "111.222.333-05",
+            "status": "LIBERADO",
+            "vencimento": "17/05/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 21,
+            "nome": "Bruno Henrique",
+            "matricula": "RF20260022",
+            "cpf": "111.222.333-06",
+            "status": "LIBERADO",
+            "vencimento": "21/05/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 22,
+            "nome": "Beatriz Lima",
+            "matricula": "RF20260023",
+            "cpf": "111.222.333-07",
+            "status": "LIBERADO",
+            "vencimento": "15/05/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 23,
+            "nome": "Gustavo Pereira",
+            "matricula": "RF20260024",
+            "cpf": "111.222.333-08",
+            "status": "BLOQUEADO",
+            "vencimento": "04/04/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
+        },
+        {
+            "id": 24,
+            "nome": "Larissa Souza",
+            "matricula": "RF20260025",
+            "cpf": "111.222.333-09",
+            "status": "LIBERADO",
+            "vencimento": "06/05/2026",
+            "foto_url": null,
+            "tem_foto": false,
+            "tem_digital": false
         }
     ]
 }
