@@ -92,6 +92,13 @@ STORAGES = {
     },
 }
 
+# Configurações de Segurança de Acesso (Djanog-Axes)
+# Ajuste para Hostman: O sistema deve olhar para o cabeçalho X-Forwarded-For 
+# para não bloquear o IP do Load Balancer (172.18.0.7)
+AXES_ENABLED = False  # 🚨 DESATIVADO TEMPORARIAMENTE PARA VOCÊ ENTRAR
+AXES_BEHIND_REVERSE_PROXY = True
+AXES_META_PRECEDENCE_ORDER = ('HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR')
+
 # Configurações Legado (Necessárias para compatibilidade de scripts de build na Hostman)
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 STATICFILES_STORAGE = 'cloudinary_storage.storage.StaticCloudinaryStorage'

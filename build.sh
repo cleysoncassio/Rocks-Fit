@@ -37,35 +37,42 @@ fi
 echo "Build concluído com sucesso."
 
 # 🚨 RESET DE SENHA TEMPORÁRIO (PARA PRODUÇÃO)
-echo "Iniciando script de emergência para reset de senha..."
+echo "Limpando bloqueios de segurança (Axes)..."
+python3 manage.py axes_reset || echo "Axes nao instalado ou erro ao limpar."
+
+echo "Iniciando script de emergência de Autenticação..."
 python3 -c "
 import os
 import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sitio.settings.production')
-django.setup()
-from blog.models import User
-# Reset ccs
-u = User.objects.filter(username='ccs').first()
-if u:
-    u.set_password('admin123')
-    u.is_staff = True
-    u.is_active = True
-    u.is_superuser = True
-    u.save()
-    print('✅ Senha de ccs resetada no PostgreSQL.')
-else:
-    print('⚠️ Usuario ccs nao encontrado em producao.')
+from django.contrib.auth import get_user_model
 
-# Cria suporte_rocks se não existir
-if not User.objects.filter(username='suporte_rocks').exists():
-    try:
-        User.objects.create_superuser('suporte_rocks', 'suporte@rocksfit.com.br', 'rocks2026')
-        print('✅ Usuario suporte_rocks criado no PostgreSQL.')
-    except Exception as e:
-        print(f'❌ Erro ao criar suporte_rocks: {e}')
-else:
-    u_s = User.objects.get(username='suporte_rocks')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sitio.settings.production')
+try:
+    django.setup()
+    User = get_user_model()
+    
+    # 1. Resetar CCS
+    u = User.objects.filter(username='ccs').first()
+    if u:
+        u.set_password('admin123')
+        u.is_staff = True
+        u.is_active = True
+        u.is_superuser = True
+        u.save()
+        print('✅ [SYNC] Senha de ccs redefinida no Banco de Produção.')
+    else:
+        print('⚠️ [SYNC] Usuário ccs não encontrado.')
+
+    # 2. Garantir Suporte Rocks
+    u_s, created = User.objects.get_or_create(username='suporte_rocks', defaults={'email': 'suporte@rocksfit.com.br'})
     u_s.set_password('rocks2026')
+    u_s.is_staff = True
+    u_s.is_active = True
+    u_s.is_superuser = True
     u_s.save()
-    print('✅ Senha de suporte_rocks atualizada no PostgreSQL.')
+    if created: print('✅ [SYNC] Novo superusuário suporte_rocks criado.')
+    else: print('✅ [SYNC] Senha do suporte_rocks atualizada.')
+
+except Exception as e:
+    print(f'❌ [ERRO CRÍTICO NO RESET]: {e}')
 "
