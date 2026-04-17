@@ -274,6 +274,7 @@ class SiteConfiguration(models.Model):
     # Logos
     intro_logo = models.ImageField(upload_to='site_images/', blank=True, null=True, verbose_name="Logo da Introdução")
     footer_logo = models.ImageField(upload_to='site_images/', blank=True, null=True, verbose_name="Logo do Rodapé")
+    footer_description = models.TextField(blank=True, null=True, verbose_name="Descrição do Rodapé", default="Desenvolvido por Cleyson Cassio - Eng. de Software")
 
     # PIX Configuration
     pix_key = models.CharField(max_length=255, blank=True, null=True, verbose_name="Chave PIX")

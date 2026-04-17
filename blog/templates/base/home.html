@@ -292,13 +292,13 @@
 											
 											<p class="fh5co-social-icons" style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 20px; width: 100%;">
 											{% for social in trainer.social_links.all %}
-											<a href="{{ social.link }}" target="_blank" title="{{ social.name }}" style="display: inline-flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 50%; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1);">
+											<a href="{{ social.link }}" target="_blank" title="{{ social.name }}" style="display: inline-flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 50%; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1);">
 												{% if social.icon_image %}
-													<img src="{{ social.icon_image.url }}" alt="{{ social.name }}" style="width: 32px; height: 32px; object-fit: contain;">
+													<img src="{{ social.icon_image.url }}" alt="{{ social.name }}" style="width: 40px; height: 40px; object-fit: contain;">
 												{% elif social.icon_url %}
-													<img src="{{ social.icon_url }}" alt="{{ social.name }}" style="width: 32px; height: 32px; object-fit: contain;">
+													<img src="{{ social.icon_url }}" alt="{{ social.name }}" style="width: 40px; height: 40px; object-fit: contain;">
 												{% else %}
-													<i class="icon-link" style="font-size: 24px;"></i>
+													<i class="icon-link" style="font-size: 30px;"></i>
 												{% endif %}
 											</a>
 											{% endfor %}

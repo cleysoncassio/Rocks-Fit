@@ -8,7 +8,7 @@
                         <img src="{% if site_config.footer_logo %}{{ site_config.footer_logo.url }}{% else %}{% static 'images/cleyson-logo.png' %}{% endif %}" alt="Academia Rocks Fit Logo" style="height: 100px; filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.3)); margin-bottom: 10px;">
                         
                         <p class="copyright-text" style="margin: 0; text-align: center;">
-                            &copy; 2026 Rocks-Fit.<br>Desenvolvido por <strong>Cleyson Cassio</strong> - Eng. de Software
+                            &copy; 2026 Rocks-Fit.<br>{{ site_config.footer_description|safe|linebreaksbr }}
                         </p>
 
                         <p class="fh5co-social-icons" style="margin: 0; display: flex; gap: 15px; justify-content: center;">
