@@ -1,0 +1,50 @@
+/* blog/static/css/admin_custom.css */
+
+/* Deixa as tabelas de redes sociais mais organizadas e responsivas */
+.inline-related table {
+    width: 100% !important;
+}
+
+.inline-related td {
+    vertical-align: middle !important;
+}
+
+/* Destaca o botão de apagar do Inline para não confundir com o do Professor */
+.inline-related .delete input[type="checkbox"] {
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    accent-color: #ff4d4d;
+}
+
+.inline-related .delete label {
+    color: #ff4d4d;
+    font-weight: bold;
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+/* Melhora a aparência dos campos de Upload e URL */
+.inline-related input[type="text"], 
+.inline-related input[type="url"],
+.inline-related input[type="file"] {
+    padding: 8px !important;
+    border-radius: 4px !important;
+    border: 1px solid #ddd !important;
+    width: 90% !important;
+}
+
+/* Faz a prévia do ícone se destacar */
+.field-ver_previa img {
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    border: 1px solid #444;
+}
+
+/* Ajuste de responsividade para telas menores no Admin */
+@media (max-width: 768px) {
+    .inline-related .tabular.inline-related td {
+        display: block;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+}

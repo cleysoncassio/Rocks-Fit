@@ -9,10 +9,32 @@ from .models import (ContactInfo, ContactMessage, Program,
 class TrainerSocialInline(admin.TabularInline):
     model = TrainerSocial
     extra = 1
+    fields = ('name', 'link', 'icon_image', 'icon_url', 'ver_previa')
+    readonly_fields = ('ver_previa',)
+
+    def ver_previa(self, obj):
+        from django.utils.html import format_html
+        if obj and obj.icon_image:
+            return format_html('<img src="{}" style="width: 32px; height: 32px; background: #333; padding: 2px; border-radius: 4px;" />', obj.icon_image.url)
+        elif obj and obj.icon_url:
+            return format_html('<img src="{}" style="width: 32px; height: 32px; background: #333; padding: 2px; border-radius: 4px;" />', obj.icon_url)
+        return "-"
+    ver_previa.short_description = "Prévia"
 
 class DeveloperSocialInline(admin.TabularInline):
     model = DeveloperSocial
     extra = 1
+    fields = ('name', 'link', 'icon_image', 'icon_url', 'ver_previa')
+    readonly_fields = ('ver_previa',)
+
+    def ver_previa(self, obj):
+        from django.utils.html import format_html
+        if obj and obj.icon_image:
+            return format_html('<img src="{}" style="width: 32px; height: 32px; background: #333; padding: 2px; border-radius: 4px;" />', obj.icon_image.url)
+        elif obj and obj.icon_url:
+            return format_html('<img src="{}" style="width: 32px; height: 32px; background: #333; padding: 2px; border-radius: 4px;" />', obj.icon_url)
+        return "-"
+    ver_previa.short_description = "Prévia"
 
 @admin.register(SiteConfiguration)
 class SiteConfigurationAdmin(admin.ModelAdmin):
@@ -21,6 +43,11 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
         if self.model.objects.count() >= 1:
             return False
         return super().has_add_permission(request)
+
+    class Media:
+        css = {
+            'all': ('css/admin_custom.css',)
+        }
 
 @admin.register(Plan)
 class PlanAdmin(OrderedModelAdmin):
@@ -48,6 +75,11 @@ class TrainerAdmin(OrderedModelAdmin):
     list_display = ("name", "title", "move_up_down_links")
     search_fields = ("name",)
     inlines = [TrainerSocialInline]
+
+    class Media:
+        css = {
+            'all': ('css/admin_custom.css',)
+        }
 
 @admin.register(TrainerSocial)
 class TrainerSocialAdmin(admin.ModelAdmin):
