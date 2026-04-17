@@ -4,7 +4,7 @@ import requests
 
 # --- CONFIGURAÇÕES DA ACADEMIA ---
 # O IP que você usa para acessar o site (ex: https://rocksfit.com)
-SITE_URL = "https://SEU-SITE-AQUI.com" 
+SITE_URL = "https://academiarocksfit.com.br" 
 API_ENDPOINT = f"{SITE_URL}/api/catraca-polling/"
 
 # --- CONFIGURAÇÕES DA CATRACA ---

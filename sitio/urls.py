@@ -24,6 +24,7 @@ from blog import views
 urlpatterns = [
     path("7becomb/", admin.site.urls),
     path("admin/", views.fake_admin, name="fake_admin"),
+    path("accounts/", include("django.contrib.auth.urls")), # Login, Logout, Recuperação de Senha
     path("", include("blog.urls")),
 ]
 

@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alunos | Rocks-Fit Enterprise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'snow': '#F9FAFB',
+                        'slate-ultra-light': '#F1F5F9',
+                        'vibrant-orange': '#FF6B00',
+                    },
+                    borderRadius: { '2xl': '16px' },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-sidebar { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .soft-shadow { box-shadow: 0 8px 30px rgb(0,0,0,0.04); }
+        .lux-table tr { transition: all 0.3s ease; }
+        .lux-table tr:hover { background-color: #F8FAFC; transform: scale(1.002); }
+    </style>
+</head>
+<body class="bg-snow font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- Sidebar Glassmorphism -->
+    <aside id="sidebar" class="w-64 bg-slate-900 flex flex-col z-50 shadow-2xl transition-all duration-300 relative border-r border-slate-800">
+        <!-- Botão de Esconder (Toggle) -->
+        <button onclick="toggleSidebar()" class="absolute -right-3 top-10 bg-vibrant-orange text-white h-7 w-7 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-[60]">
+            <i id="toggle-icon" class="fas fa-chevron-left text-[10px]"></i>
+        </button>
+
+        <a href="{% url 'crm_dashboard' %}" class="sidebar-brand p-10 flex flex-col items-center justify-center hover:opacity-80 transition-all border-b border-slate-800 pb-12 overflow-hidden">
+            {% if gym_settings.logo %}
+                <img src="{{ gym_settings.logo.url }}" class="max-h-32 w-auto object-contain sidebar-logo transition-all duration-300" alt="{{ gym_settings.name }}">
+            {% else %}
+                <div class="h-16 w-16 bg-vibrant-orange rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl shrink-0">
+                    {{ gym_settings.name|default:"R"|slice:":1" }}
+                </div>
+                <span class="text-2xl font-black tracking-tighter text-white mt-6 sidebar-text">{{ gym_settings.name|default:"Rocks-Fit" }}<span class="text-vibrant-orange">.</span></span>
+            {% endif %}
+        </a>
+
+        <nav class="flex-grow px-4 py-8 space-y-2 overflow-hidden">
+            <a href="{% url 'crm_dashboard' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl transition-all font-bold group whitespace-nowrap">
+                <i class="fas fa-grid-2 w-6 text-center group-hover:text-vibrant-orange text-lg"></i> 
+                <span class="sidebar-text truncate">Dashboard</span>
+            </a>
+            <a href="{% url 'crm_alunos_list' %}" class="flex items-center gap-4 px-4 py-4 text-white bg-vibrant-orange rounded-2xl transition-all font-bold shadow-lg shadow-orange-900/20 whitespace-nowrap">
+                <i class="fas fa-users-viewfinder w-6 text-center text-lg"></i> 
+                <span class="sidebar-text truncate">Alunos</span>
+            </a>
+            <a href="{% url 'crm_caixa' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl transition-all font-bold group whitespace-nowrap">
+                <i class="fas fa-cash-register w-6 text-center group-hover:text-vibrant-orange text-lg"></i> 
+                <span class="sidebar-text truncate">Financeiro</span>
+            </a>
+        </nav>
+
+        <div class="p-6 border-t border-slate-800">
+             <a href="{% url 'home' %}" class="text-[11px] font-black text-slate-400 hover:text-vibrant-orange transition-all flex items-center gap-4 px-2 uppercase tracking-widest">
+                <i class="fas fa-arrow-left w-6 text-center"></i> 
+                <span class="sidebar-text">Site</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-grow overflow-y-auto p-12 bg-snow transition-all duration-300">
+        <header class="flex justify-between items-end mb-12">
+            <div>
+                <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight">Estatísticas de Alunos</h1>
+                <p class="text-slate-400 mt-2 font-medium">Gerenciamento inteligente da base de clientes.</p>
+            </div>
+            <button onclick="location.href='/7becomb/blog/aluno/add/'" class="bg-vibrant-orange text-white px-8 py-4 rounded-2xl font-bold shadow-[0_10px_20px_rgba(255,107,0,0.2)] hover:shadow-[0_15px_30px_rgba(255,107,0,0.3)] hover:-translate-y-1 transition-all">
+                <i class="fas fa-plus mr-2"></i> Adicionar Aluno
+            </button>
+        </header>
+
+        <!-- Search Bar Luxe -->
+        <div class="bg-white p-2 rounded-2xl border border-gray-100 soft-shadow mb-10 max-w-2xl flex items-center gap-4">
+            <div class="pl-4 text-slate-300"><i class="fas fa-search"></i></div>
+            <form method="get" class="flex-grow">
+                <input type="text" name="q" value="{{ query }}" placeholder="Procurar por nome, CPF ou identificação..." class="w-100 py-3 bg-transparent border-none outline-none text-slate-600 font-medium placeholder:text-slate-300">
+            </form>
+            <button class="bg-slate-50 text-slate-400 px-6 py-3 rounded-xl font-bold text-xs hover:bg-slate-100 transition-all uppercase tracking-widest">Filtrar</button>
+        </div>
+
+        <!-- Table Luxe -->
+        <div class="bg-white rounded-3xl soft-shadow border border-gray-50 overflow-hidden">
+            <table class="w-full lux-table">
+                <thead class="bg-slate-50/50 border-b border-gray-100">
+                    <tr>
+                        <th class="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identidade</th>
+                        <th class="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Vencimento (Renovação)</th>
+                        <th class="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contato</th>
+                        <th class="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                        <th class="px-8 py-5"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for aluno in alunos %}
+                    <tr onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="cursor-pointer group">
+                        <td class="px-8 py-6">
+                            <div class="flex items-center gap-4">
+                                <!-- Borda Dinâmica na Foto -->
+                                <div class="h-12 w-12 rounded-xl p-[2px] 
+                                    {% if aluno.status == 'ATIVO' %}bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]
+                                    {% elif aluno.status == 'SUSPENSO' %}bg-orange-50
+                                    {% elif aluno.status == 'INADIMPLENTE' %}bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]
+                                    {% else %}bg-gray-400 opacity-50{% endif %}">
+                                    <img src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}https://ui-avatars.com/api/?name={{ aluno.nome_completo }}&background=fff&color=64748B{% endif %}" class="h-full w-full rounded-[10px] object-cover bg-white">
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-800 text-sm">{{ aluno.nome_completo }}</p>
+                                    <p class="text-[11px] text-slate-400 font-medium">Matrícula: {{ aluno.matricula }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-8 py-6">
+                            {% if aluno.acesso %}
+                            <div class="flex flex-col">
+                                <span class="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest border-2 w-fit 
+                                    {% if aluno.acesso.dias_vencimento < 0 %}
+                                        bg-red-50 text-red-500 border-red-100 animate-pulse
+                                    {% elif aluno.acesso.dias_vencimento <= 7 %}
+                                        bg-orange-50 text-orange-500 border-orange-100
+                                    {% else %}
+                                        bg-green-50 text-green-600 border-green-100
+                                    {% endif %}">
+                                    <i class="fas fa-calendar-alt mr-1"></i> {{ aluno.acesso.data_vencimento|date:"d/m/Y" }}
+                                </span>
+                                <span class="text-[8px] font-black uppercase tracking-tight mt-1 {% if aluno.acesso.dias_vencimento < 0 %}text-red-400{% else %}text-slate-300{% endif %}">
+                                    {% if aluno.acesso.dias_vencimento < 0 %}Vencido{% else %}Expira em {{ aluno.acesso.dias_vencimento }} dias{% endif %}
+                                </span>
+                            </div>
+                            {% else %}
+                            <span class="text-[9px] font-black text-slate-200 uppercase tracking-widest">Sem Plano Ativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-8 py-6 text-sm text-slate-500 font-medium">
+                            {{ aluno.whatsapp }}
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full
+                                {% if aluno.status == 'ATIVO' %}bg-green-50 text-green-500
+                                {% elif aluno.status == 'SUSPENSO' %}bg-orange-50 text-orange-500
+                                {% elif aluno.status == 'INADIMPLENTE' %}bg-red-50 text-red-500
+                                {% else %}bg-gray-100 text-gray-500{% endif %}">
+                                {{ aluno.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6 text-right">
+                             <span class="text-slate-200 group-hover:text-vibrant-orange transition-colors"><i class="fas fa-chevron-right"></i></span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-8 py-20 text-center text-slate-300 font-medium italic">Nenhum registro encontrado na base enterprise.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleIcon = document.getElementById('toggle-icon');
+            const texts = document.querySelectorAll('.sidebar-text');
+            const logo = document.querySelector('.sidebar-logo');
+            
+            if (sidebar.classList.contains('w-64')) {
+                sidebar.classList.replace('w-64', 'w-20');
+                toggleIcon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+                texts.forEach(t => t.classList.add('hidden'));
+                if(logo) logo.classList.add('h-8');
+            } else {
+                sidebar.classList.replace('w-20', 'w-64');
+                toggleIcon.classList.replace('fa-chevron-right', 'fa-chevron-left');
+                texts.forEach(t => t.classList.remove('hidden'));
+                if(logo) logo.classList.remove('h-8');
+            }
+        }
+    </script>
+</body>
+</html>

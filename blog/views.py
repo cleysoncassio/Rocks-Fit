@@ -1,5 +1,8 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.db import models
+from datetime import date, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from django_ratelimit.decorators import ratelimit
 import json
@@ -7,6 +10,32 @@ import json
 from blog.models import ContactInfo, Program, Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso
 from .services import processar_vencimento_catraca
 from .forms import ContactForm
+
+def registrar_venda_no_caixa(valor, descricao, metodo='PIX', origem='SITE'):
+    """Helper para registrar vendas automáticas vindas do Site ou App no caixa aberto."""
+    from blog.models import CaixaTurno, TransacaoCaixa
+    from django.utils import timezone
+    
+    # Tenta encontrar um caixa aberto hoje. Prioriza caixas abertos.
+    caixa = CaixaTurno.objects.filter(status='ABERTO').order_by('-abertura').first()
+    
+    if not caixa:
+        # Se não houver caixa aberto (ex: venda de madrugada), 
+        # cria um 'Caixa de Sistema' automático se necessário ou ignora se a política for rígida.
+        # Aqui, vamos registrar no último caixa fechado como fallback ou criar um temporário.
+        # Para este ERP, vamos apenas registrar se houver um caixa para auditoria real.
+        return False
+
+    TransacaoCaixa.objects.create(
+        caixa=caixa,
+        tipo='ENTRADA',
+        valor=valor,
+        descricao=descricao,
+        metodo=metodo,
+        origem=origem
+    )
+    return True
+
 
 def home(request):
     from django.utils import timezone
@@ -227,7 +256,16 @@ def dev_simular_pagamento(request):
         PagamentoHistorico.objects.create(
             aluno=aluno, plano=plano, status='pago',
             metodo_pagamento='dev_simulate',
-            transacao_id='DEV-SIM-' + cpf_limpo
+            transacao_id='DEV-SIM-' + cpf_limpo,
+            valor=plano.price
+        )
+        
+        # Integrar ao Caixa
+        registrar_venda_no_caixa(
+            valor=plano.price, 
+            descricao=f"Matrícula: {aluno.nome_completo} ({plano.name})",
+            metodo='PIX', 
+            origem='SITE'
         )
 
         acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
@@ -275,7 +313,16 @@ def infinitepay_webhook(request):
             if historico:
                 historico.status = 'pago'
                 historico.transacao_id = str(payload.get('id', ''))
+                historico.valor = historico.plano.price if historico.plano else 0
                 historico.save()
+
+                # Integrar ao Caixa
+                registrar_venda_no_caixa(
+                    valor=historico.valor,
+                    descricao=f"Pagamento InfinitePay: {aluno.nome_completo}",
+                    metodo='CREDITO',
+                    origem='APP'
+                )
 
             acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
             plano = historico.plano if historico and historico.plano else None
@@ -514,3 +561,287 @@ def aluno_update_data_api(request):
 def whatsapp_webhook(request):
     """Endpoint 'buraco negro' para silenciar as insistentes requisições de webhook do WhatsApp que geram erro 400."""
     return JsonResponse({'status': 'ok'})
+
+@login_required
+def crm_dashboard(request):
+    """Dashboard com Inteligência Artificial, Demografia e Plano de Ação"""
+    alunos = Aluno.objects.all()
+    total_alunos = alunos.count()
+    hoje = date.today()
+    proximos_7_dias = hoje + timedelta(days=7)
+    
+    ativos = Aluno.objects.filter(acesso__data_vencimento__gte=hoje).count()
+    inativos = total_alunos - ativos
+    
+    # 1. Análise Demográfica (Inspirado no request do usuário)
+    # Gênero
+    mulheres = alunos.filter(sexo='F').count()
+    homens = alunos.filter(sexo='M').count()
+    
+    # Idade Média
+    idades = []
+    for a in alunos:
+        if a.data_nascimento:
+            idade = hoje.year - a.data_nascimento.year - ((hoje.month, hoje.day) < (a.data_nascimento.month, a.data_nascimento.day))
+            idades.append(idade)
+    
+    idade_media = sum(idades) / len(idades) if idades else 0
+    
+    # 2. Geração de Ações Estratégicas (Relatório Automatizado)
+    acoes_gestor = []
+    if total_alunos > 0:
+        if churn_rate := (inativos / total_alunos * 100) > 15:
+            acoes_gestor.append({"titulo": "Reduzir Evasão", "msg": "Ofertar 10% de desconto para renovações feitas hoje."})
+        
+        if mulheres > homens:
+            acoes_gestor.append({"titulo": "Marketing Feminino", "msg": "Criar campanha de modalidade focada no público feminino (ex: Dance/Pilates)."})
+        
+        if idade_media > 40:
+             acoes_gestor.append({"titulo": "Saúde Senior", "msg": "Implementar horários de treinamento focado em mobilidade."})
+        else:
+             acoes_gestor.append({"titulo": "Performance Jovem", "msg": "Lançar desafios e rankings de força no Instagram."})
+    
+    # Alertas
+    aniversariantes = Aluno.objects.filter(data_nascimento__month=hoje.month, data_nascimento__day=hoje.day)
+    vencimentos_proximos = Aluno.objects.filter(acesso__data_vencimento__range=[hoje, proximos_7_dias])
+    
+    # Insights curtos para o painel principal
+    taxa_churn = (inativos / total_alunos * 100) if total_alunos > 0 else 0
+    ai_insights = "Análise concluída. Clique no botão de Auditoria para ver o Plano de Ação."
+
+    context = {
+        'total_alunos': total_alunos,
+        'ativos': ativos,
+        'inativos': inativos,
+        'aniversariantes': aniversariantes,
+        'vencimentos_proximos': vencimentos_proximos,
+        'ai_insights': ai_insights,
+        'churn_rate': round(taxa_churn, 1),
+        'idade_media': round(idade_media, 1),
+        'perfil_mulheres': mulheres,
+        'perfil_homens': homens,
+        'acoes_gestor': acoes_gestor,
+        'user_role': getattr(request.user, 'role', 'ALUNO'),
+    }
+    return render(request, 'crm/dashboard.html', context)
+
+@login_required
+def crm_alunos_list(request):
+    """Lista de Alunos com Busca por Nome, CPF e Telefone"""
+    query = request.GET.get('q', '')
+    if query:
+        # Busca tripla: Nome, CPF ou WhatsApp
+        alunos = Aluno.objects.filter(
+            models.Q(nome_completo__icontains=query) | 
+            models.Q(cpf__icontains=query) | 
+            models.Q(whatsapp__icontains=query) |
+            models.Q(matricula__icontains=query)
+        ).distinct()
+    else:
+        alunos = Aluno.objects.all().order_by('-data_cadastro')
+    
+    context = {
+        'alunos': alunos,
+        'query': query
+    }
+    return render(request, 'crm/alunos_list.html', context)
+
+@login_required
+def crm_aluno_detail(request, aluno_id):
+    """Gestão Individual do Aluno (Financeiro, Treinos, Pontuação)"""
+    from blog.models import Aluno, PagamentoHistorico, Plan
+    from django.utils import timezone
+    from django.contrib import messages
+    
+    aluno = get_object_or_404(Aluno, id=aluno_id)
+    
+    if request.method == 'POST' and 'foto' in request.FILES:
+        aluno.foto = request.FILES['foto']
+        aluno.save()
+        messages.success(request, "Foto do perfil atualizada!")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
+    if request.method == 'POST' and 'faturar' in request.POST:
+        valor = request.POST.get('valor')
+        metodo = request.POST.get('metodo')
+        plano_id = request.POST.get('plano')
+        
+        # 1. Registrar no Histórico do Aluno
+        PagamentoHistorico.objects.create(
+            aluno=aluno,
+            plano_id=plano_id if plano_id else None,
+            valor=valor,
+            status='pago',
+            data_pagamento=timezone.now(),
+            metodo_pagamento=metodo
+        )
+        
+        # 2. Registrar no Caixa (se houver turno aberto)
+        registrar_venda_no_caixa(
+            valor=float(valor),
+            descricao=f"Mensalidade/Taxa: {aluno.nome_completo}",
+            metodo=metodo,
+            origem='MANUAL'
+        )
+        
+        messages.success(request, f"Pagamento de R$ {valor} processado e enviado ao caixa.")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
+    if request.method == 'POST' and 'liberar_agora' in request.POST:
+        if hasattr(aluno, 'acesso'):
+            aluno.acesso.abrir_catraca_agora = True
+            aluno.acesso.save()
+            messages.success(request, f"Comando enviado! A catraca será liberada para {aluno.nome_completo}.")
+        else:
+            messages.error(request, "Este aluno não possui registro de controle de acesso.")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
+    acesso = getattr(aluno, 'acesso', None)
+    pagamentos = aluno.pagamentos.all().order_by('-data_pagamento')
+    
+    total_investido = sum(p.valor for p in pagamentos if p.status == 'pago')
+    debitos = sum(p.valor for p in pagamentos if p.status == 'pendente')
+    
+    rockspoints = int(total_investido)
+    credito = 0.00
+    planos = Plan.objects.all()
+    
+    context = {
+        'aluno': aluno,
+        'acesso': acesso,
+        'pagamentos': pagamentos,
+        'total_pago': total_investido,
+        'debitos': debitos,
+        'rockspoints': rockspoints,
+        'credito': credito,
+        'planos': planos,
+    }
+    return render(request, 'crm/aluno_detail.html', context)
+
+@login_required
+def crm_caixa(request):
+    """
+    Novo Módulo Financeiro: Caixa Perpétuo Diário.
+    Automação baseada no ciclo de 24h. Reseta automaticamente à meia-noite.
+    """
+    from blog.models import CaixaTurno, TransacaoCaixa, User
+    from django.utils import timezone
+    from django.db.models import Sum
+    from django.contrib import messages
+    
+    agora = timezone.localtime()
+    hoje = agora.date()
+
+    # 🔄 Lógica de Automação: Garantir que o caixa atual seja o do dia de hoje
+    # 1. Tenta encontrar qualquer caixa aberto
+    caixa_atual = CaixaTurno.objects.filter(status='ABERTO').first()
+    
+    if caixa_atual and caixa_atual.abertura.date() < hoje:
+        # CAIXA ANTIGO DETECTADO! Fechamento automático "Retroativo" (Meia-Noite)
+        resumo_velho = caixa_atual.transacoes.aggregate(
+            total_in=Sum('valor', filter=models.Q(tipo='ENTRADA')),
+            total_out=Sum('valor', filter=models.Q(tipo='SAIDA'))
+        )
+        total_in = resumo_velho['total_in'] or 0
+        total_out = resumo_velho['total_out'] or 0
+        
+        caixa_atual.saldo_final = caixa_atual.saldo_inicial + total_in - total_out
+        caixa_atual.status = 'FECHADO'
+        caixa_atual.is_automatico = True
+        # Fecha no último segundo do dia em que foi aberto
+        caixa_atual.fechamento = timezone.make_aware(
+            timezone.datetime.combine(caixa_atual.abertura.date(), timezone.datetime.max.time())
+        )
+        caixa_atual.save()
+        
+        # Cria o novo para HOJE começando com o saldo de ontem
+        caixa_atual = CaixaTurno.objects.create(
+            operador=request.user,
+            saldo_inicial=caixa_atual.saldo_final,
+            status='ABERTO',
+            is_automatico=True
+        )
+        messages.info(request, "Ciclo diário resetado. Saldo acumulado de ontem transportado.")
+
+    elif not caixa_atual:
+        # NENHUM CAIXA ABERTO: Abertura automática de emergência
+        ultimo_fechado = CaixaTurno.objects.filter(status='FECHADO').order_by('-fechamento').first()
+        saldo_inicial = ultimo_fechado.saldo_final if ultimo_fechado else 0
+        
+        caixa_atual = CaixaTurno.objects.create(
+            operador=request.user,
+            saldo_inicial=saldo_inicial,
+            status='ABERTO',
+            is_automatico=True
+        )
+        messages.success(request, f"Caixa diário iniciado. Saldo inicial: R$ {saldo_inicial}")
+
+    # 2. Processar Lançamentos Manuais e Estornos (POST)
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'transacao' and caixa_atual:
+            try:
+                TransacaoCaixa.objects.create(
+                    caixa=caixa_atual,
+                    tipo=request.POST.get('tipo'),
+                    valor=request.POST.get('valor'),
+                    descricao=request.POST.get('descricao'),
+                    metodo=request.POST.get('metodo', 'DINHEIRO'),
+                    origem='MANUAL'
+                )
+                messages.success(request, "Operação financeira registrada com sucesso.")
+            except Exception as e:
+                messages.error(request, f"Erro ao registrar: {e}")
+            return redirect('crm_caixa')
+
+        if acao == 'estorno' and caixa_atual:
+            try:
+                tx_id = request.POST.get('transacao_id')
+                tx = TransacaoCaixa.objects.get(id=tx_id, status='NORMAL')
+                tx.status = 'ESTORNADO'
+                tx.save()
+                messages.warning(request, f"Estorno da transação #{tx_id} realizado com sucesso.")
+            except Exception as e:
+                messages.error(request, f"Erro ao estornar: {e}")
+            return redirect('crm_caixa')
+
+        if acao == 'fechar_manual' and caixa_atual:
+            # Fechamento manual antecipado se o gestor desejar (Apenas Ativas)
+            resumo_calc = caixa_atual.transacoes.filter(status='NORMAL').aggregate(
+                total_in=Sum('valor', filter=models.Q(tipo='ENTRADA')),
+                total_out=Sum('valor', filter=models.Q(tipo='SAIDA'))
+            )
+            tin = resumo_calc['total_in'] or 0
+            tout = resumo_calc['total_out'] or 0
+            caixa_atual.saldo_final = caixa_atual.saldo_inicial + tin - tout
+            caixa_atual.status = 'FECHADO'
+            caixa_atual.fechamento = timezone.now()
+            caixa_atual.save()
+            messages.warning(request, "Caixa encerrado manualmente antes do ciclo automático.")
+            return redirect('crm_caixa')
+
+    # 3. Dados do Dashboard (Filtrando as ATIVAS)
+    transacoes = caixa_atual.transacoes.all().order_by('-data_hora')
+    resumo = {'dinheiro': 0, 'pix': 0, 'cartao': 0, 'saidas': 0, 'total': 0, 'volume_h': []}
+    
+    for t in [tx for tx in transacoes if tx.status == 'NORMAL']:
+        if t.tipo == 'ENTRADA':
+            if t.metodo == 'DINHEIRO': resumo['dinheiro'] += t.valor
+            elif t.metodo == 'PIX': resumo['pix'] += t.valor
+            else: resumo['cartao'] += t.valor
+            resumo['total'] += t.valor
+        else:
+            resumo['saidas'] += t.valor
+            resumo['total'] -= t.valor
+
+    # Histórico de fechamentos
+    historico_caixas = CaixaTurno.objects.filter(status='FECHADO').order_by('-fechamento')[:15]
+
+    context = {
+        'caixa': caixa_atual,
+        'transacoes': transacoes,
+        'resumo': resumo,
+        'historico_caixas': historico_caixas,
+    }
+    return render(request, 'crm/caixa.html', context)

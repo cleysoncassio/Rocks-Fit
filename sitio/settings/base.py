@@ -67,6 +67,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "blog.context_processors.site_settings",
+                "blog.context_processors.gym_branding",
             ],
         },
     },
@@ -139,9 +140,9 @@ CONTENT_SECURITY_POLICY = {
         'default-src': ("'self'",),
         'font-src': ("'self'", 'https://res.cloudinary.com', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
         'frame-src': ("'self'", 'https://www.googletagmanager.com', 'https://www.google.com'),
-        'img-src': ("'self'", 'data:', 'https://res.cloudinary.com', 'https://maps.google.com', 'https://maps.gstatic.com', 'https://www.googletagmanager.com'),
+        'img-src': ("'self'", 'data:', 'https://res.cloudinary.com', 'https://maps.google.com', 'https://maps.gstatic.com', 'https://www.googletagmanager.com', 'https://blog.nextfit.com.br'),
         'connect-src': ("'self'", 'https://res.cloudinary.com', 'https://www.googletagmanager.com'),
-        'script-src': ("'self'", "'unsafe-inline'", 'https://res.cloudinary.com', 'https://www.googletagmanager.com'),
+        'script-src': ("'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://res.cloudinary.com', 'https://www.googletagmanager.com', 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net'),
         'style-src': ("'self'", "'unsafe-inline'", 'https://res.cloudinary.com', 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'),
         'style-src-attr': ("'self'", "'unsafe-inline'")
     }
@@ -154,3 +155,10 @@ RATELIMIT_CACHE_PREFIX = 'ratelimit'
 
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = True  # Para desenvolvimento do App do Aluno
+
+# Custom User Model
+AUTH_USER_MODEL = 'blog.User'
+
+# Redirecionamento de Login/Logout
+LOGIN_REDIRECT_URL = '/crm/'
+LOGOUT_REDIRECT_URL = '/'

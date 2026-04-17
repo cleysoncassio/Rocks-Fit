@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Analytics | Rocks-Fit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'snow': '#F9FAFB',
+                        'slate-800': '#1E293B',
+                        'vibrant-orange': '#FF6B00',
+                        'vibrant-green': '#2ECC71',
+                        'qwen-gold': '#D4AF37',
+                    },
+                    borderRadius: { '2xl': '16px', '3xl': '24px' },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-sidebar { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .soft-shadow { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04); }
+        .card-lux { background: #FFFFFF; border: 1px solid rgba(229, 231, 235, 0.5); border-radius: 24px; transition: all 0.4s; }
+        .modal-bg { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); display: none; }
+        .btn-gold { background: linear-gradient(135deg, #FF6B00 0%, #FFB380 100%); color: white; box-shadow: 0 10px 20px rgba(255,107,0,0.2); }
+    </style>
+</head>
+<body class="bg-snow font-sans text-slate-800 flex h-screen overflow-hidden">
+
+    <!-- Sidebar SaaS Premium -->
+    <aside id="sidebar" class="w-64 bg-slate-900 flex flex-col z-50 shadow-2xl transition-all duration-300 relative border-r border-slate-800">
+        <!-- Botão de Esconder (Toggle) -->
+        <button onclick="toggleSidebar()" class="absolute -right-3 top-10 bg-vibrant-orange text-white h-7 w-7 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-[60]">
+            <i id="toggle-icon" class="fas fa-chevron-left text-[10px]"></i>
+        </button>
+
+        <a href="{% url 'crm_dashboard' %}" class="sidebar-brand p-10 flex flex-col items-center justify-center hover:opacity-80 transition-all border-b border-slate-800 pb-12 overflow-hidden">
+            {% if gym_settings.logo %}
+                <img src="{{ gym_settings.logo.url }}" class="max-h-32 w-auto object-contain sidebar-logo transition-all duration-300" alt="{{ gym_settings.name }}">
+            {% else %}
+                <div class="h-16 w-16 bg-vibrant-orange rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl shrink-0">
+                    {{ gym_settings.name|default:"R"|slice:":1" }}
+                </div>
+                <span class="text-2xl font-black tracking-tighter text-white mt-6 sidebar-text">{{ gym_settings.name|default:"Rocks-Fit" }}<span class="text-vibrant-orange">.</span></span>
+            {% endif %}
+        </a>
+
+        <nav class="flex-grow px-4 py-8 space-y-2 overflow-hidden">
+            <a href="#" class="flex items-center gap-4 px-4 py-4 text-white bg-vibrant-orange rounded-2xl font-bold transition-all shadow-lg shadow-orange-900/20 whitespace-nowrap">
+                <i class="fas fa-chart-line w-6 text-center text-lg"></i> 
+                <span class="sidebar-text truncate">Dashboard</span>
+            </a>
+            <a href="{% url 'crm_alunos_list' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl font-bold transition-all group whitespace-nowrap">
+                <i class="fas fa-users w-6 text-center group-hover:text-vibrant-orange transition-all text-lg"></i> 
+                <span class="sidebar-text truncate">Alunos</span>
+            </a>
+            <a href="{% url 'crm_caixa' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl font-bold transition-all group whitespace-nowrap">
+                <i class="fas fa-cash-register w-6 text-center group-hover:text-vibrant-orange transition-all text-lg"></i> 
+                <span class="sidebar-text truncate">Financeiro</span>
+            </a>
+        </nav>
+
+        <div class="p-6 border-t border-slate-800">
+            <a href="{% url 'logout' %}" class="text-[11px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest flex items-center gap-4 px-2">
+                <i class="fas fa-sign-out-alt w-6 text-center"></i> 
+                <span class="sidebar-text">Sair</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-grow overflow-y-auto p-12 bg-snow transition-all duration-300">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-4xl font-black text-slate-800 tracking-tight uppercase">Estratégia Enterprise</h1>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Centro de Comando: {{ gym_settings.name|default:"Rocks-Fit" }}</p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="openAuditModal()" class="btn-gold px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all">
+                    <i class="fas fa-brain mr-2"></i> Auditoria de Estratégia
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-4 gap-8 mb-10">
+            <div class="card-lux p-8 soft-shadow text-center">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Idade Média</p>
+                <p class="text-3xl font-black text-slate-800">{{ idade_media }} <span class="text-xs font-medium text-slate-400">anos</span></p>
+            </div>
+            <div class="card-lux p-8 soft-shadow text-center border-b-4 border-vibrant-orange">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Público Feminino</p>
+                <p class="text-3xl font-black text-slate-800">{{ perfil_mulheres }}</p>
+            </div>
+            <div class="card-lux p-8 soft-shadow text-center border-b-4 border-blue-500">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Público Masculino</p>
+                <p class="text-3xl font-black text-slate-800">{{ perfil_homens }}</p>
+            </div>
+            <div class="card-lux p-8 soft-shadow text-center">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa de Churn</p>
+                <p class="text-3xl font-black text-red-500">{{ churn_rate }}%</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-8">
+            <div class="col-span-2 card-lux p-10 soft-shadow">
+                <h3 class="font-black text-slate-800 text-lg mb-8 uppercase tracking-widest">Fluxo Mensal de Matrículas</h3>
+                <canvas id="revChart" height="150"></canvas>
+            </div>
+            <div class="card-lux p-10 soft-shadow bg-slate-900 border-none text-white flex flex-col justify-center">
+                <div class="h-12 w-12 bg-vibrant-orange rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,107,0,0.5)]">
+                    <i class="fas fa-bolt text-lg"></i>
+                </div>
+                <p class="text-xs font-black text-vibrant-orange uppercase tracking-widest mb-2">Insight Instantâneo</p>
+                <p class="text-lg font-medium italic opacity-90 leading-relaxed">{{ ai_insights }}</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Auditoria Estratégica -->
+    <div id="auditModal" class="fixed inset-0 modal-bg z-[100] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-2xl rounded-[32px] soft-shadow overflow-hidden transform transition-all">
+            <div class="p-10 bg-gradient-to-br from-slate-900 to-slate-800 text-white relative">
+                <button onclick="closeAuditModal()" class="absolute top-8 right-8 text-white/50 hover:text-white transition-all"><i class="fas fa-times text-xl"></i></button>
+                <div class="inline-flex items-center gap-2 text-[10px] font-black tracking-widest text-vibrant-orange bg-white/5 px-3 py-1 rounded-full mb-6 uppercase border border-white/10">
+                    <i class="fas fa-brain"></i> Qwen Strategic Hub
+                </div>
+                <h2 class="text-3xl font-black tracking-tight">Relatório de Ações Estratégicas</h2>
+                <p class="mt-2 text-slate-400 font-medium">Análise baseada em {{ total_alunos }} alunos cadastrados.</p>
+            </div>
+            <div class="p-10 space-y-6">
+                {% for acao in acoes_gestor %}
+                <div class="flex gap-6 p-6 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-vibrant-orange transition-all">
+                    <div class="h-12 w-12 rounded-xl bg-white soft-shadow flex items-center justify-center text-vibrant-orange font-black text-xl">{{ forloop.counter }}</div>
+                    <div>
+                        <h4 class="font-black text-slate-800 uppercase text-xs tracking-widest mb-1">{{ acao.titulo }}</h4>
+                        <p class="text-sm text-slate-500 leading-relaxed">{{ acao.msg }}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center text-slate-400 italic">Nenhuma ação necessária no momento. A gestão está otimizada!</p>
+                {% endfor %}
+
+                <button onclick="sendToWhatsApp()" class="w-full bg-[#25D366] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-green-500/20 hover:scale-[1.02] transition-all mt-6">
+                    <i class="fab fa-whatsapp mr-2 text-lg"></i> Enviar Plano para o Gestor (WhatsApp)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openAuditModal() { document.getElementById('auditModal').style.display = 'flex'; }
+        function closeAuditModal() { document.getElementById('auditModal').style.display = 'none'; }
+
+        function sendToWhatsApp() {
+            let msg = "🚀 *Rocks-Fit Strategic Report*\n\n";
+            {% for acao in acoes_gestor %}
+            msg += "*{{ forloop.counter }}. {{ acao.titulo }}*\n{{ acao.msg }}\n\n";
+            {% endfor %}
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleIcon = document.getElementById('toggle-icon');
+            const texts = document.querySelectorAll('.sidebar-text');
+            const logo = document.querySelector('.sidebar-logo');
+            
+            if (sidebar.classList.contains('w-64')) {
+                sidebar.classList.replace('w-64', 'w-20');
+                toggleIcon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+                texts.forEach(t => t.classList.add('hidden'));
+                if(logo) logo.classList.add('h-8');
+            } else {
+                sidebar.classList.replace('w-20', 'w-64');
+                toggleIcon.classList.replace('fa-chevron-right', 'fa-chevron-left');
+                texts.forEach(t => t.classList.remove('hidden'));
+                if(logo) logo.classList.remove('h-8');
+            }
+        }
+
+        // Mini Chart
+        const ctx = document.getElementById('revChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                datasets: [{
+                    data: [20, 45, 28, 60, 52, 75],
+                    borderColor: '#FF6B00',
+                    borderWidth: 5,
+                    fill: false,
+                    tension: 0.5,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { display: false } },
+                    x: { grid: { display: false }, ticks: { color: '#94A3B8', font: { weight: '800', size: 10 } } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
