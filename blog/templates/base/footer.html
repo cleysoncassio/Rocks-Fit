@@ -15,9 +15,9 @@
                             {% for social in site_config.social_links.all %}
                             <a href="{{ social.link }}" target="_blank" title="{{ social.name }}">
                                 {% if social.icon_image %}
-                                    <img src="{{ social.icon_image.url }}" alt="{{ social.name }}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);">
+                                    <img src="{{ social.icon_image.url }}" alt="{{ social.name }}" style="width: 24px; height: 24px; object-fit: contain;">
                                 {% elif social.icon_url %}
-                                    <img src="{{ social.icon_url }}" alt="{{ social.name }}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);">
+                                    <img src="{{ social.icon_url }}" alt="{{ social.name }}" style="width: 24px; height: 24px; object-fit: contain;">
                                 {% else %}
                                     <i class="icon-link"></i>
                                 {% endif %}

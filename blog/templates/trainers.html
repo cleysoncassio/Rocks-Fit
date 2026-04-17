@@ -74,13 +74,13 @@
 										<h3>{{ trainer.name }}</h3>
 										<span>{{ trainer.title }}</span>
 										<p>{{ trainer.description }}</p>
-										<p class="fh5co-social-icons">
+										<p class="fh5co-social-icons" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; margin-top: 10px;">
 											{% for social in trainer.social_links.all %}
-											<a href="{{ social.link }}" target="_blank" title="{{ social.name }}">
+											<a href="{{ social.link }}" target="_blank" title="{{ social.name }}" style="display: inline-flex; align-items: center; justify-content: center;">
 												{% if social.icon_image %}
-													<img src="{{ social.icon_image.url }}" alt="{{ social.name }}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);">
+													<img src="{{ social.icon_image.url }}" alt="{{ social.name }}" style="width: 24px; height: 24px; object-fit: contain;">
 												{% elif social.icon_url %}
-													<img src="{{ social.icon_url }}" alt="{{ social.name }}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);">
+													<img src="{{ social.icon_url }}" alt="{{ social.name }}" style="width: 24px; height: 24px; object-fit: contain;">
 												{% else %}
 													<i class="icon-link"></i>
 												{% endif %}
