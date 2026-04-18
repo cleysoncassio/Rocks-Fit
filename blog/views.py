@@ -684,7 +684,30 @@ def crm_aluno_detail(request, aluno_id):
     if request.method == 'POST' and 'foto' in request.FILES:
         aluno.foto = request.FILES['foto']
         aluno.save()
-        messages.success(request, "Foto do perfil atualizada!")
+        
+        # Se o aluno estava aguardando biometria para ativar o plano, ativa agora!
+        from blog.models import ControleAcesso
+        acesso, created = ControleAcesso.objects.get_or_create(aluno=aluno)
+        
+        if acesso.status_catraca == 'aguardando_biometria' and acesso.plano_pendente:
+            from datetime import timedelta
+            plano = acesso.plano_pendente
+            hoje_local = timezone.localtime(timezone.now()).date()
+            
+            # Regra do Domingo
+            base_data = hoje_local
+            if hoje_local.weekday() == 6: # Domingo
+                base_data = hoje_local + timedelta(days=1)
+                
+            acesso.data_vencimento = base_data + timedelta(days=plano.duration_days)
+            acesso.status_catraca = 'liberado'
+            acesso.plano_pendente = None
+            acesso.abrir_catraca_agora = True # Abre na hora pós-foto!
+            acesso.save()
+            messages.success(request, f"Biometria Facial Cadastrada! Plano '{plano.name}' ativado e catraca liberada.")
+        else:
+            messages.success(request, "Foto do perfil atualizada!")
+            
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
     if request.method == 'POST' and 'faturar' in request.POST:
@@ -738,6 +761,13 @@ def crm_aluno_detail(request, aluno_id):
         )
         
         messages.success(request, f"Pagamento de R$ {valor} processado e enviado ao caixa.")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
+    if request.method == 'POST' and 'cadastro_digital' in request.POST:
+        digital_id = request.POST.get('digital_id')
+        aluno.digital = digital_id
+        aluno.save()
+        messages.success(request, f"Biometria Digital vinculada com sucesso: ID {digital_id}")
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
     if request.method == 'POST' and 'liberar_agora' in request.POST:
