@@ -330,6 +330,8 @@ class ControleAcesso(models.Model):
         verbose_name="Plano Aguardando 1ª Entrada",
         help_text="Plano pago, aguardando biometria para ativar e calcular vencimento."
     )
+    esta_dentro = models.BooleanField(default=False, verbose_name="Está Dentro da Academia?")
+    ultimo_acesso = models.DateTimeField(null=True, blank=True, verbose_name="Data/Hora Último Acesso")
 
     @property
     def dias_vencimento(self):

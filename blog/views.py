@@ -8,13 +8,13 @@ from django_ratelimit.decorators import ratelimit
 import json
 
 from blog.models import ContactInfo, Program, Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso
+from django.utils import timezone
 from .services import processar_vencimento_catraca
 from .forms import ContactForm
 
 def registrar_venda_no_caixa(valor, descricao, metodo='PIX', origem='SITE'):
     """Helper para registrar vendas automáticas vindas do Site ou App no caixa aberto."""
     from blog.models import CaixaTurno, TransacaoCaixa
-    from django.utils import timezone
     
     # Tenta encontrar um caixa aberto hoje. Prioriza caixas abertos.
     caixa = CaixaTurno.objects.filter(status='ABERTO').order_by('-abertura').first()
@@ -429,14 +429,32 @@ def catraca_check_api(request, id_tag):
             'mensagem': 'Plano vencido. Procure a recepção.'
         })
 
-    # 4. ATIVO
+    # 4. LÓGICA DE ENTRADA/SAÍDA (ESGOTAMENTO POR USO)
+    # Alternar estado (Se estava fora, entra. Se estava dentro, sai).
+    esta_saindo = acesso.esta_dentro
+    acesso.esta_dentro = not acesso.esta_dentro
+    acesso.ultimo_acesso = timezone.now()
+    
+    msg_complemento = "Entrada confirmada."
+    if esta_saindo:
+        msg_complemento = "Saída confirmada. Bom descanso!"
+        # Se for DIÁRIA, esgota o acesso após a saída
+        # Verificamos pelo nome do plano ou tipo
+        ultimo_pago = aluno.pagamentos.filter(status='pago', plano__isnull=False).order_by('-data_pagamento').first()
+        if ultimo_pago and ultimo_pago.plano.plan_type == 'diaria':
+            acesso.data_vencimento = hoje - datetime.timedelta(days=1)
+            acesso.status_catraca = 'bloqueado'
+            msg_complemento = "Diária esgotada (Ciclo concluído). Até a próxima!"
+            
+    acesso.save()
+
     return JsonResponse({
         'nome': aluno.nome_completo, 'matricula': aluno.matricula,
         'vencimento': acesso.data_vencimento.strftime('%d/%m/%Y'),
         'dias_restantes': dias_restantes, 'foto_url': foto_url,
         'status': 'alerta' if dias_restantes <= 5 else 'ativo',
         'status_borda': 'verde',
-        'mensagem': f'{dias_restantes} dias restantes.'
+        'mensagem': f'{msg_complemento}'
     })
 
 def catraca_polling_api(request):
@@ -738,14 +756,20 @@ def crm_aluno_detail(request, aluno_id):
         ac, created = ControleAcesso.objects.get_or_create(aluno=aluno)
         
         # Se o aluno tem um plano pago mas a catraca está sem data ou vencida, sincroniza
-        # A data de vencimento será: data do pagamento + dias do plano
-        vencimento_calculado = ultimo_pago.data_pagamento.date() + timedelta(days=ultimo_pago.plano.duration_days)
+        # --- REGRA DO DOMINGO: Se pagar domingo, começa a contar de segunda ---
+        data_local = timezone.localtime(ultimo_pago.data_pagamento).date()
+        if data_local.weekday() == 6: # 6 = Domingo
+            base_data_calculo = data_local + timedelta(days=1)
+        else:
+            base_data_calculo = data_local
+            
+        vencimento_calculado = base_data_calculo + timedelta(days=ultimo_pago.plano.duration_days)
         
         if not ac.data_vencimento or ac.data_vencimento < vencimento_calculado:
             ac.data_vencimento = vencimento_calculado
             ac.status_catraca = 'liberado'
             ac.save()
-            acesso = ac # Atualiza para o template
+            acesso = ac
     # -----------------------------------------------------------------------------------
 
     context = {
