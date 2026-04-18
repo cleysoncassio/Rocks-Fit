@@ -26,7 +26,7 @@
     <style>
         .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(0,0,0,0.03); }
         .deep-shadow { box-shadow: 0 40px 100px rgba(0, 0, 0, 0.08); }
-        .lux-card { background: #FFFFFF; border: 1px solid rgba(229, 231, 235, 0.4); border-radius: 28px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .lux-card { background: #FFFFFF; border: 1px solid rgba(229, 231, 235, 0.4); border-radius: 32px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         .lux-card:hover { transform: translateY(-8px); box-shadow: 0 40px 80px rgba(0,0,0,0.12); border-color: rgba(255, 107, 0, 0.2); }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -39,7 +39,7 @@
             70% { box-shadow: 0 0 0 20px rgba(74, 222, 128, 0); }
             100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
         }
-        .text-huge { font-size: 1.75rem; line-height: 1; }
+        .text-value { font-size: 1.5rem; line-height: 1.2; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-slate-900 flex h-screen overflow-hidden">
@@ -160,12 +160,12 @@
         <!-- 2. Sistema de Navegação por Abas -->
         <div class="bg-white border-b border-slate-100 sticky top-0 md:top-[129px] z-[90]">
             <div class="max-w-7xl mx-auto px-10">
-                <nav class="flex gap-10 overflow-x-auto no-scrollbar py-4 uppercase text-[10px] font-black tracking-[0.2em]">
-                    <a href="#proximo-vencimento" class="tab-active py-2">Resumo</a>
-                    <a href="#comunicacao" class="text-slate-400 hover:text-slate-900 py-2 transition-all">Comunicação</a>
-                    <a href="#financeiro" class="text-slate-400 hover:text-slate-900 py-2 transition-all">Financeiro</a>
-                    <a href="#treinos" class="text-slate-400 hover:text-slate-900 py-2 transition-all">Treinos</a>
-                    <a href="#servicos" class="text-slate-400 hover:text-slate-900 py-2 transition-all">Serviços</a>
+                <nav class="flex gap-12 overflow-x-auto no-scrollbar py-2 uppercase text-[13px] font-black tracking-widest text-center">
+                    <a href="#proximo-vencimento" class="tab-active py-4 px-2 border-b-4">Resumo</a>
+                    <a href="#comunicacao" class="text-slate-400 hover:text-slate-900 py-4 px-2 transition-all">Comunicação</a>
+                    <a href="#financeiro" class="text-slate-400 hover:text-slate-900 py-4 px-2 transition-all">Financeiro</a>
+                    <a href="#treinos" class="text-slate-400 hover:text-slate-900 py-4 px-2 transition-all">Treinos</a>
+                    <a href="#servicos" class="text-slate-400 hover:text-slate-900 py-4 px-2 transition-all">Serviços</a>
                 </nav>
             </div>
         </div>
@@ -184,23 +184,23 @@
         </div>
         {% endif %}
 
-        <!-- 3. Grid de Resumo Financeiro (Quick Cards) -->
+        <!-- 3. Grid de Resumo Financeiro (Quick Cards Re-balanced) -->
         <div id="proximo-vencimento" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-            <div class="lux-card py-10 px-8 flex items-center gap-6">
-                <div class="h-16 w-16 min-w-[64px] rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-2xl shadow-sm"><i class="fas fa-clock-rotate-left"></i></div>
-                <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">Total Pago</p><p class="text-huge font-black text-slate-900 tracking-tighter">R$ {{ total_pago|floatformat:2 }}</p></div>
+            <div class="lux-card py-8 px-8 flex items-center gap-5">
+                <div class="h-14 w-14 min-w-[56px] rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-xl shadow-sm"><i class="fas fa-clock-rotate-left"></i></div>
+                <div><p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Pago</p><p class="text-value font-black text-slate-900 tracking-tight">R$ {{ total_pago|floatformat:2 }}</p></div>
             </div>
-            <div class="lux-card py-10 px-8 flex items-center gap-6">
-                <div class="h-16 w-16 min-w-[64px] rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-2xl shadow-sm"><i class="fas fa-hand-holding-dollar"></i></div>
-                <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">Dívidas</p><p class="text-huge font-black {% if debitos > 0 %}text-red-500{% else %}text-slate-900{% endif %} tracking-tighter">R$ {{ debitos|floatformat:2 }}</p></div>
+            <div class="lux-card py-8 px-8 flex items-center gap-5">
+                <div class="h-14 w-14 min-w-[56px] rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-xl shadow-sm"><i class="fas fa-hand-holding-dollar"></i></div>
+                <div><p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Dívidas</p><p class="text-value font-black {% if debitos > 0 %}text-red-500{% else %}text-slate-900{% endif %} tracking-tight">R$ {{ debitos|floatformat:2 }}</p></div>
             </div>
-            <div class="lux-card py-10 px-8 flex items-center gap-6">
-                <div class="h-16 w-16 min-w-[64px] rounded-2xl bg-green-50 text-green-500 flex items-center justify-center text-2xl shadow-sm"><i class="fas fa-piggy-bank"></i></div>
-                <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">Créditos</p><p class="text-huge font-black text-slate-900 tracking-tighter">R$ {{ credito|floatformat:2 }}</p></div>
+            <div class="lux-card py-8 px-8 flex items-center gap-5">
+                <div class="h-14 w-14 min-w-[56px] rounded-2xl bg-green-50 text-green-500 flex items-center justify-center text-xl shadow-sm"><i class="fas fa-piggy-bank"></i></div>
+                <div><p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Créditos</p><p class="text-value font-black text-slate-900 tracking-tight">R$ {{ credito|floatformat:2 }}</p></div>
             </div>
-            <div class="lux-card py-10 px-8 flex items-center gap-6 border-2 border-vibrant-orange/10 bg-gradient-to-br from-white to-orange-50/30">
-                <div class="h-16 w-16 min-w-[64px] rounded-2xl bg-vibrant-orange text-white flex items-center justify-center text-2xl shadow-xl shadow-orange-500/30"><i class="fas fa-star"></i></div>
-                <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">Rockspoints</p><p class="text-huge font-black text-slate-900 tracking-tighter">{{ rockspoints }}<span class="text-xs ml-1 text-slate-400">pts</span></p></div>
+            <div class="lux-card py-8 px-8 flex items-center gap-5 border-2 border-vibrant-orange/10 bg-gradient-to-br from-white to-orange-50/20">
+                <div class="h-14 w-14 min-w-[56px] rounded-2xl bg-vibrant-orange text-white flex items-center justify-center text-xl shadow-lg shadow-orange-500/30"><i class="fas fa-star"></i></div>
+                <div><p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Rockspoints</p><p class="text-value font-black text-slate-900 tracking-tight">{{ rockspoints }}<span class="text-[10px] ml-1 text-slate-400">pts</span></p></div>
             </div>
             <!-- Card de Vencimento Dinâmico (Ultra Luxe) -->
             <div class="lux-card py-10 px-8 flex items-center gap-6 transition-all duration-500
@@ -215,11 +215,17 @@
                 <div>
                     <p class="text-[10px] font-black {% if aluno.acesso.dias_vencimento <= 7 %}text-white/70{% else %}text-white/50{% endif %} uppercase tracking-[0.2em] mb-1">Status Acesso</p>
                     <p class="text-[20px] font-black text-white leading-tight">
-                        {% if aluno.acesso.data_vencimento %}{{ aluno.acesso.data_vencimento|date:"d M Y" }}{% else %}SEM PLANO{% endif %}
+                        {% if aluno.acesso.data_vencimento %}
+                            {% if ultimo_pago and aluno.acesso.dias_vencimento >= 0 %}
+                                {{ ultimo_pago.plano.name|upper|default:"AVULSO" }}
+                            {% else %}
+                                {{ aluno.acesso.data_vencimento|date:"d M Y" }}
+                            {% endif %}
+                        {% else %}SEM PLANO{% endif %}
                     </p>
                     <p class="text-[9px] font-black text-white px-2 py-0.5 rounded-md bg-white/10 w-fit mt-2 tracking-widest">
                         {% if aluno.acesso.dias_vencimento < 0 %}VENCIDO
-                        {% elif aluno.acesso.dias_vencimento == 0 %}HOJE
+                        {% elif aluno.acesso.dias_vencimento == 0 %}LIBERADO HOJE
                         {% else %}FALTAM {{ aluno.acesso.dias_vencimento }} DIAS{% endif %}
                     </p>
                 </div>
