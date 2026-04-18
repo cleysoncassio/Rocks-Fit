@@ -724,16 +724,30 @@ def crm_aluno_detail(request, aluno_id):
 
     acesso = getattr(aluno, 'acesso', None)
     pagamentos = aluno.pagamentos.all().order_by('-data_pagamento')
-    
     total_investido = sum(p.valor for p in pagamentos if p.status == 'pago')
     debitos = sum(p.valor for p in pagamentos if p.status == 'pendente')
-    
     rockspoints = int(total_investido)
     credito = 0.00
     planos = Plan.objects.all()
-    
+
+    # --- AUTO-SYNC: Garantir que o acesso esteja sincronizado com o último pagamento ---
     ultimo_pago = pagamentos.filter(status='pago').first()
-    
+    if ultimo_pago and ultimo_pago.plano:
+        from blog.models import ControleAcesso
+        from datetime import date, timedelta
+        ac, created = ControleAcesso.objects.get_or_create(aluno=aluno)
+        
+        # Se o aluno tem um plano pago mas a catraca está sem data ou vencida, sincroniza
+        # A data de vencimento será: data do pagamento + dias do plano
+        vencimento_calculado = ultimo_pago.data_pagamento.date() + timedelta(days=ultimo_pago.plano.duration_days)
+        
+        if not ac.data_vencimento or ac.data_vencimento < vencimento_calculado:
+            ac.data_vencimento = vencimento_calculado
+            ac.status_catraca = 'liberado'
+            ac.save()
+            acesso = ac # Atualiza para o template
+    # -----------------------------------------------------------------------------------
+
     context = {
         'aluno': aluno,
         'acesso': acesso,
