@@ -628,6 +628,11 @@ def crm_dashboard(request):
 @login_required
 def crm_alunos_list(request):
     """Lista de Alunos com Busca por Nome, CPF e Telefone"""
+    if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
+        messages.error(request, "Acesso Negado: Sua conta não permite gerenciar a lista de alunos.")
+        # Redireciona para o dashboard com a mensagem de erro
+        from django.contrib import messages
+        return redirect('crm_dashboard')
     query = request.GET.get('q', '')
     if query:
         # Busca tripla: Nome, CPF ou WhatsApp
@@ -649,6 +654,9 @@ def crm_alunos_list(request):
 @login_required
 def crm_aluno_detail(request, aluno_id):
     """Gestão Individual do Aluno (Financeiro, Treinos, Pontuação)"""
+    if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
+        messages.error(request, "Acesso Negado: Sua conta não permite visualizar detalhes de alunos.")
+        return redirect('crm_dashboard')
     from blog.models import Aluno, PagamentoHistorico, Plan
     from django.utils import timezone
     from django.contrib import messages
@@ -722,8 +730,10 @@ def crm_aluno_detail(request, aluno_id):
 def crm_caixa(request):
     """
     Novo Módulo Financeiro: Caixa Perpétuo Diário.
-    Automação baseada no ciclo de 24h. Reseta automaticamente à meia-noite.
     """
+    if not request.user.has_perm('blog.can_access_financial') and not request.user.is_superuser:
+        messages.error(request, "Acesso Restrito: Módulo Financeiro disponível apenas para gestores autorizados.")
+        return redirect('crm_dashboard')
     from blog.models import CaixaTurno, TransacaoCaixa, User
     from django.utils import timezone
     from django.db.models import Sum

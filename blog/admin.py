@@ -42,7 +42,11 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Informações Pessoais', {'fields': ('first_name', 'last_name', 'email', 'avatar')}),
-        ('Sistema: Cargo e Permissões', {'fields': ('role', 'is_active', 'is_staff', 'is_superuser', 'birth_date')}),
+        ('Sistema: Cargo Simples', {'fields': ('role', 'birth_date')}),
+        ('Gestão de Acessos e Grupos (Cargos)', {
+            'fields': ('groups', 'user_permissions', 'is_active', 'is_staff', 'is_superuser'),
+            'description': 'Use GRUPOS para criar cargos (ex: Secretária) e definir as permissões em massa, ou escolha permissões individuais abaixo.'
+        }),
         ('Extra: Biografia e Localização', {'fields': ('bio', 'location', 'website')}),
         ('Datas Importantes', {'fields': ('last_login', 'date_joined')}),
     )
