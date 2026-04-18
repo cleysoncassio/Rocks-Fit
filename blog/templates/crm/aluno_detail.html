@@ -103,10 +103,10 @@
                             
                             <!-- Menu de Ação Flutuante -->
                             <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all gap-3">
-                                <button onclick="document.getElementById('file-upload').click()" class="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-slate-900 transition-all flex items-center justify-center" title="Upload de Arquivo">
+                                <button type="button" onclick="document.getElementById('file-upload').click()" class="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-slate-900 transition-all flex items-center justify-center" title="Upload de Arquivo">
                                     <i class="fas fa-upload"></i>
                                 </button>
-                                <button onclick="startCamera()" class="h-10 w-10 bg-vibrant-orange rounded-full text-white hover:scale-110 transition-all flex items-center justify-center shadow-lg" title="Leitura Biométrica (Câmera)">
+                                <button type="button" onclick="startCamera()" class="h-10 w-10 bg-vibrant-orange rounded-full text-white hover:scale-110 transition-all flex items-center justify-center shadow-lg" title="Leitura Biométrica (Câmera)">
                                     <i class="fas fa-camera"></i>
                                 </button>
                             </div>
@@ -142,7 +142,10 @@
                     </div>
                 </div>
 
-                <div class="flex gap-3">
+                <div class="flex gap-4">
+                    <button onclick="document.getElementById('modal-digital').classList.remove('hidden')" class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-700 hover:bg-slate-800 transition-all flex items-center gap-2">
+                        <i class="fas fa-fingerprint text-vibrant-orange"></i> Biometria
+                    </button>
                     <form method="POST">
                         {% csrf_token %}
                         <input type="hidden" name="liberar_agora" value="true">
@@ -381,6 +384,30 @@
             <button onclick="takeSnapshot()" class="w-full bg-slate-900 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:bg-vibrant-orange transition-all flex items-center justify-center gap-4">
                 <i class="fas fa-circle text-red-500 animate-pulse"></i> CAPTURAR IDENTIDADE
             </button>
+        </div>
+    </div>
+
+    <!-- Modal de Cadastro Digital -->
+    <div id="modal-digital" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
+        <div class="bg-white w-full max-w-sm rounded-[40px] p-10 shadow-2xl relative">
+            <button onclick="document.getElementById('modal-digital').classList.add('hidden')" class="absolute top-8 right-8 text-slate-300 hover:text-slate-900 transition-all"><i class="fas fa-times text-xl"></i></button>
+            <h2 class="text-3xl font-black tracking-tighter mb-4 text-slate-800 uppercase">Biometria</h2>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-10">Vincular ID da digital da catraca ao aluno.</p>
+            
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="cadastro_digital" value="true">
+                
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">ID da Digital (Catraca)</label>
+                    <input type="text" name="digital_id" class="w-full bg-slate-50 border-none rounded-3xl py-5 px-8 font-black text-xl focus:ring-4 focus:ring-vibrant-orange/10 outline-none transition-all text-center" placeholder="0" value="{{ aluno.digital|default:'' }}" required>
+                </div>
+
+                <div class="pt-6">
+                    <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-vibrant-orange hover:scale-[1.02] transition-all">Salvar Biometria</button>
+                    <p class="text-center text-[10px] text-slate-300 font-bold mt-6 uppercase">A catraca reconhecerá o aluno por este ID.</p>
+                </div>
+            </form>
         </div>
     </div>
 
