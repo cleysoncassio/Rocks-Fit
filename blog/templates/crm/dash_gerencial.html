@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <script id="tailwind-config">
         tailwind.config = {
@@ -388,7 +388,7 @@
         };
 
         // 1. Vendas
-        new Chart(document.getElementById('vendasChart'), {
+        new Chart(document.getElementById('vendasChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['jan/2026', 'fev/2026', 'mar/2026'],
@@ -401,7 +401,7 @@
         });
 
         // 2. Receita
-        new Chart(document.getElementById('receitaChart'), {
+        new Chart(document.getElementById('receitaChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['jan/2026', 'fev/2026', 'mar/2026'],
@@ -414,7 +414,7 @@
         });
 
         // 3. LTV Chart
-        new Chart(document.getElementById('ltvChart'), {
+        new Chart(document.getElementById('ltvChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['jan/2026', 'fev/2026', 'mar/2026'],
@@ -424,7 +424,7 @@
         });
 
         // 4. Ticket Médio
-        new Chart(document.getElementById('ticketChart'), {
+        new Chart(document.getElementById('ticketChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: ['jan/2026', 'fev/2026', 'mar/2026'],
@@ -438,7 +438,7 @@
         });
 
         // 5. Histórico clientes ativos
-        new Chart(document.getElementById('clientesAtivosChart'), {
+        new Chart(document.getElementById('clientesAtivosChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: ['jan/2026', 'fev/2026'],
@@ -451,7 +451,7 @@
         });
 
         // 6. Churn Graph
-        new Chart(document.getElementById('churnGraphChart'), {
+        new Chart(document.getElementById('churnGraphChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['jan/2026', 'fev/2026', 'mar/2026'],
@@ -461,7 +461,7 @@
         });
 
         // 7. Contratos mais vendidos
-        new Chart(document.getElementById('contratosChart'), {
+        new Chart(document.getElementById('contratosChart').getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['TotalPass - Musculação (42.62%)', 'MUSCULAÇÃO - ESPÉC. (38.17%)', 'Gympass - Musculação (17.1%)', 'Outros (2.11%)'],
@@ -475,7 +475,7 @@
         });
 
         // 8. Vendas por origem
-        new Chart(document.getElementById('origemChart'), {
+        new Chart(document.getElementById('origemChart').getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['Automática (41.41%)', 'Manual (38.81%)', 'Site de vendas (14.92%)', 'Outros (4.85%)'],
@@ -489,7 +489,7 @@
         });
 
         // 9. Motivo encerramento
-        new Chart(document.getElementById('motivoChart'), {
+        new Chart(document.getElementById('motivoChart').getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['Automático (100%)', 'Outros (0%)'],
@@ -503,7 +503,7 @@
         });
 
         // 10. Estatísticas de contratos
-        new Chart(document.getElementById('estatisticasChart'), {
+        new Chart(document.getElementById('estatisticasChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['jan/2026', 'fev/2026', 'mar/2026'],
