@@ -70,9 +70,15 @@
         <nav class="flex-grow">
             <ul class="space-y-1">
                 <li>
-                    <a class="nav-link text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_dashboard' %}">
+                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_dashboard' %}">
                         <span class="material-symbols-outlined text-lg">grid_view</span>
                         <span class="nav-text">Painel</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_dash_gerencial' %}">
+                        <span class="material-symbols-outlined text-lg">analytics</span>
+                        <span class="nav-text">Gestão Gerencial</span>
                     </a>
                 </li>
                 {% if perms.blog.can_manage_students or user.is_superuser %}
@@ -85,7 +91,7 @@
                 {% endif %}
                 {% if perms.blog.can_access_financial or user.is_superuser %}
                 <li>
-                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_caixa' %}">
+                    <a class="nav-link text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_caixa' %}">
                         <span class="material-symbols-outlined text-lg">payments</span>
                         <span class="nav-text">Financeiro</span>
                     </a>

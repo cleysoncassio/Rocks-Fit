@@ -648,6 +648,24 @@ def crm_dashboard(request):
     return render(request, 'crm/dashboard.html', context)
 
 @login_required
+def crm_dash_gerencial(request):
+    """Dashboard Gerencial com métricas avançadas de LTV, CAC e retenção"""
+    from blog.models import GymSetting
+    gym_settings = GymSetting.objects.first()
+    
+    # Mock data para os gráficos e métricas conforme as imagens de referência
+    context = {
+        'gym_settings': gym_settings,
+        'ltv_meses': "4 meses e 16 dias",
+        'churn_evasao': "22%",
+        'cac_valor': "R$ 0,00",
+        'clientes_risco': 128,
+        'taxa_renovacao': "72%",
+        # Dados para os gráficos (serão processados no Chart.js no template)
+    }
+    return render(request, "crm/dash_gerencial.html", context)
+
+@login_required
 def crm_alunos_list(request):
     """Lista de Alunos com Busca por Nome, CPF e Telefone"""
     if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:

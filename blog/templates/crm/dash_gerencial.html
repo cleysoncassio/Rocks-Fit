@@ -1,0 +1,528 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="pt-br">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Gestão Gerencial | ROCKS FIT</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#0e0e0e",
+                        "primary": "#ff9159",
+                        "primary-container": "#ff7a2f",
+                        "surface-container-low": "#131313",
+                        "surface-container-high": "#201f1f",
+                        "surface-container-highest": "#262626",
+                        "on-surface": "#ffffff",
+                        "on-surface-variant": "#adaaaa",
+                        "vibrant-orange": "#ff9159",
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glow-orange { box-shadow: 0 0 40px -10px rgba(255, 145, 89, 0.2); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0e0e0e; }
+        ::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ff9159; }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden">
+
+    <!-- Sidebar Industrial Collapsible (Consistent with other CRM pages) -->
+    <aside id="main-sidebar" class="fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
+        <!-- Toggle Button -->
+        <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-primary text-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
+            <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
+        </button>
+
+        <div class="px-4 mb-12 text-center group">
+            <a href="{% url 'crm_dashboard' %}" class="block hover:opacity-80 transition-all">
+                {% if gym_settings.logo %}
+                    <img src="{{ gym_settings.logo.url }}" class="h-28 w-full mx-auto mb-4 object-contain sidebar-logo" alt="{{ gym_settings.name }}">
+                {% else %}
+                    <h1 class="text-3xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
+                {% endif %}
+            </a>
+            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-400 mt-2 sidebar-label">Industrial RKS</p>
+        </div>
+
+        <nav class="flex-grow">
+            <ul class="space-y-1">
+                <li>
+                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_dashboard' %}">
+                        <span class="material-symbols-outlined text-lg">grid_view</span>
+                        <span class="nav-text">Painel</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_dash_gerencial' %}">
+                        <span class="material-symbols-outlined text-lg">analytics</span>
+                        <span class="nav-text">Gestão Gerencial</span>
+                    </a>
+                </li>
+                {% if perms.blog.can_manage_students or user.is_superuser %}
+                <li>
+                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_alunos_list' %}">
+                        <span class="material-symbols-outlined text-lg">group</span>
+                        <span class="nav-text">Membros</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if perms.blog.can_access_financial or user.is_superuser %}
+                <li>
+                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_caixa' %}">
+                        <span class="material-symbols-outlined text-lg">payments</span>
+                        <span class="nav-text">Financeiro</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <div class="px-6 mt-auto pt-8 border-t border-white/5 space-y-6">
+            <a class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors px-2" href="{% url 'logout' %}">
+                <span class="material-symbols-outlined text-lg">logout</span>
+                <span class="nav-text">Sair</span>
+            </a>
+        </div>
+    </aside>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            const toggleIcon = document.getElementById('toggle-icon');
+            const mainContent = document.querySelector('main');
+            
+            sidebar.classList.toggle('w-64');
+            sidebar.classList.toggle('w-20');
+            
+            const isCollapsed = sidebar.classList.contains('w-20');
+            localStorage.setItem('sidebar-collapsed', isCollapsed);
+            
+            document.querySelectorAll('.nav-text, .sidebar-label, .sidebar-text').forEach(el => {
+                el.classList.toggle('hidden', isCollapsed);
+            });
+            
+            if(mainContent) {
+                mainContent.classList.toggle('ml-64', !isCollapsed);
+                mainContent.classList.toggle('ml-20', isCollapsed);
+            }
+            
+            toggleIcon.innerText = isCollapsed ? 'chevron_right' : 'chevron_left';
+        }
+
+        (function() {
+            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+            if (isCollapsed) {
+                const sidebar = document.getElementById('main-sidebar');
+                const toggleIcon = document.getElementById('toggle-icon');
+                const mainContent = document.querySelector('main');
+                
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-20');
+                document.querySelectorAll('.nav-text, .sidebar-label, .sidebar-text').forEach(el => el.classList.add('hidden'));
+                if(mainContent) {
+                    mainContent.classList.remove('ml-64');
+                    mainContent.classList.add('ml-20');
+                }
+                if(toggleIcon) toggleIcon.innerText = 'chevron_right';
+            }
+        })();
+    </script>
+
+    <!-- Main Content Area -->
+    <main class="ml-64 flex-grow flex flex-col h-screen overflow-y-auto">
+        <!-- TopAppBar -->
+        <header class="sticky top-0 w-full bg-surface/80 backdrop-blur-md flex justify-between items-center px-12 py-8 z-40">
+            <div class="flex items-center gap-4">
+                <h2 class="font-headline font-black text-2xl tracking-tighter text-on-surface uppercase italic">Gestão Gerencial</h2>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="bg-surface-container-high px-5 py-3 rounded-xl flex items-center gap-4 border border-white/5 glow-orange">
+                    <div class="relative">
+                        <span class="block w-2.5 h-2.5 bg-primary rounded-full"></span>
+                        <span class="absolute top-0 left-0 block w-2.5 h-2.5 bg-primary rounded-full animate-ping opacity-75"></span>
+                    </div>
+                    <div>
+                        <p class="text-[8px] text-neutral-300 font-headline uppercase tracking-[0.2em]">Status da Academia</p>
+                        <p class="text-xs font-black text-primary font-headline tracking-widest uppercase">ONLINE</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Bento Grid -->
+        <div class="p-12 pb-24">
+            <div class="max-w-7xl mx-auto space-y-8">
+                
+                <!-- Metrics Row -->
+                <div class="grid grid-cols-5 gap-4">
+                    <!-- LTV -->
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-purple-400">hourglass_empty</span>
+                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">LTV</p>
+                            <span class="material-symbols-outlined text-neutral-600 text-sm cursor-help">help</span>
+                        </div>
+                        <h3 class="text-xl font-black font-headline">{{ ltv_meses }}</h3>
+                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                    </div>
+                    <!-- Churn -->
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-red-400">trending_down</span>
+                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Churn (Evasão)</p>
+                            <span class="material-symbols-outlined text-neutral-600 text-sm cursor-help">help</span>
+                        </div>
+                        <h3 class="text-xl font-black font-headline">{{ churn_evasao }}</h3>
+                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                    </div>
+                    <!-- CAC -->
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-blue-400">group_add</span>
+                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">CAC</p>
+                            <span class="material-symbols-outlined text-neutral-600 text-sm cursor-help">help</span>
+                        </div>
+                        <h3 class="text-xl font-black font-headline">{{ cac_valor }}</h3>
+                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                    </div>
+                    <!-- Clientes em Risco -->
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-yellow-400">warning</span>
+                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Clientes em risco</p>
+                        </div>
+                        <h3 class="text-xl font-black font-headline">{{ clientes_risco }}</h3>
+                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                    </div>
+                    <!-- Taxa de Renovação -->
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-green-400">autorenew</span>
+                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Taxa de renovação</p>
+                        </div>
+                        <h3 class="text-xl font-black font-headline">{{ taxa_renovacao }}</h3>
+                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                    </div>
+                </div>
+
+                <!-- Sales & Profit Row -->
+                <div class="grid grid-cols-2 gap-8">
+                    <!-- Vendas -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Vendas</h4>
+                            <div class="chart-container">
+                                <canvas id="vendasChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                    <!-- Receita -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Receita</h4>
+                            <div class="chart-container">
+                                <canvas id="receitaChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                </div>
+
+                <!-- LTV & Ticket Médio Row -->
+                <div class="grid grid-cols-2 gap-8">
+                    <!-- LTV (valor) -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <div class="flex items-center gap-2 mb-6">
+                                <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200">LTV (valor)</h4>
+                                <span class="material-symbols-outlined text-neutral-600 text-sm cursor-help">help</span>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="ltvChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                    <!-- Ticket Médio -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Ticket médio</h4>
+                            <div class="chart-container">
+                                <canvas id="ticketChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                </div>
+
+                <!-- Clientes & Churn History -->
+                <div class="grid grid-cols-2 gap-8">
+                    <!-- Histórico de clientes ativos -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Histórico de clientes ativos</h4>
+                            <div class="chart-container">
+                                <canvas id="clientesAtivosChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                    <!-- Churn (Evasão) Graph -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Churn (Evasão)</h4>
+                            <div class="chart-container">
+                                <canvas id="churnGraphChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                </div>
+
+                <!-- Donut Charts Row -->
+                <div class="grid grid-cols-3 gap-8">
+                    <!-- Contratos mais vendidos -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Contratos mais vendidos</h4>
+                            <div class="chart-container !h-[300px]">
+                                <canvas id="contratosChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                    <!-- Vendas por origem -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Vendas por origem</h4>
+                            <div class="chart-container !h-[300px]">
+                                <canvas id="origemChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                    <!-- Contratos encerrados por motivo -->
+                    <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                        <div class="w-full mb-6">
+                            <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Contratos encerrados por motivo</h4>
+                            <div class="chart-container !h-[300px]">
+                                <canvas id="motivoChart"></canvas>
+                            </div>
+                        </div>
+                        <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                    </div>
+                </div>
+
+                <!-- Full Width Bar Chart -->
+                <div class="bg-surface-container-low p-8 rounded-2xl border border-white/5 flex flex-col items-end">
+                    <div class="w-full mb-6">
+                        <h4 class="font-headline font-black text-sm uppercase tracking-widest text-neutral-200 mb-6">Estatísticas de contratos</h4>
+                        <div class="chart-container !h-[400px]">
+                            <canvas id="estatisticasChart"></canvas>
+                        </div>
+                    </div>
+                    <a href="#" class="text-[10px] font-black uppercase text-primary hover:underline">Abrir relatório</a>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Chart.js Configuration for Managerial Dashboard
+        Chart.defaults.color = '#adaaaa';
+        Chart.defaults.font.family = 'Manrope';
+
+        const barOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, padding: 20, font: { size: 10 } }
+                }
+            },
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 } } },
+                x: { grid: { display: false }, ticks: { font: { size: 9 } } }
+            }
+        };
+
+        const donutOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'left',
+                    labels: { boxWidth: 12, padding: 15, font: { size: 10 } }
+                }
+            },
+            cutout: '70%'
+        };
+
+        // 1. Vendas
+        new Chart(document.getElementById('vendasChart'), {
+            type: 'bar',
+            data: {
+                labels: ['jan/2026', 'fev/2026', 'mar/2026'],
+                datasets: [
+                    { label: 'Meta', data: [0, 0, 0], backgroundColor: '#ff9159', type: 'line', borderColor: '#ff9159', borderWidth: 2 },
+                    { label: 'Vendas', data: [17500, 14000, 15000], backgroundColor: '#4CAF50', borderRadius: 4 }
+                ]
+            },
+            options: barOptions
+        });
+
+        // 2. Receita
+        new Chart(document.getElementById('receitaChart'), {
+            type: 'bar',
+            data: {
+                labels: ['jan/2026', 'fev/2026', 'mar/2026'],
+                datasets: [
+                    { label: 'Meta', data: [0, 0, 0], backgroundColor: '#ff9159', type: 'line', borderColor: '#ff9159', borderWidth: 2 },
+                    { label: 'Receitas', data: [13107.78, 12000, 14500], backgroundColor: '#4CAF50', borderRadius: 4 }
+                ]
+            },
+            options: barOptions
+        });
+
+        // 3. LTV Chart
+        new Chart(document.getElementById('ltvChart'), {
+            type: 'bar',
+            data: {
+                labels: ['jan/2026', 'fev/2026', 'mar/2026'],
+                datasets: [{ label: 'LTV', data: [290, 325, 260], backgroundColor: '#673AB7', borderRadius: 4 }]
+            },
+            options: barOptions
+        });
+
+        // 4. Ticket Médio
+        new Chart(document.getElementById('ticketChart'), {
+            type: 'line',
+            data: {
+                labels: ['jan/2026', 'fev/2026', 'mar/2026'],
+                datasets: [
+                    { label: 'Ticket médio geral', data: [61.12, 54.80, 57.50], borderColor: '#4CAF50', backgroundColor: '#4CAF50', tension: 0.1, fill: false },
+                    { label: 'Ticket médio contrato/serviço', data: [0, 0, 0], borderColor: '#2196F3', backgroundColor: '#2196F3', tension: 0.1, fill: false },
+                    { label: 'Ticket médio produto', data: [0, 0, 0], borderColor: '#673AB7', backgroundColor: '#673AB7', tension: 0.1, fill: false }
+                ]
+            },
+            options: barOptions
+        });
+
+        // 5. Histórico clientes ativos
+        new Chart(document.getElementById('clientesAtivosChart'), {
+            type: 'line',
+            data: {
+                labels: ['jan/2026', 'fev/2026'],
+                datasets: [
+                    { label: 'Meta', data: [0, 0], borderColor: '#03A9F4', backgroundColor: 'rgba(3, 169, 244, 0.1)', fill: true, tension: 0.1 },
+                    { label: 'Clientes ativos', data: [178, 178], borderColor: '#9C27B0', backgroundColor: 'rgba(156, 39, 176, 0.8)', borderDash: [5, 5], fill: true, tension: 0.1 }
+                ]
+            },
+            options: barOptions
+        });
+
+        // 6. Churn Graph
+        new Chart(document.getElementById('churnGraphChart'), {
+            type: 'bar',
+            data: {
+                labels: ['jan/2026', 'fev/2026', 'mar/2026'],
+                datasets: [{ label: 'Churn', data: [21, 17, 23], backgroundColor: '#f44336', borderRadius: 4 }]
+            },
+            options: barOptions
+        });
+
+        // 7. Contratos mais vendidos
+        new Chart(document.getElementById('contratosChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['TotalPass - Musculação (42.62%)', 'MUSCULAÇÃO - ESPÉC. (38.17%)', 'Gympass - Musculação (17.1%)', 'Outros (2.11%)'],
+                datasets: [{
+                    data: [42.62, 38.17, 17.1, 2.11],
+                    backgroundColor: ['#03A9F4', '#0288D1', '#4FC3F7', '#B3E5FC'],
+                    borderWidth: 0
+                }]
+            },
+            options: donutOptions
+        });
+
+        // 8. Vendas por origem
+        new Chart(document.getElementById('origemChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Automática (41.41%)', 'Manual (38.81%)', 'Site de vendas (14.92%)', 'Outros (4.85%)'],
+                datasets: [{
+                    data: [41.41, 38.81, 14.92, 4.85],
+                    backgroundColor: ['#2E7D32', '#4CAF50', '#81C784', '#C8E6C9'],
+                    borderWidth: 0
+                }]
+            },
+            options: donutOptions
+        });
+
+        // 9. Motivo encerramento
+        new Chart(document.getElementById('motivoChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Automático (100%)', 'Outros (0%)'],
+                datasets: [{
+                    data: [100, 0],
+                    backgroundColor: ['#D32F2F', '#FFCDD2'],
+                    borderWidth: 0
+                }]
+            },
+            options: donutOptions
+        });
+
+        // 10. Estatísticas de contratos
+        new Chart(document.getElementById('estatisticasChart'), {
+            type: 'bar',
+            data: {
+                labels: ['jan/2026', 'fev/2026', 'mar/2026'],
+                datasets: [
+                    { label: 'Adesão de clientes', data: [28, 15, 18], backgroundColor: '#4CAF50' },
+                    { label: 'Renovação de clientes', data: [88, 105, 108], backgroundColor: '#1565C0' },
+                    { label: 'Retorno de clientes', data: [38, 25, 45], backgroundColor: '#03A9F4' },
+                    { label: 'Encerramento de clientes', data: [38, 33, 40], backgroundColor: '#f44336' }
+                ]
+            },
+            options: {
+                ...barOptions,
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: false, grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
