@@ -704,19 +704,28 @@ def crm_aluno_detail(request, aluno_id):
         
         # 2. Atualizar Controle de Acesso Automaticamente
         if plano_id:
-            from datetime import date, timedelta
+            from datetime import timedelta
             plano = Plan.objects.get(id=plano_id)
             dias = plano.duration_days
             
-            # Se não existe registro de acesso, cria um
             from blog.models import ControleAcesso
             acesso, created = ControleAcesso.objects.get_or_create(aluno=aluno)
             
-            # Se o aluno já tem um vencimento futuro, soma os dias a partir de lá. 
-            # Se já venceu ou é novo, soma a partir de hoje.
-            base_data = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > date.today()) else date.today()
-            acesso.data_vencimento = base_data + timedelta(days=dias)
+            hoje_local = timezone.localtime(timezone.now()).date()
+            base_data = hoje_local
+            if hoje_local.weekday() == 6: # Domingo
+                base_data = hoje_local + timedelta(days=1)
+
+            # Se for DIÁRIA, não acumula (reseta para o prazo do plano)
+            if plano.plan_type == 'diaria':
+                acesso.data_vencimento = base_data + timedelta(days=dias)
+            else:
+                # Se for Mensal/etc, acumula se o vencimento for futuro
+                start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > hoje_local) else base_data
+                acesso.data_vencimento = start_date + timedelta(days=dias)
+
             acesso.status_catraca = 'liberado'
+            acesso.esta_dentro = False
             acesso.save()
             messages.success(request, f"Acesso LIBERADO até {acesso.data_vencimento.strftime('%d/%m/%Y')}.")
 
@@ -765,11 +774,20 @@ def crm_aluno_detail(request, aluno_id):
             
         vencimento_calculado = base_data_calculo + timedelta(days=ultimo_pago.plano.duration_days)
         
-        if not ac.data_vencimento or ac.data_vencimento < vencimento_calculado:
-            ac.data_vencimento = vencimento_calculado
-            ac.status_catraca = 'liberado'
-            ac.save()
-            acesso = ac
+        # Se for diária, a gente força o vencimento calculado (sem somar)
+        # Se for mensal, a gente só atualiza se estiver vazio ou se o novo cálculo for MAIOR
+        if ultimo_pago.plano.plan_type == 'diaria':
+            if ac.data_vencimento != vencimento_calculado:
+                ac.data_vencimento = vencimento_calculado
+                ac.status_catraca = 'liberado'
+                ac.save()
+                acesso = ac
+        else:
+            if not ac.data_vencimento or ac.data_vencimento < vencimento_calculado:
+                ac.data_vencimento = vencimento_calculado
+                ac.status_catraca = 'liberado'
+                ac.save()
+                acesso = ac
     # -----------------------------------------------------------------------------------
 
     context = {
