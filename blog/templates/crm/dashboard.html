@@ -156,11 +156,11 @@
                         <span class="absolute top-0 left-0 block w-2.5 h-2.5 bg-primary rounded-full animate-ping opacity-75"></span>
                     </div>
                     <div>
-                        <p class="text-[8px] text-neutral-400 font-headline uppercase tracking-[0.2em]">Status da Academia</p>
+                        <p class="text-[8px] text-neutral-300 font-headline uppercase tracking-[0.2em]">Status da Academia</p>
                         <p class="text-xs font-black text-primary font-headline tracking-widest uppercase">ONLINE</p>
                     </div>
                 </div>
-                <button onclick="openAuditModal()" class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-8 py-3.5 rounded-xl font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:scale-105 transition-all active:scale-95">
+                <button onclick="openAuditModal()" class="bg-gradient-to-r from-primary to-primary-container text-black px-8 py-3.5 rounded-xl font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:scale-105 transition-all active:scale-95">
                     Auditoria de Estratégia
                 </button>
             </div>
@@ -172,19 +172,19 @@
                 <!-- Highlighted Stats -->
                 <div class="grid grid-cols-12 gap-8">
                     <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 hover:bg-surface-container-high transition-all">
-                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.3em] mb-4">Idade Média</p>
-                        <h3 class="text-5xl font-black font-headline tracking-tighter">{{ idade_media }} <span class="text-xs font-bold text-neutral-600 uppercase">Anos</span></h3>
+                        <p class="text-[9px] font-black text-neutral-300 uppercase tracking-[0.3em] mb-4">Idade Média</p>
+                        <h3 class="text-5xl font-black font-headline tracking-tighter">{{ idade_media }} <span class="text-xs font-bold text-neutral-400 uppercase">Anos</span></h3>
                     </div>
                     <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 border-b-primary shadow-[inset_0_-4px_0_0_rgba(255,145,89,1)]">
-                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.3em] mb-4">Público Feminino</p>
+                        <p class="text-[9px] font-black text-neutral-300 uppercase tracking-[0.3em] mb-4">Público Feminino</p>
                         <h3 class="text-5xl font-black font-headline tracking-tighter text-primary">{{ perfil_mulheres }}</h3>
                     </div>
                     <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 border-b-blue-600 shadow-[inset_0_-4px_0_0_rgba(37,99,235,1)]">
-                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.3em] mb-4">Público Masculino</p>
+                        <p class="text-[9px] font-black text-neutral-300 uppercase tracking-[0.3em] mb-4">Público Masculino</p>
                         <h3 class="text-5xl font-black font-headline tracking-tighter text-blue-500">{{ perfil_homens }}</h3>
                     </div>
                     <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5">
-                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.3em] mb-4">Taxa de Churn</p>
+                        <p class="text-[9px] font-black text-neutral-300 uppercase tracking-[0.3em] mb-4">Taxa de Churn</p>
                         <h3 class="text-5xl font-black font-headline tracking-tighter text-red-500">{{ churn_rate }}<span class="text-xs font-bold text-red-900">%</span></h3>
                     </div>
                 </div>
@@ -206,12 +206,12 @@
                             <span class="material-symbols-outlined text-9xl">terminal</span>
                         </div>
                         <div>
-                            <span class="material-symbols-outlined text-4xl text-on-primary-fixed mb-6">bolt</span>
-                            <h4 class="font-headline font-black text-[10px] uppercase tracking-[0.3em] text-on-primary-fixed mb-4">Insight Instantâneo</h4>
-                            <p class="text-xl font-headline font-black italic tracking-tight text-on-primary-fixed leading-tight opacity-90">{{ ai_insights }}</p>
+                            <span class="material-symbols-outlined text-4xl text-black/90 mb-6">bolt</span>
+                            <h4 class="font-headline font-black text-[10px] uppercase tracking-[0.3em] text-black/90 mb-4">Insight Instantâneo</h4>
+                            <p class="text-xl font-headline font-black italic tracking-tight text-black leading-tight opacity-90">{{ ai_insights }}</p>
                         </div>
                         <div class="mt-8 pt-8 border-t border-black/10">
-                            <p class="text-[9px] font-black uppercase tracking-widest text-on-primary-fixed">Processado por Rocks Engine v2.4</p>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-black/80">Processado por Rocks Engine v2.4</p>
                         </div>
                     </div>
                 </div>
@@ -241,7 +241,7 @@
                     </div>
                 </div>
                 {% empty %}
-                <p class="text-center text-neutral-600 font-headline italic uppercase text-xs">Gestão Operacional no Ápice.</p>
+                <p class="text-center text-neutral-500 font-headline italic uppercase text-xs">Gestão Operacional no Ápice.</p>
                 {% endfor %}
             </div>
             <div class="p-10 border-t border-white/5">

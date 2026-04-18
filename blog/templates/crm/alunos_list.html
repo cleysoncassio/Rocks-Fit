@@ -60,7 +60,7 @@
                     <h1 class="text-3xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
                 {% endif %}
             </a>
-            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-400 mt-2 sidebar-label">Industrial RKS</p>
+            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-300 mt-2 sidebar-label">Industrial RKS</p>
         </div>
 
         <nav class="flex-grow">
@@ -149,7 +149,7 @@
                 <div class="relative w-80 hidden md:block">
                     <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600 text-lg">search</span>
                     <form method="get">
-                        <input name="q" value="{{ query|default:'' }}" class="w-full bg-surface-container-low border-none rounded-full py-3.5 pl-12 pr-6 text-xs text-on-surface focus:ring-1 focus:ring-primary placeholder:text-neutral-700 font-headline font-black uppercase tracking-widest" placeholder="Pesquisar por ID ou Nome..." type="text"/>
+                        <input name="q" value="{{ query|default:'' }}" class="w-full bg-surface-container-low border-none rounded-full py-3.5 pl-12 pr-6 text-xs text-on-surface focus:ring-1 focus:ring-primary placeholder:text-neutral-500 font-headline font-black uppercase tracking-widest" placeholder="Pesquisar por ID ou Nome..." type="text"/>
                     </form>
                 </div>
                 <div class="h-8 w-px bg-white/5 mx-2"></div>
@@ -157,7 +157,7 @@
                 <div class="flex items-center gap-3">
                     <div class="bg-surface-container-high px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3">
                         <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                        <span class="text-[9px] font-black uppercase tracking-widest text-neutral-400 font-headline">Sincronizando...</span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-neutral-300 font-headline">Sincronizando...</span>
                     </div>
                 </div>
             </div>
@@ -170,8 +170,8 @@
                 <!-- Filters -->
                 <div class="flex gap-4 mb-10">
                     <button class="px-8 py-2.5 bg-primary text-on-primary-fixed rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Todos</button>
-                    <button class="px-8 py-2.5 bg-surface-container-high text-neutral-500 hover:text-primary transition-colors rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Vencidos</button>
-                    <button class="px-8 py-2.5 bg-surface-container-high text-neutral-500 hover:text-primary transition-colors rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Bloqueados</button>
+                    <button class="px-8 py-2.5 bg-surface-container-high text-neutral-400 hover:text-primary transition-colors rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Vencidos</button>
+                    <button class="px-8 py-2.5 bg-surface-container-high text-neutral-400 hover:text-primary transition-colors rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Bloqueados</button>
                 </div>
 
                 <!-- Member Grid -->
@@ -210,7 +210,7 @@
                                 <span class="px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border
                                     {% if aluno.status == 'ATIVO' %}bg-primary/10 text-primary border-primary/20
                                     {% elif aluno.status == 'INADIMPLENTE' %}bg-error/10 text-error border-error/20
-                                    {% else %}bg-neutral-800 text-neutral-500 border-white/5{% endif %}">
+                                    {% else %}bg-neutral-800 text-neutral-400 border-white/5{% endif %}">
                                     {{ aluno.get_status_display }}
                                 </span>
                             </div>
@@ -219,7 +219,7 @@
                     {% empty %}
                     <div class="p-20 text-center">
                         <span class="material-symbols-outlined text-6xl text-neutral-800 mb-4">search_off</span>
-                        <p class="text-neutral-600 font-headline font-black uppercase text-sm tracking-widest">Nenhum membro identificado no perímetro.</p>
+                        <p class="text-neutral-500 font-headline font-black uppercase text-sm tracking-widest">Nenhum membro identificado no perímetro.</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -237,7 +237,7 @@
                 <div class="absolute inset-0 bg-primary/20 blur-lg rounded-full animate-pulse"></div>
             </div>
             <div>
-                <p class="text-[9px] font-headline uppercase tracking-[0.2em] text-neutral-400">Monitoramento de Acesso</p>
+                <p class="text-[9px] font-headline uppercase tracking-[0.2em] text-neutral-300">Monitoramento de Acesso</p>
                 <p class="text-[11px] font-black text-on-surface font-headline uppercase">Biometria Rocks Fit Ativa</p>
             </div>
         </div>

@@ -170,7 +170,7 @@
                             <span class="px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5 bg-surface-container-highest
                                 {% if aluno.status == 'ATIVO' %}text-success border-success/20 glow-status
                                 {% elif aluno.status == 'INADIMPLENTE' %}text-error border-error/20 glow-status
-                                {% else %}text-neutral-500{% endif %}">
+                                {% else %}text-neutral-400{% endif %}">
                                 {{ aluno.get_status_display }}
                             </span>
                         </div>
@@ -224,11 +224,11 @@
                     </div>
                     <div class="mt-8 pt-8 border-t border-white/5 flex gap-12">
                         <div>
-                            <p class="text-[8px] font-black text-neutral-600 uppercase tracking-widest leading-none mb-1">Validade</p>
+                            <p class="text-[8px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Validade</p>
                             <p class="text-xs font-black font-headline uppercase">{{ aluno.acesso.data_vencimento|date:"d M Y"|default:"----" }}</p>
                         </div>
                         <div>
-                            <p class="text-[8px] font-black text-neutral-600 uppercase tracking-widest leading-none mb-1">Último Ingresso</p>
+                            <p class="text-[8px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Último Ingresso</p>
                             <p class="text-xs font-black font-headline uppercase italic">{{ aluno.acesso.ultimo_acesso|date:"d/m H:i"|default:"----" }}</p>
                         </div>
                     </div>
@@ -239,12 +239,12 @@
                     <div class="bg-surface-container-low p-8 rounded-[32px] border border-white/5 hover:border-white/10 transition-all">
                         <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic">Investimento</p>
                         <h4 class="text-4xl font-black font-headline tracking-tighter">R$ {{ total_pago|floatformat:2 }}</h4>
-                        <p class="text-[9px] font-black uppercase text-neutral-600 mt-2 tracking-widest">Total acumulado</p>
+                        <p class="text-[9px] font-black uppercase text-neutral-400 mt-2 tracking-widest">Total acumulado</p>
                     </div>
                     <div class="bg-surface-container-low p-8 rounded-[32px] border border-white/5 hover:border-white/10 transition-all">
                         <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic">Débitos</p>
                         <h4 class="text-4xl font-black font-headline tracking-tighter {% if debitos > 0 %}text-error{% endif %}">R$ {{ debitos|floatformat:2 }}</h4>
-                        <p class="text-[9px] font-black uppercase text-neutral-600 mt-2 tracking-widest">Saldo pendente</p>
+                        <p class="text-[9px] font-black uppercase text-neutral-400 mt-2 tracking-widest">Saldo pendente</p>
                     </div>
                     <div class="bg-primary p-8 rounded-[32px] shadow-2xl relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-2 -bottom-2 text-black/10">
@@ -253,7 +253,7 @@
                         <p class="text-[9px] font-black text-black uppercase tracking-[0.4em] mb-4 font-headline italic">RKS COINS</p>
                         <div>
                             <h4 class="text-5xl font-black font-headline tracking-tighter text-black uppercase">{{ rockspoints }}</h4>
-                            <p class="text-[9px] font-black uppercase text-black/60 mt-2 tracking-widest">Score de fidelidade</p>
+                            <p class="text-[9px] font-black uppercase text-black/80 mt-2 tracking-widest">Score de fidelidade</p>
                         </div>
                     </div>
                 </div>
@@ -281,7 +281,7 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-black font-headline uppercase tracking-tight text-on-surface">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
-                                    <p class="text-[9px] font-black uppercase tracking-widest text-neutral-600 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}</p>
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-neutral-400 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}</p>
                                 </div>
                             </div>
                             <div class="text-right">
@@ -290,7 +290,7 @@
                             </div>
                         </div>
                         {% empty %}
-                        <p class="py-20 text-center text-neutral-700 font-headline uppercase text-[10px] font-black tracking-widest italic">Nenhum evento financeiro logado.</p>
+                        <p class="py-20 text-center text-neutral-500 font-headline uppercase text-[10px] font-black tracking-widest italic">Nenhum evento financeiro logado.</p>
                         {% endfor %}
                     </div>
                     <!-- Danger Zone -->
@@ -310,7 +310,7 @@
                 <div class="col-span-12 lg:col-span-5 space-y-8">
                     <div class="bg-surface-container-low p-10 rounded-[40px] border border-white/5 min-h-[300px] flex flex-col justify-between">
                         <div>
-                            <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-500 italic mb-8">Tags de Caracterização</h3>
+                            <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-400 italic mb-8">Tags de Caracterização</h3>
                             <div class="flex flex-wrap gap-3">
                                 <span class="px-6 py-2.5 bg-surface-container-highest rounded-full text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 text-neutral-400 hover:text-primary hover:border-primary/40 cursor-default transition-all">Hipertrofia</span>
                                 <span class="px-6 py-2.5 bg-surface-container-highest rounded-full text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 text-neutral-400">Regular Member</span>
@@ -321,16 +321,16 @@
 
                     <div class="grid grid-cols-3 gap-6">
                         <button class="bg-surface-container-low aspect-square rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-700 group-hover:text-primary transition-colors text-3xl">fitness_center</span>
-                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-600">Treinos</span>
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">fitness_center</span>
+                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Treinos</span>
                         </button>
                         <button class="bg-surface-container-low aspect-square rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-700 group-hover:text-primary transition-colors text-3xl">monitor_heart</span>
-                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-600">Saúde</span>
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">monitor_heart</span>
+                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Saúde</span>
                         </button>
                         <button class="bg-surface-container-low aspect-square rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-700 group-hover:text-primary transition-colors text-3xl">query_stats</span>
-                             <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-600">Evolução</span>
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">query_stats</span>
+                             <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Evolução</span>
                         </button>
                     </div>
                 </div>
@@ -369,8 +369,8 @@
                 <div class="space-y-2">
                     <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Gateway de Recebimento</label>
                     <select name="metodo" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-8 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer uppercase tracking-widest">
-                        <option value="DINHEIRO">Dinheiro (Industrial Cash)</option>
-                        <option value="PIX">PIX Protocol</option>
+                        <option value="DINHEIRO">Dinheiro (Industrial RKS)</option>
+                        <option value="PIX">Protocolo PIX</option>
                         <option value="CREDITO">Cartão de Crédito</option>
                         <option value="DEBITO">Cartão de Débito</option>
                     </select>
@@ -411,7 +411,7 @@
     <div id="modal-digital" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-6 bg-surface/80 backdrop-blur-md">
         <div class="bg-surface-container-high w-full max-w-sm rounded-[40px] p-12 border border-white/5 shadow-2xl relative">
             <button onclick="document.getElementById('modal-digital').classList.add('hidden')" class="absolute top-8 right-8 text-neutral-600 hover:text-on-surface transition-all"><span class="material-symbols-outlined">close</span></button>
-            <h2 class="text-3xl font-black font-headline tracking-tighter mb-4 uppercase italic leading-none">Fingerprint</h2>
+            <h2 class="text-3xl font-black font-headline tracking-tighter mb-4 uppercase italic leading-none">Digital</h2>
             <p class="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-10">Vincular ID físico da catraca ao perfil do membro.</p>
             
             <form method="POST" class="space-y-6">
