@@ -71,7 +71,7 @@
                 <li>
                     <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_dashboard' %}">
                         <span class="material-symbols-outlined text-lg">grid_view</span>
-                        <span class="nav-text">Dashboard</span>
+                        <span class="nav-text">Painel</span>
                     </a>
                 </li>
                 <li>
@@ -165,7 +165,7 @@
                     <div>
                         <h1 class="text-5xl font-black font-headline tracking-tighter uppercase italic leading-none">{{ aluno.nome_completo }}</h1>
                         <div class="flex items-center gap-6 mt-4">
-                            <span class="text-[10px] font-black font-headline uppercase tracking-[0.3em] text-neutral-500">ID: <span class="text-primary">#{{ aluno.matricula }}</span></span>
+                            <span class="text-[10px] font-black font-headline uppercase tracking-[0.3em] text-neutral-400">ID: <span class="text-primary">#{{ aluno.matricula }}</span></span>
                             <span class="w-px h-3 bg-white/10"></span>
                             <span class="px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5 bg-surface-container-highest
                                 {% if aluno.status == 'ATIVO' %}text-success border-success/20 glow-status
@@ -179,13 +179,13 @@
 
                 <div class="flex items-center gap-4">
                     <button onclick="document.getElementById('modal-digital').classList.remove('hidden')" class="bg-surface-container-highest text-on-surface px-6 py-3.5 rounded-xl font-headline font-black text-[10px] uppercase tracking-[0.2em] border border-white/5 hover:bg-neutral-800 transition-all">
-                        <span class="material-symbols-outlined text-lg align-middle mr-2">fingerprint</span> Fingerprint Mapping
+                        <span class="material-symbols-outlined text-lg align-middle mr-2">fingerprint</span> Mapeamento Digital
                     </button>
                     <form method="POST">
                         {% csrf_token %}
                         <input type="hidden" name="liberar_agora" value="true">
                         <button type="submit" class="bg-primary text-black px-8 py-4 rounded-xl font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all">
-                            <span class="material-symbols-outlined text-lg align-middle mr-2">bolt</span> Unlock Perimeter
+                            <span class="material-symbols-outlined text-lg align-middle mr-2">bolt</span> Liberar Perímetro
                         </button>
                     </form>
                 </div>
@@ -201,7 +201,7 @@
                         <span class="material-symbols-outlined text-[160px]">verified_user</span>
                     </div>
                     <div>
-                        <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.4em] mb-4 font-headline italic">Perímetro de Acesso</p>
+                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-4 font-headline italic">Perímetro de Acesso</p>
                         <h3 class="text-4xl font-black font-headline tracking-tighter uppercase
                             {% if aluno.acesso.dias_vencimento < 0 %}text-error
                             {% elif aluno.acesso.dias_vencimento <= 1 %}text-success
@@ -237,12 +237,12 @@
                 <!-- Financial Bento -->
                 <div class="col-span-12 lg:col-span-8 grid grid-cols-3 gap-8">
                     <div class="bg-surface-container-low p-8 rounded-[32px] border border-white/5 hover:border-white/10 transition-all">
-                        <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.4em] mb-6 font-headline italic">Investimento</p>
+                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic">Investimento</p>
                         <h4 class="text-4xl font-black font-headline tracking-tighter">R$ {{ total_pago|floatformat:2 }}</h4>
                         <p class="text-[9px] font-black uppercase text-neutral-600 mt-2 tracking-widest">Total acumulado</p>
                     </div>
                     <div class="bg-surface-container-low p-8 rounded-[32px] border border-white/5 hover:border-white/10 transition-all">
-                        <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.4em] mb-6 font-headline italic">Débitos</p>
+                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic">Débitos</p>
                         <h4 class="text-4xl font-black font-headline tracking-tighter {% if debitos > 0 %}text-error{% endif %}">R$ {{ debitos|floatformat:2 }}</h4>
                         <p class="text-[9px] font-black uppercase text-neutral-600 mt-2 tracking-widest">Saldo pendente</p>
                     </div>
@@ -250,7 +250,7 @@
                         <div class="absolute -right-2 -bottom-2 text-black/10">
                             <span class="material-symbols-outlined text-8xl">military_tech</span>
                         </div>
-                        <p class="text-[9px] font-black text-black uppercase tracking-[0.4em] mb-4 font-headline italic">Pulse Points</p>
+                        <p class="text-[9px] font-black text-black uppercase tracking-[0.4em] mb-4 font-headline italic">RKS COINS</p>
                         <div>
                             <h4 class="text-5xl font-black font-headline tracking-tighter text-black uppercase">{{ rockspoints }}</h4>
                             <p class="text-[9px] font-black uppercase text-black/60 mt-2 tracking-widest">Score de fidelidade</p>
@@ -267,7 +267,7 @@
                 <!-- Financial History -->
                 <div class="col-span-12 lg:col-span-7 bg-surface-container-low p-10 rounded-[40px] border border-white/5">
                     <div class="flex justify-between items-center mb-10">
-                        <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-500 italic">Protocolos Financeiros</h3>
+                        <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-400 italic">Protocolos Financeiros</h3>
                         <button onclick="document.getElementById('modal-faturar').classList.remove('hidden')" class="w-12 h-12 rounded-full bg-surface-container-highest border border-white/10 flex items-center justify-center hover:bg-primary hover:text-black transition-all shadow-xl">
                             <span class="material-symbols-outlined">add</span>
                         </button>
