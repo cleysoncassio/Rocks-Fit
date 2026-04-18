@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>FINANCIAL OPERATIONS | ROCKS FIT</title>
+    <title>OPERAÇÕES FINANCEIRAS | ROCKS FIT</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -72,7 +72,7 @@
                 <li>
                     <a class="nav-link text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_dashboard' %}">
                         <span class="material-symbols-outlined text-lg">grid_view</span>
-                        <span class="nav-text">Dashboard</span>
+                        <span class="nav-text">Painel</span>
                     </a>
                 </li>
                 {% if perms.blog.can_manage_students or user.is_superuser %}
@@ -204,7 +204,7 @@
                     </div>
                     <div class="relative z-10 flex flex-col md:flex-row justify-between items-end md:items-center">
                         <div>
-                            <p class="text-[10px] font-black text-neutral-500 uppercase tracking-[0.5em] mb-4 font-headline italic">Liquidez Total em Caixa</p>
+                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-[0.5em] mb-4 font-headline italic">Liquidez Total em Caixa</p>
                             <h3 class="text-7xl font-black font-headline tracking-tighter text-on-surface italic leading-none">R$ {{ resumo.total|floatformat:2 }}</h3>
                         </div>
                         <div class="mt-8 md:mt-0 flex gap-12">
@@ -226,7 +226,7 @@
                     <div class="bg-surface-container-low p-8 rounded-[40px] border border-white/5 flex flex-col justify-between hover:border-primary/20 transition-all group">
                          <div>
                             <span class="material-symbols-outlined text-primary mb-4 text-3xl">payments</span>
-                            <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.4em] mb-4 font-headline italic">Reserva Física</p>
+                            <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-4 font-headline italic">Reserva Física</p>
                             <h4 class="text-4xl font-black font-headline tracking-tighter">R$ {{ resumo.dinheiro|floatformat:2 }}</h4>
                          </div>
                          <p class="text-[8px] font-black text-neutral-700 uppercase tracking-widest mt-8">Lançamentos em Espécie</p>
@@ -235,7 +235,7 @@
                     <div class="bg-surface-container-low p-8 rounded-[40px] border border-white/5 flex flex-col justify-between hover:border-blue-500/20 transition-all group">
                          <div>
                             <span class="material-symbols-outlined text-blue-500 mb-4 text-3xl">bolt</span>
-                            <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.4em] mb-4 font-headline italic">Protocolo PIX</p>
+                            <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-4 font-headline italic">Protocolo PIX</p>
                             <h4 class="text-4xl font-black font-headline tracking-tighter">R$ {{ resumo.pix|floatformat:2 }}</h4>
                          </div>
                          <p class="text-[8px] font-black text-neutral-700 uppercase tracking-widest mt-8">Transferências Instantâneas</p>
@@ -244,7 +244,7 @@
                     <div class="bg-surface-container-low p-8 rounded-[40px] border border-white/5 flex flex-col justify-between hover:border-purple-500/20 transition-all group">
                          <div>
                             <span class="material-symbols-outlined text-purple-500 mb-4 text-3xl">credit_card</span>
-                            <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.4em] mb-4 font-headline italic">Gateways de Cartão</p>
+                            <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-4 font-headline italic">Gateways de Cartão</p>
                             <h4 class="text-4xl font-black font-headline tracking-tighter">R$ {{ resumo.cartao|floatformat:2 }}</h4>
                          </div>
                          <p class="text-[8px] font-black text-neutral-700 uppercase tracking-widest mt-8">Crédito e Débito Reconciliados</p>
