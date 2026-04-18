@@ -52,12 +52,12 @@
             <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
         </button>
 
-        <div class="px-6 mb-12 text-center group">
-            <a href="{% url 'crm_dashboard' %}" class="block hover:opacity-80 transition-all">
+        <div class="px-4 mb-12 text-center group">
+            <a href="{% url 'home' %}" class="block hover:opacity-80 transition-all">
                 {% if gym_settings.logo %}
-                    <img src="{{ gym_settings.logo.url }}" class="h-16 w-auto mx-auto mb-4 object-contain sidebar-logo" alt="{{ gym_settings.name }}">
+                    <img src="{{ gym_settings.logo.url }}" class="h-28 w-full mx-auto mb-4 object-contain sidebar-logo" alt="{{ gym_settings.name }}">
                 {% else %}
-                    <h1 class="text-2xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
+                    <h1 class="text-3xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
                 {% endif %}
             </a>
             <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-500 mt-2 sidebar-label">Industrial Pulse</p>
