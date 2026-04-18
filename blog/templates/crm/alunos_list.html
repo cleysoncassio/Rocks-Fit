@@ -1,201 +1,200 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="pt-br">
+<html class="dark" lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alunos | Rocks-Fit Enterprise</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Membros | ROCKS FIT</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <script id="tailwind-config">
         tailwind.config = {
+            darkMode: "class",
             theme: {
                 extend: {
-                    colors: {
-                        'snow': '#F9FAFB',
-                        'slate-ultra-light': '#F1F5F9',
-                        'vibrant-orange': '#FF6B00',
+                    "colors": {
+                        "surface": "#0e0e0e",
+                        "primary": "#ff9159",
+                        "primary-container": "#ff7a2f",
+                        "surface-container-low": "#131313",
+                        "surface-container-high": "#201f1f",
+                        "surface-container-highest": "#262626",
+                        "on-surface": "#ffffff",
+                        "on-surface-variant": "#adaaaa",
+                        "error": "#ff7351",
+                        "tertiary": "#ffc562",
                     },
-                    borderRadius: { '2xl': '16px' },
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                }
-            }
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
         }
     </script>
     <style>
-        .glass-sidebar { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .soft-shadow { box-shadow: 0 8px 30px rgb(0,0,0,0.04); }
-        .lux-table tr { transition: all 0.3s ease; }
-        .lux-table tr:hover { background-color: #F8FAFC; transform: scale(1.002); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0e0e0e; }
+        ::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ff9159; }
     </style>
 </head>
-<body class="bg-snow font-sans antialiased flex h-screen overflow-hidden">
+<body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden">
 
-    <!-- Sidebar Glassmorphism -->
-    <aside id="sidebar" class="w-64 bg-slate-900 flex flex-col z-50 shadow-2xl transition-all duration-300 relative border-r border-slate-800">
-        <!-- Botão de Esconder (Toggle) -->
-        <button onclick="toggleSidebar()" class="absolute -right-3 top-10 bg-vibrant-orange text-white h-7 w-7 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-[60]">
-            <i id="toggle-icon" class="fas fa-chevron-left text-[10px]"></i>
-        </button>
+    <!-- Sidebar Industrial -->
+    <aside class="fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)]">
+        <div class="px-8 mb-12 text-center">
+            <h1 class="text-2xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none">ROCKS FIT</h1>
+            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-500 mt-2">Industrial Pulse</p>
+        </div>
 
-        <a href="{% url 'crm_dashboard' %}" class="sidebar-brand p-10 flex flex-col items-center justify-center hover:opacity-80 transition-all border-b border-slate-800 pb-12 overflow-hidden">
-            {% if gym_settings.logo %}
-                <img src="{{ gym_settings.logo.url }}" class="max-h-32 w-auto object-contain sidebar-logo transition-all duration-300" alt="{{ gym_settings.name }}">
-            {% else %}
-                <div class="h-16 w-16 bg-vibrant-orange rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl shrink-0">
-                    {{ gym_settings.name|default:"R"|slice:":1" }}
-                </div>
-                <span class="text-2xl font-black tracking-tighter text-white mt-6 sidebar-text">{{ gym_settings.name|default:"Rocks-Fit" }}<span class="text-vibrant-orange">.</span></span>
-            {% endif %}
-        </a>
-
-        <nav class="flex-grow px-4 py-8 space-y-2 overflow-hidden">
-            <a href="{% url 'crm_dashboard' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl transition-all font-bold group whitespace-nowrap">
-                <i class="fas fa-grid-2 w-6 text-center group-hover:text-vibrant-orange text-lg"></i> 
-                <span class="sidebar-text truncate">Dashboard</span>
-            </a>
-            
-            {% if perms.blog.can_manage_students or user.is_superuser %}
-            <a href="{% url 'crm_alunos_list' %}" class="flex items-center gap-4 px-4 py-4 text-white bg-vibrant-orange rounded-2xl transition-all font-bold shadow-lg shadow-orange-900/20 whitespace-nowrap">
-                <i class="fas fa-users-viewfinder w-6 text-center text-lg"></i> 
-                <span class="sidebar-text truncate">Alunos</span>
-            </a>
-            {% endif %}
-
-            {% if perms.blog.can_access_financial or user.is_superuser %}
-            <a href="{% url 'crm_caixa' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl transition-all font-bold group whitespace-nowrap">
-                <i class="fas fa-cash-register w-6 text-center group-hover:text-vibrant-orange text-lg"></i> 
-                <span class="sidebar-text truncate">Financeiro</span>
-            </a>
-            {% endif %}
+        <nav class="flex-grow overflow-y-auto">
+            <ul class="space-y-1">
+                <li>
+                    <a class="text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_dashboard' %}">
+                        <span class="material-symbols-outlined text-lg">grid_view</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_alunos_list' %}">
+                        <span class="material-symbols-outlined text-lg">group</span>
+                        <span>Membros</span>
+                    </a>
+                </li>
+                {% if perms.blog.can_access_financial or user.is_superuser %}
+                <li>
+                    <a class="text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_caixa' %}">
+                        <span class="material-symbols-outlined text-lg">payments</span>
+                        <span>Financeiro</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            <div class="px-6 mt-8">
+                <button onclick="location.href='/7becomb/blog/aluno/add/'" class="w-full bg-primary text-on-primary-fixed py-4 rounded-xl font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:scale-105 active:scale-95 transition-all">
+                    Adicionar Aluno
+                </button>
+            </div>
         </nav>
 
-        <div class="p-6 border-t border-slate-800">
-             <a href="{% url 'home' %}" class="text-[11px] font-black text-slate-400 hover:text-vibrant-orange transition-all flex items-center gap-4 px-2 uppercase tracking-widest">
-                <i class="fas fa-arrow-left w-6 text-center"></i> 
-                <span class="sidebar-text">Site</span>
+        <div class="px-8 mt-auto pt-8 border-t border-white/5">
+            <a class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors" href="{% url 'logout' %}">
+                <span class="material-symbols-outlined text-lg">logout</span>
+                <span>Sair</span>
             </a>
         </div>
     </aside>
 
-    <main class="flex-grow overflow-y-auto p-12 bg-snow transition-all duration-300">
-        <header class="flex justify-between items-end mb-12">
-            <div>
-                <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight">Estatísticas de Alunos</h1>
-                <p class="text-slate-400 mt-2 font-medium">Gerenciamento inteligente da base de clientes.</p>
+    <!-- Main Content Area -->
+    <main class="ml-64 flex-grow flex flex-col h-screen overflow-hidden">
+        <!-- TopAppBar -->
+        <header class="w-full bg-surface flex justify-between items-center px-12 py-8 z-40">
+            <div class="flex items-center gap-12">
+                <h2 class="font-headline font-black text-5xl tracking-tighter text-on-surface uppercase italic">Membros <span class="text-primary">Ativos</span></h2>
             </div>
-            <button onclick="location.href='/7becomb/blog/aluno/add/'" class="bg-vibrant-orange text-white px-8 py-4 rounded-2xl font-bold shadow-[0_10px_20px_rgba(255,107,0,0.2)] hover:shadow-[0_15px_30px_rgba(255,107,0,0.3)] hover:-translate-y-1 transition-all">
-                <i class="fas fa-plus mr-2"></i> Adicionar Aluno
-            </button>
+            <div class="flex items-center gap-6">
+                <!-- Search Industrial -->
+                <div class="relative w-80 hidden md:block">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600 text-lg">search</span>
+                    <form method="get">
+                        <input name="q" value="{{ query|default:'' }}" class="w-full bg-surface-container-low border-none rounded-full py-3.5 pl-12 pr-6 text-xs text-on-surface focus:ring-1 focus:ring-primary placeholder:text-neutral-700 font-headline font-black uppercase tracking-widest" placeholder="Pesquisar por ID ou Nome..." type="text"/>
+                    </form>
+                </div>
+                <div class="h-8 w-px bg-white/5 mx-2"></div>
+                <!-- Status Stats -->
+                <div class="flex items-center gap-3">
+                    <div class="bg-surface-container-high px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3">
+                        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant font-headline">Syncing...</span>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <!-- Search Bar Luxe -->
-        <div class="bg-white p-2 rounded-2xl border border-gray-100 soft-shadow mb-10 max-w-2xl flex items-center gap-4">
-            <div class="pl-4 text-slate-300"><i class="fas fa-search"></i></div>
-            <form method="get" class="flex-grow">
-                <input type="text" name="q" value="{{ query }}" placeholder="Procurar por nome, CPF ou identificação..." class="w-100 py-3 bg-transparent border-none outline-none text-slate-600 font-medium placeholder:text-slate-300">
-            </form>
-            <button class="bg-slate-50 text-slate-400 px-6 py-3 rounded-xl font-bold text-xs hover:bg-slate-100 transition-all uppercase tracking-widest">Filtrar</button>
-        </div>
+        <!-- List Content -->
+        <div class="flex-grow overflow-y-auto px-12 pb-24">
+            <div class="max-w-7xl mx-auto">
+                
+                <!-- Filters -->
+                <div class="flex gap-4 mb-10">
+                    <button class="px-8 py-2.5 bg-primary text-on-primary-fixed rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Todos</button>
+                    <button class="px-8 py-2.5 bg-surface-container-high text-neutral-500 hover:text-primary transition-colors rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Vencidos</button>
+                    <button class="px-8 py-2.5 bg-surface-container-high text-neutral-500 hover:text-primary transition-colors rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Bloqueados</button>
+                </div>
 
-        <!-- Table Luxe -->
-        <div class="bg-white rounded-3xl soft-shadow border border-gray-50 overflow-hidden">
-            <table class="w-full lux-table">
-                <thead class="bg-slate-50/50 border-b border-gray-100">
-                    <tr>
-                        <th class="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identidade</th>
-                        <th class="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Vencimento (Renovação)</th>
-                        <th class="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contato</th>
-                        <th class="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                        <th class="px-8 py-5"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
+                <!-- Member Grid -->
+                <div class="space-y-4">
                     {% for aluno in alunos %}
-                    <tr onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="cursor-pointer group">
-                        <td class="px-8 py-6">
-                            <div class="flex items-center gap-4">
-                                <!-- Borda Dinâmica na Foto -->
-                                <div class="h-12 w-12 rounded-xl p-[2px] 
-                                    {% if aluno.status == 'ATIVO' %}bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]
-                                    {% elif aluno.status == 'SUSPENSO' %}bg-orange-50
-                                    {% elif aluno.status == 'INADIMPLENTE' %}bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]
-                                    {% else %}bg-gray-400 opacity-50{% endif %}">
-                                    <img src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}https://ui-avatars.com/api/?name={{ aluno.nome_completo }}&background=fff&color=64748B{% endif %}" class="h-full w-full rounded-[10px] object-cover bg-white">
-                                </div>
-                                <div>
-                                    <p class="font-bold text-slate-800 text-sm">{{ aluno.nome_completo }}</p>
-                                    <p class="text-[11px] text-slate-400 font-medium">Matrícula: {{ aluno.matricula }}</p>
-                                </div>
+                    <div onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="group relative flex items-center gap-8 p-6 bg-surface-container-low rounded-2xl transition-all duration-300 hover:bg-surface-container-high hover:-translate-y-1 cursor-pointer border border-white/5 shadow-xl">
+                        <!-- Directional Indicator -->
+                        <div class="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity
+                            {% if aluno.status == 'ATIVO' %}bg-primary
+                            {% elif aluno.status == 'INADIMPLENTE' %}bg-error
+                            {% else %}bg-neutral-600{% endif %}"></div>
+
+                        <!-- Photo Grayscale to Color -->
+                        <div class="relative w-20 h-20 shrink-0">
+                            <div class="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-20 transition-opacity
+                                {% if aluno.status == 'ATIVO' %}bg-primary
+                                {% elif aluno.status == 'INADIMPLENTE' %}bg-error
+                                {% else %}bg-neutral-600{% endif %}"></div>
+                            <img alt="{{ aluno.nome_completo }}" class="relative w-full h-full object-cover rounded-full grayscale group-hover:grayscale-0 transition-all duration-500 border-2 border-surface-container-highest group-hover:border-primary" src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}https://ui-avatars.com/api/?name={{ aluno.nome_completo }}&background=0e0e0e&color=adaaaa{% endif %}"/>
+                        </div>
+
+                        <div class="flex-1 grid grid-cols-4 gap-8 items-center">
+                            <div>
+                                <h3 class="text-xl font-black font-headline tracking-tighter text-on-surface uppercase">{{ aluno.nome_completo }}</h3>
+                                <p class="text-[10px] text-on-surface-variant font-headline uppercase font-bold tracking-widest mt-1">Matrícula: <span class="text-primary">#{{ aluno.matricula }}</span></p>
                             </div>
-                        </td>
-                        <td class="px-8 py-6">
-                            {% if aluno.acesso %}
-                            <div class="flex flex-col">
-                                <span class="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest border-2 w-fit 
-                                    {% if aluno.acesso.dias_vencimento < 0 %}
-                                        bg-red-50 text-red-500 border-red-100 animate-pulse
-                                    {% elif aluno.acesso.dias_vencimento <= 7 %}
-                                        bg-orange-50 text-orange-500 border-orange-100
-                                    {% else %}
-                                        bg-green-50 text-green-600 border-green-100
-                                    {% endif %}">
-                                    <i class="fas fa-calendar-alt mr-1"></i> {{ aluno.acesso.data_vencimento|date:"d/m/Y" }}
-                                </span>
-                                <span class="text-[8px] font-black uppercase tracking-tight mt-1 {% if aluno.acesso.dias_vencimento < 0 %}text-red-400{% else %}text-slate-300{% endif %}">
-                                    {% if aluno.acesso.dias_vencimento < 0 %}Vencido{% else %}Expira em {{ aluno.acesso.dias_vencimento }} dias{% endif %}
+                            <div>
+                                <p class="text-[9px] text-on-surface-variant font-headline uppercase tracking-[0.3em] mb-1">Vencimento</p>
+                                <p class="text-sm font-black text-on-surface font-headline uppercase">{{ aluno.acesso.data_vencimento|date:"d M Y"|default:"SEM PLANO" }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-on-surface-variant font-headline uppercase tracking-[0.3em] mb-1">Último Acesso</p>
+                                <p class="text-sm font-bold text-on-surface font-headline uppercase italic">{{ aluno.acesso.ultimo_acesso|date:"d/m H:i"|default:"Nunca" }}</p>
+                            </div>
+                            <div class="justify-self-end">
+                                <span class="px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border
+                                    {% if aluno.status == 'ATIVO' %}bg-primary/10 text-primary border-primary/20
+                                    {% elif aluno.status == 'INADIMPLENTE' %}bg-error/10 text-error border-error/20
+                                    {% else %}bg-neutral-800 text-neutral-500 border-white/5{% endif %}">
+                                    {{ aluno.get_status_display }}
                                 </span>
                             </div>
-                            {% else %}
-                            <span class="text-[9px] font-black text-slate-200 uppercase tracking-widest">Sem Plano Ativo</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-8 py-6 text-sm text-slate-500 font-medium">
-                            {{ aluno.whatsapp }}
-                        </td>
-                        <td class="px-8 py-6">
-                            <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full
-                                {% if aluno.status == 'ATIVO' %}bg-green-50 text-green-500
-                                {% elif aluno.status == 'SUSPENSO' %}bg-orange-50 text-orange-500
-                                {% elif aluno.status == 'INADIMPLENTE' %}bg-red-50 text-red-500
-                                {% else %}bg-gray-100 text-gray-500{% endif %}">
-                                {{ aluno.get_status_display }}
-                            </span>
-                        </td>
-                        <td class="px-8 py-6 text-right">
-                             <span class="text-slate-200 group-hover:text-vibrant-orange transition-colors"><i class="fas fa-chevron-right"></i></span>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                     {% empty %}
-                    <tr>
-                        <td colspan="5" class="px-8 py-20 text-center text-slate-300 font-medium italic">Nenhum registro encontrado na base enterprise.</td>
-                    </tr>
+                    <div class="p-20 text-center">
+                        <span class="material-symbols-outlined text-6xl text-neutral-800 mb-4">search_off</span>
+                        <p class="text-neutral-600 font-headline font-black uppercase text-sm tracking-widest">Nenhum membro identificado no perímetro.</p>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
     </main>
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const toggleIcon = document.getElementById('toggle-icon');
-            const texts = document.querySelectorAll('.sidebar-text');
-            const logo = document.querySelector('.sidebar-logo');
-            
-            if (sidebar.classList.contains('w-64')) {
-                sidebar.classList.replace('w-64', 'w-20');
-                toggleIcon.classList.replace('fa-chevron-left', 'fa-chevron-right');
-                texts.forEach(t => t.classList.add('hidden'));
-                if(logo) logo.classList.add('h-8');
-            } else {
-                sidebar.classList.replace('w-20', 'w-64');
-                toggleIcon.classList.replace('fa-chevron-right', 'fa-chevron-left');
-                texts.forEach(t => t.classList.remove('hidden'));
-                if(logo) logo.classList.remove('h-8');
-            }
-        }
-    </script>
+    <!-- Scanner Status Bottom -->
+    <div class="fixed bottom-8 right-8 z-50">
+        <div class="p-4 bg-surface-container-high/60 backdrop-blur-xl rounded-2xl border border-primary/20 shadow-2xl flex items-center gap-4 group">
+            <div class="relative">
+                <div class="w-12 h-12 rounded-full border-2 border-primary/30 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">fingerprint</span>
+                </div>
+                <div class="absolute inset-0 bg-primary/20 blur-lg rounded-full animate-pulse"></div>
+            </div>
+            <div>
+                <p class="text-[9px] font-headline uppercase tracking-[0.2em] text-on-surface-variant">Access Monitoring</p>
+                <p class="text-[11px] font-black text-on-surface font-headline uppercase">Rocks Fit Biometrics Active</p>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
