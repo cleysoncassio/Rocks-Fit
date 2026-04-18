@@ -49,59 +49,103 @@
 </head>
 <body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden">
 
-    <!-- Sidebar Industrial -->
-    <aside class="fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5">
-        <div class="px-8 mb-12 text-center">
-            <h1 class="text-2xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none">ROCKS FIT</h1>
-            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-500 mt-2">Industrial Pulse</p>
+    <!-- Sidebar Industrial Collapsible -->
+    <aside id="main-sidebar" class="fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
+        <!-- Toggle Button -->
+        <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-primary text-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
+            <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
+        </button>
+
+        <div class="px-6 mb-12 text-center group">
+            <a href="{% url 'crm_dashboard' %}" class="block hover:opacity-80 transition-all">
+                {% if gym_settings.logo %}
+                    <img src="{{ gym_settings.logo.url }}" class="h-16 w-auto mx-auto mb-4 object-contain sidebar-logo" alt="{{ gym_settings.name }}">
+                {% else %}
+                    <h1 class="text-2xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
+                {% endif %}
+            </a>
+            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-500 mt-2 sidebar-label">Industrial Pulse</p>
         </div>
 
         <nav class="flex-grow">
             <ul class="space-y-1">
                 <li>
-                    <a class="text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_dashboard' %}">
+                    <a class="nav-link text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_dashboard' %}">
                         <span class="material-symbols-outlined text-lg">grid_view</span>
-                        <span>Dashboard</span>
+                        <span class="nav-text">Dashboard</span>
                     </a>
                 </li>
+                {% if perms.blog.can_manage_students or user.is_superuser %}
                 <li>
-                    <a class="text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_caixa' %}">
-                        <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
-                        <span>Financeiro</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_alunos_list' %}">
+                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_alunos_list' %}">
                         <span class="material-symbols-outlined text-lg">group</span>
-                        <span>Membros</span>
+                        <span class="nav-text">Membros</span>
                     </a>
                 </li>
+                {% endif %}
+                {% if perms.blog.can_access_financial or user.is_superuser %}
+                <li>
+                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_caixa' %}">
+                        <span class="material-symbols-outlined text-lg">payments</span>
+                        <span class="nav-text">Financeiro</span>
+                    </a>
+                </li>
+                {% endif %}
             </ul>
         </nav>
 
-        <div class="px-8 mt-auto pt-8 border-t border-white/5">
-            <!-- Caixa Operational Status in Sidebar -->
-            {% if caixa %}
-            <div class="mb-8 p-5 bg-surface-container-highest rounded-2xl border border-success/20 shadow-inner">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-                    <span class="text-[8px] font-black uppercase tracking-widest text-success">Operacional On-line</span>
-                </div>
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center text-[10px] font-headline font-bold">
-                        <span class="text-neutral-500">LIQUIDEZ</span>
-                        <span class="text-on-surface">R$ {{ resumo.total|floatformat:2 }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <a class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors" href="{% url 'logout' %}">
+        <div class="px-6 mt-auto pt-8 border-t border-white/5 space-y-6">
+            <a class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors px-2" href="{% url 'logout' %}">
                 <span class="material-symbols-outlined text-lg">logout</span>
-                <span>Sair</span>
+                <span class="nav-text">Sair</span>
             </a>
         </div>
     </aside>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            const toggleIcon = document.getElementById('toggle-icon');
+            const mainContent = document.querySelector('main');
+            
+            sidebar.classList.toggle('w-64');
+            sidebar.classList.toggle('w-20');
+            
+            const isCollapsed = sidebar.classList.contains('w-20');
+            localStorage.setItem('sidebar-collapsed', isCollapsed);
+            
+            // Adjust elements
+            document.querySelectorAll('.nav-text, .sidebar-label, .sidebar-text').forEach(el => {
+                el.classList.toggle('hidden', isCollapsed);
+            });
+            
+            if(mainContent) {
+                mainContent.classList.toggle('ml-64', !isCollapsed);
+                mainContent.classList.toggle('ml-20', isCollapsed);
+            }
+            
+            toggleIcon.innerText = isCollapsed ? 'chevron_right' : 'chevron_left';
+        }
+
+        // Initialize state
+        (function() {
+            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+            if (isCollapsed) {
+                const sidebar = document.getElementById('main-sidebar');
+                const toggleIcon = document.getElementById('toggle-icon');
+                const mainContent = document.querySelector('main');
+                
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-20');
+                document.querySelectorAll('.nav-text, .sidebar-label, .sidebar-text').forEach(el => el.classList.add('hidden'));
+                if(mainContent) {
+                    mainContent.classList.remove('ml-64');
+                    mainContent.classList.add('ml-20');
+                }
+                if(toggleIcon) toggleIcon.innerText = 'chevron_right';
+            }
+        })();
+    </script>
 
     <!-- Main Content Area -->
     <main class="ml-64 flex-grow flex flex-col h-screen overflow-y-auto bg-surface relative">
