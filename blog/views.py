@@ -853,10 +853,11 @@ def crm_caixa(request):
     if not request.user.has_perm('blog.can_access_financial') and not request.user.is_superuser:
         messages.error(request, "Acesso Restrito: Módulo Financeiro disponível apenas para gestores autorizados.")
         return redirect('crm_dashboard')
-    from blog.models import CaixaTurno, TransacaoCaixa, User
+    from blog.models import CaixaTurno, TransacaoCaixa, User, GymSetting
     from django.utils import timezone
-    from django.db.models import Sum
+    from django.db.models import Sum, Q
     from django.contrib import messages
+    import datetime
     
     agora = timezone.localtime()
     hoje = agora.date()
@@ -868,8 +869,8 @@ def crm_caixa(request):
     if caixa_atual and caixa_atual.abertura.date() < hoje:
         # CAIXA ANTIGO DETECTADO! Fechamento automático "Retroativo" (Meia-Noite)
         resumo_velho = caixa_atual.transacoes.aggregate(
-            total_in=Sum('valor', filter=models.Q(tipo='ENTRADA')),
-            total_out=Sum('valor', filter=models.Q(tipo='SAIDA'))
+            total_in=Sum('valor', filter=Q(tipo='ENTRADA')),
+            total_out=Sum('valor', filter=Q(tipo='SAIDA'))
         )
         total_in = resumo_velho['total_in'] or 0
         total_out = resumo_velho['total_out'] or 0
@@ -879,7 +880,7 @@ def crm_caixa(request):
         caixa_atual.is_automatico = True
         # Fecha no último segundo do dia em que foi aberto
         caixa_atual.fechamento = timezone.make_aware(
-            timezone.datetime.combine(caixa_atual.abertura.date(), timezone.datetime.max.time())
+            datetime.datetime.combine(caixa_atual.abertura.date(), datetime.time.max)
         )
         caixa_atual.save()
         
@@ -935,11 +936,11 @@ def crm_caixa(request):
                 messages.error(request, f"Erro ao estornar: {e}")
             return redirect('crm_caixa')
 
-        if acao == 'fechar_manual' and caixa_atual:
+        if acao == 'fechar' and caixa_atual:
             # Fechamento manual antecipado se o gestor desejar (Apenas Ativas)
             resumo_calc = caixa_atual.transacoes.filter(status='NORMAL').aggregate(
-                total_in=Sum('valor', filter=models.Q(tipo='ENTRADA')),
-                total_out=Sum('valor', filter=models.Q(tipo='SAIDA'))
+                total_in=Sum('valor', filter=Q(tipo='ENTRADA')),
+                total_out=Sum('valor', filter=Q(tipo='SAIDA'))
             )
             tin = resumo_calc['total_in'] or 0
             tout = resumo_calc['total_out'] or 0
@@ -955,13 +956,21 @@ def crm_caixa(request):
     gym_settings = GymSetting.objects.first()
     
     transacoes = caixa_atual.transacoes.all().order_by('-data_hora')
-    resumo = {'dinheiro': 0, 'pix': 0, 'cartao': 0, 'saidas': 0, 'total': 0, 'entradas': 0, 'volume_h': []}
+    resumo = {
+        'dinheiro': 0, 
+        'pix': 0, 
+        'cartao': 0, 
+        'saidas': 0, 
+        'entradas': 0,
+        'total': caixa_atual.saldo_inicial, # Começa com o saldo que já estava no caixa
+        'volume_h': []
+    }
     
     for t in [tx for tx in transacoes if tx.status == 'NORMAL']:
         if t.tipo == 'ENTRADA':
-            if t.metodo == 'DINHEIRO': resumo['dinheiro'] += t.float_valor if hasattr(t, 'float_valor') else t.valor
-            elif t.metodo == 'PIX': resumo['pix'] += t.float_valor if hasattr(t, 'float_valor') else t.valor
-            else: resumo['cartao'] += t.float_valor if hasattr(t, 'float_valor') else t.valor
+            if t.metodo == 'DINHEIRO': resumo['dinheiro'] += t.valor
+            elif t.metodo == 'PIX': resumo['pix'] += t.valor
+            else: resumo['cartao'] += t.valor
             resumo['total'] += t.valor
             resumo['entradas'] += t.valor
         else:
