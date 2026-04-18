@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.http import JsonResponse
 from django.db import models
 from datetime import date, timedelta
@@ -607,8 +608,10 @@ def crm_dashboard(request):
     
     # 2. Geração de Ações Estratégicas (Relatório Automatizado)
     acoes_gestor = []
+    taxa_churn_atual = (inativos / total_alunos * 100) if total_alunos > 0 else 0
+    
     if total_alunos > 0:
-        if churn_rate := (inativos / total_alunos * 100) > 15:
+        if taxa_churn_atual > 15:
             acoes_gestor.append({"titulo": "Reduzir Evasão", "msg": "Ofertar 10% de desconto para renovações feitas hoje."})
         
         if mulheres > homens:
@@ -624,8 +627,8 @@ def crm_dashboard(request):
     vencimentos_proximos = Aluno.objects.filter(acesso__data_vencimento__range=[hoje, proximos_7_dias])
     
     # Insights curtos para o painel principal
-    taxa_churn = (inativos / total_alunos * 100) if total_alunos > 0 else 0
     ai_insights = "Análise concluída. Clique no botão de Auditoria para ver o Plano de Ação."
+    taxa_churn = taxa_churn_atual
 
     from blog.models import GymSetting
     gym_settings = GymSetting.objects.first()
@@ -650,18 +653,19 @@ def crm_dashboard(request):
 @login_required
 def crm_dash_gerencial(request):
     """Dashboard Gerencial com métricas avançadas de LTV, CAC e retenção"""
-    from blog.models import GymSetting
+    from blog.models import GymSetting, Aluno
     gym_settings = GymSetting.objects.first()
+    total_alunos = Aluno.objects.count()
     
     # Mock data para os gráficos e métricas conforme as imagens de referência
     context = {
         'gym_settings': gym_settings,
+        'total_alunos': total_alunos,
         'ltv_meses': "4 meses e 16 dias",
         'churn_evasao': "22%",
         'cac_valor': "R$ 0,00",
         'clientes_risco': 128,
         'taxa_renovacao': "72%",
-        # Dados para os gráficos (serão processados no Chart.js no template)
     }
     return render(request, "crm/dash_gerencial.html", context)
 
@@ -671,7 +675,6 @@ def crm_alunos_list(request):
     if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
         messages.error(request, "Acesso Negado: Sua conta não permite gerenciar a lista de alunos.")
         # Redireciona para o dashboard com a mensagem de erro
-        from django.contrib import messages
         return redirect('crm_dashboard')
     query = request.GET.get('q', '')
     if query:
@@ -874,7 +877,6 @@ def crm_caixa(request):
     from blog.models import CaixaTurno, TransacaoCaixa, User, GymSetting
     from django.utils import timezone
     from django.db.models import Sum, Q
-    from django.contrib import messages
     import datetime
     
     agora = timezone.localtime()
