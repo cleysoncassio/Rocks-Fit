@@ -64,7 +64,7 @@
                     <h1 class="text-3xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
                 {% endif %}
             </a>
-            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-500 mt-2 sidebar-label">Industrial Pulse</p>
+            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-400 mt-2 sidebar-label">Industrial RKS</p>
         </div>
 
         <nav class="flex-grow">
@@ -188,7 +188,7 @@
             <div class="max-w-2xl w-full bg-surface-container-low border-2 border-dashed border-white/5 rounded-[48px] p-24 text-center">
                 <span class="material-symbols-outlined text-8xl text-neutral-800 mb-8">security</span>
                 <h2 class="text-3xl font-black font-headline uppercase italic tracking-tighter mb-4">Módulo Indisponível</h2>
-                <p class="text-neutral-500 font-body text-sm mb-12 max-w-sm mx-auto">Conclua a conferência inicial de fundo de troco para liberar as movimentações multicanal.</p>
+                <p class="text-neutral-400 font-body text-sm mb-12 max-w-sm mx-auto">Conclua a conferência inicial de fundo de troco para liberar as movimentações multicanal.</p>
                 <button onclick="document.getElementById('modal-abrir').classList.remove('hidden')" class="bg-primary text-black px-12 py-5 rounded-2xl font-headline font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl hover:scale-110 transition-all glow-orange">Ativar Terminal</button>
             </div>
         </section>
@@ -388,13 +388,13 @@
                     <label class="cursor-pointer group">
                         <input type="radio" name="tipo" value="ENTRADA" checked class="hidden peer">
                         <div class="p-8 rounded-3xl border border-white/5 bg-surface-container-low text-center peer-checked:border-success/40 peer-checked:bg-success/5 transition-all">
-                             <p class="text-[10px] font-black uppercase text-neutral-500 group-hover:text-success transition-colors font-headline">Inflow (+)</p>
+                             <p class="text-[10px] font-black uppercase text-neutral-400 group-hover:text-success transition-colors font-headline">Entrada (+)</p>
                         </div>
                     </label>
                     <label class="cursor-pointer group">
                         <input type="radio" name="tipo" value="SAIDA" class="hidden peer">
                         <div class="p-8 rounded-3xl border border-white/5 bg-surface-container-low text-center peer-checked:border-error/40 peer-checked:bg-error/5 transition-all">
-                             <p class="text-[10px] font-black uppercase text-neutral-500 group-hover:text-error transition-colors font-headline">Outflow (-)</p>
+                             <p class="text-[10px] font-black uppercase text-neutral-400 group-hover:text-error transition-colors font-headline">Saída (-)</p>
                         </div>
                     </label>
                 </div>
@@ -409,7 +409,7 @@
                              <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Liquidação</label>
                              <select name="metodo" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-6 font-black font-headline text-[10px] uppercase text-on-surface focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer">
                                 <option value="DINHEIRO">Espécie (Cash)</option>
-                                <option value="PIX">Pix Protocol</option>
+                                <option value="PIX">Protocolo PIX</option>
                                 <option value="CREDITO">Crédito</option>
                                 <option value="DEBITO">Débito</option>
                              </select>
