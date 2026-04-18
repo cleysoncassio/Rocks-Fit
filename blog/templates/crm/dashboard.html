@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Dashboard | ROCKS FIT</title>
+    <title>Painel | ROCKS FIT</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -69,7 +69,7 @@
                 <li>
                     <a class="nav-link text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_dashboard' %}">
                         <span class="material-symbols-outlined text-lg">grid_view</span>
-                        <span class="nav-text">Dashboard</span>
+                        <span class="nav-text">Painel</span>
                     </a>
                 </li>
                 {% if perms.blog.can_manage_students or user.is_superuser %}
@@ -156,8 +156,8 @@
                         <span class="absolute top-0 left-0 block w-2.5 h-2.5 bg-primary rounded-full animate-ping opacity-75"></span>
                     </div>
                     <div>
-                        <p class="text-[8px] text-on-surface-variant font-headline uppercase tracking-[0.2em]">Gym Status</p>
-                        <p class="text-xs font-black text-primary font-headline tracking-widest uppercase">PULSING ONLINE</p>
+                        <p class="text-[8px] text-neutral-400 font-headline uppercase tracking-[0.2em]">Status da Academia</p>
+                        <p class="text-xs font-black text-primary font-headline tracking-widest uppercase">ONLINE</p>
                     </div>
                 </div>
                 <button onclick="openAuditModal()" class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-8 py-3.5 rounded-xl font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:scale-105 transition-all active:scale-95">
@@ -172,19 +172,19 @@
                 <!-- Highlighted Stats -->
                 <div class="grid grid-cols-12 gap-8">
                     <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 hover:bg-surface-container-high transition-all">
-                        <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em] mb-4">Idade Média</p>
+                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.3em] mb-4">Idade Média</p>
                         <h3 class="text-5xl font-black font-headline tracking-tighter">{{ idade_media }} <span class="text-xs font-bold text-neutral-600 uppercase">Anos</span></h3>
                     </div>
                     <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 border-b-primary shadow-[inset_0_-4px_0_0_rgba(255,145,89,1)]">
-                        <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em] mb-4">Público Feminino</p>
+                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.3em] mb-4">Público Feminino</p>
                         <h3 class="text-5xl font-black font-headline tracking-tighter text-primary">{{ perfil_mulheres }}</h3>
                     </div>
                     <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 border-b-blue-600 shadow-[inset_0_-4px_0_0_rgba(37,99,235,1)]">
-                        <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em] mb-4">Público Masculino</p>
+                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.3em] mb-4">Público Masculino</p>
                         <h3 class="text-5xl font-black font-headline tracking-tighter text-blue-500">{{ perfil_homens }}</h3>
                     </div>
                     <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5">
-                        <p class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em] mb-4">Taxa de Churn</p>
+                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.3em] mb-4">Taxa de Churn</p>
                         <h3 class="text-5xl font-black font-headline tracking-tighter text-red-500">{{ churn_rate }}<span class="text-xs font-bold text-red-900">%</span></h3>
                     </div>
                 </div>
@@ -193,7 +193,7 @@
                 <div class="grid grid-cols-12 gap-8">
                     <div class="col-span-12 lg:col-span-8 bg-surface-container-low p-10 rounded-2xl border border-white/5">
                         <div class="flex justify-between items-center mb-10">
-                            <h4 class="font-headline font-black text-xs uppercase tracking-[0.3em] text-neutral-500">Fluxo de Matrículas</h4>
+                            <h4 class="font-headline font-black text-xs uppercase tracking-[0.3em] text-neutral-400">Fluxo de Matrículas</h4>
                             <div class="flex gap-2">
                                 <div class="w-2 h-2 rounded-full bg-primary"></div>
                                 <div class="w-2 h-2 rounded-full bg-neutral-800"></div>
@@ -224,7 +224,7 @@
         <div class="bg-surface-container-high w-full max-w-2xl rounded-[40px] shadow-2xl border border-white/5 relative overflow-hidden">
             <div class="p-10 bg-surface-container-highest flex justify-between items-start">
                 <div>
-                    <h2 class="text-3xl font-black font-headline tracking-tighter uppercase italic">Strategic Report</h2>
+                    <h2 class="text-3xl font-black font-headline tracking-tighter uppercase italic">Relatório Estratégico</h2>
                     <p class="text-[10px] text-primary font-black uppercase tracking-[0.3em] mt-2">Base: {{ total_alunos }} Alunos Cadastrados</p>
                 </div>
                 <button onclick="closeAuditModal()" class="text-neutral-500 hover:text-white transition-all"><span class="material-symbols-outlined">close</span></button>
@@ -246,7 +246,7 @@
             </div>
             <div class="p-10 border-t border-white/5">
                 <button onclick="sendToWhatsApp()" class="w-full bg-green-600 hover:bg-green-500 text-white py-5 rounded-2xl font-headline font-black text-xs uppercase tracking-[0.3em] shadow-xl transition-all active:scale-95">
-                    WhatsApp Protocol Access
+                    Acessar Relatório via WhatsApp
                 </button>
             </div>
         </div>
@@ -257,7 +257,7 @@
         function closeAuditModal() { document.getElementById('auditModal').classList.add('hidden'); }
 
         function sendToWhatsApp() {
-            let msg = "🚀 *Rocks-Fit Strategic Report*\n\n";
+            let msg = "🚀 *Relatório Estratégico Rocks-Fit*\n\n";
             {% for acao in acoes_gestor %}
             msg += "*{{ forloop.counter }}. {{ acao.titulo }}*\n{{ acao.msg }}\n\n";
             {% endfor %}
