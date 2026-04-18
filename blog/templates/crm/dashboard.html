@@ -56,18 +56,24 @@
         </a>
 
         <nav class="flex-grow px-4 py-8 space-y-2 overflow-hidden">
-            <a href="#" class="flex items-center gap-4 px-4 py-4 text-white bg-vibrant-orange rounded-2xl font-bold transition-all shadow-lg shadow-orange-900/20 whitespace-nowrap">
+            <a href="{% url 'crm_dashboard' %}" class="flex items-center gap-4 px-4 py-4 text-white bg-vibrant-orange rounded-2xl font-bold transition-all shadow-lg shadow-orange-900/20 whitespace-nowrap">
                 <i class="fas fa-chart-line w-6 text-center text-lg"></i> 
                 <span class="sidebar-text truncate">Dashboard</span>
             </a>
+            
+            {% if perms.blog.can_manage_students or user.is_superuser %}
             <a href="{% url 'crm_alunos_list' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl font-bold transition-all group whitespace-nowrap">
                 <i class="fas fa-users w-6 text-center group-hover:text-vibrant-orange transition-all text-lg"></i> 
                 <span class="sidebar-text truncate">Alunos</span>
             </a>
+            {% endif %}
+
+            {% if perms.blog.can_access_financial or user.is_superuser %}
             <a href="{% url 'crm_caixa' %}" class="flex items-center gap-4 px-4 py-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl font-bold transition-all group whitespace-nowrap">
                 <i class="fas fa-cash-register w-6 text-center group-hover:text-vibrant-orange transition-all text-lg"></i> 
                 <span class="sidebar-text truncate">Financeiro</span>
             </a>
+            {% endif %}
         </nav>
 
         <div class="p-6 border-t border-slate-800">

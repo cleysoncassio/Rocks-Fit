@@ -35,6 +35,14 @@ class User(AbstractUser):
         related_query_name="blog_user",
     )
 
+    class Meta:
+        permissions = [
+            ("can_access_financial", "Pode acessar o módulo financeiro e caixa"),
+            ("can_manage_students", "Pode cadastrar e gerenciar alunos"),
+            ("can_manage_workouts", "Pode gerenciar treinos e avaliações"),
+            ("can_access_settings", "Pode acessar configurações do gestor"),
+        ]
+
     def __str__(self):
         return self.username
 
