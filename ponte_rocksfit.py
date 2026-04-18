@@ -10,14 +10,14 @@ import os
 import base64
 import json
 
-# --- 🚀 GESTÃO ROCKS FIT v3.0.0 (INDUSTRIAL PULSE EDITION) ---
+# --- 🚀 GESTÃO ROCKS FIT v3.0.0 (INDUSTRIAL RKS EDITION) ---
 SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
 CATRACA_IP = "169.254.37.150"
 CATRACA_PORTA = 1001
 SERVIDOR_PORTA = 5000
 
-# Palette Industrial Pulse
+# Palette Industrial RKS
 COR_BG = "#0e0e0e"
 COR_CARD = "#131313"
 COR_CARD_HIGH = "#1a1a1a"
@@ -50,7 +50,7 @@ class JanelaMonitor(ctk.CTkToplevel):
     """ TELA DO ALUNO: COM INTERFACE TÁTICA DE ESCANEAMENTO """
     def __init__(self, parent):
         super().__init__(parent)
-        self.title("IDENTIFICATION PERIMETER - ROCKS FIT")
+        self.title("PERÍMETRO DE IDENTIFICAÇÃO - ROCKS FIT")
         self.geometry("1024x768")
         self.attributes("-fullscreen", False) # Pode ser True em produção
         self.configure(fg_color=COR_BG)
@@ -69,7 +69,7 @@ class JanelaMonitor(ctk.CTkToplevel):
         lbl_brand = ctk.CTkLabel(self.header, text="ROCKS FIT", font=("Space Grotesk", 48, "bold"), text_color=COR_PRIMARY)
         lbl_brand.pack(side="left")
         
-        lbl_mode = ctk.CTkLabel(self.header, text="|  DIAGNOSTIC TERMINAL  |  v3.0.0", font=("Inter", 12, "bold"), text_color=COR_TEXT_SEC)
+        lbl_mode = ctk.CTkLabel(self.header, text="|  TERMINAL DE DIAGNÓSTICO  |  v3.0.0", font=("Inter", 12, "bold"), text_color=COR_TEXT_SEC)
         lbl_mode.pack(side="left", padx=20, pady=(20, 0))
 
         # Grid Principal
@@ -81,7 +81,7 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.cam_f.pack(side="left", fill="both", expand=True)
         self.cam_f.pack_propagate(False)
         
-        self.lbl_cam = ctk.CTkLabel(self.cam_f, text="INITIALIZING OPTICAL SENSORS...", text_color=COR_TEXT_SEC, font=("Inter", 14, "bold"))
+        self.lbl_cam = ctk.CTkLabel(self.cam_f, text="INICIALIZANDO SENSORES ÓPTICOS...", text_color=COR_TEXT_SEC, font=("Inter", 14, "bold"))
         self.lbl_cam.pack(expand=True)
 
         # Dossier de Identificação (Direita)
@@ -91,13 +91,13 @@ class JanelaMonitor(ctk.CTkToplevel):
         # Avatar Container
         self.avatar_f = ctk.CTkFrame(self.info_f, width=280, height=280, corner_radius=40, fg_color=COR_CARD, border_width=1, border_color=COR_CARD_HIGH)
         self.avatar_f.pack(pady=(0, 30)); self.avatar_f.pack_propagate(False)
-        self.lbl_aluno_foto = ctk.CTkLabel(self.avatar_f, text="READY", font=("Inter", 18, "bold"), text_color=COR_TEXT_SEC)
+        self.lbl_aluno_foto = ctk.CTkLabel(self.avatar_f, text="PRONTO", font=("Inter", 18, "bold"), text_color=COR_TEXT_SEC)
         self.lbl_aluno_foto.pack(expand=True)
 
-        self.lbl_nome = ctk.CTkLabel(self.info_f, text="SCANNING AREA", font=("Space Grotesk", 32, "bold"), text_color=COR_TEXTO, wraplength=300, justify="left")
+        self.lbl_nome = ctk.CTkLabel(self.info_f, text="ÁREA DE ESCANEAMENTO", font=("Space Grotesk", 32, "bold"), text_color=COR_TEXTO, wraplength=300, justify="left")
         self.lbl_nome.pack(anchor="w")
         
-        self.lbl_status = ctk.CTkLabel(self.info_f, text="AWAITING BIOMETRIC INPUT", font=("Inter", 11, "bold"), text_color=COR_TEXT_SEC, anchor="w")
+        self.lbl_status = ctk.CTkLabel(self.info_f, text="AGUARDANDO BIOMETRIA", font=("Inter", 11, "bold"), text_color=COR_TEXT_SEC, anchor="w")
         self.lbl_status.pack(anchor="w", pady=10)
         
         self.status_bar = ctk.CTkFrame(self.info_f, height=4, fg_color=COR_CARD_HIGH, corner_radius=2)
@@ -125,7 +125,7 @@ class JanelaMonitor(ctk.CTkToplevel):
                     cv2.line(frame, (x, y+h), (x, y+h-l), (89, 145, 255), t)
                     cv2.line(frame, (x+w, y+h), (x+w-l, y+h), (89, 145, 255), t)
                     cv2.line(frame, (x+w, y+h), (x+w, y+h-l), (89, 145, 255), t)
-                    cv2.putText(frame, "LOCKED", (x, y-15), cv2.FONT_HERSHEY_DUPLEX, 0.6, (89, 145, 255), 1)
+                    cv2.putText(frame, "TRAVADO", (x, y-15), cv2.FONT_HERSHEY_DUPLEX, 0.6, (89, 145, 255), 1)
 
                 img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((640, 480))
                 self.photo = ImageTk.PhotoImage(img)
@@ -134,7 +134,7 @@ class JanelaMonitor(ctk.CTkToplevel):
 
     def indentificar_aluno(self, d):
         self.lbl_nome.configure(text=d.get('nome', 'IDENTIFIED').upper())
-        self.lbl_status.configure(text="ACCESS GRANTED | STATUS: ACTIVE", text_color=COR_SUCCESS)
+        self.lbl_status.configure(text="ACESSO AUTORIZADO | STATUS: ATIVO", text_color=COR_SUCCESS)
         self.bar_fill.configure(width=300, fg_color=COR_SUCCESS)
         if d.get('foto_url'): threading.Thread(target=self.carregar_foto, args=(d.get('foto_url'),), daemon=True).start()
         threading.Timer(5, self.reset).start()
@@ -148,7 +148,7 @@ class JanelaMonitor(ctk.CTkToplevel):
 
     def reset(self):
         self.lbl_nome.configure(text="SCANNING AREA")
-        self.lbl_status.configure(text="AWAITING BIOMETRIC INPUT", text_color=COR_TEXT_SEC)
+        self.lbl_status.configure(text="AGUARDANDO BIOMETRIA", text_color=COR_TEXT_SEC)
         self.lbl_aluno_foto.configure(image=None, text="READY")
         self.bar_fill.configure(width=0, fg_color=COR_PRIMARY)
 
@@ -160,7 +160,7 @@ class JanelaMonitor(ctk.CTkToplevel):
 class AppRecepcao(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("ROCKS FIT | INDUSTRIAL PULSE TERMINAL")
+        self.title("ROCKS FIT | TERMINAL INDUSTRIAL RKS")
         self.geometry("1100x850"); self.configure(fg_color=COR_BG)
         self.monitor = None; self.alunos_data = []; self.aluno_em_registro = None
         
@@ -178,13 +178,13 @@ class AppRecepcao(ctk.CTk):
         
         # Botões de Ação Visualmente Fortes
         btn_st = {"height": 50, "corner_radius": 15, "font": ("Inter", 12, "bold")}
-        ctk.CTkButton(self.sidebar, text="🖥️ MONITOR ALUNO", fg_color=COR_PRIMARY, text_color=COR_BG, command=self.saltar_monitor, **btn_st).pack(pady=10, padx=20, fill="x")
-        ctk.CTkButton(self.sidebar, text="🔄 SYNC DATA", fg_color=COR_BG, border_width=1, border_color=COR_CARD_HIGH, command=self.carregar_alunos, **btn_st).pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.sidebar, text="🖥️ MONITORAR ALUNO", fg_color=COR_PRIMARY, text_color=COR_BG, command=self.saltar_monitor, **btn_st).pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.sidebar, text="🔄 SINCRONIZAR", fg_color=COR_BG, border_width=1, border_color=COR_CARD_HIGH, command=self.carregar_alunos, **btn_st).pack(pady=10, padx=20, fill="x")
         
         ctk.CTkFrame(self.sidebar, height=1, fg_color=COR_CARD_HIGH).pack(fill="x", pady=20, padx=30)
         
-        ctk.CTkButton(self.sidebar, text="🔓 OPEN ENTRANCE", fg_color="#1e2d24", text_color=COR_SUCCESS, hover_color="#233b2b", command=lambda: self.abrir_catraca("0"), **btn_st).pack(pady=5, padx=20, fill="x")
-        ctk.CTkButton(self.sidebar, text="🔒 OPEN EXIT", fg_color="#2d1e1e", text_color=COR_ERROR, hover_color="#3b2323", command=lambda: self.abrir_catraca("1"), **btn_st).pack(pady=5, padx=20, fill="x")
+        ctk.CTkButton(self.sidebar, text="🔓 ABRIR ENTRADA", fg_color="#1e2d24", text_color=COR_SUCCESS, hover_color="#233b2b", command=lambda: self.abrir_catraca("0"), **btn_st).pack(pady=5, padx=20, fill="x")
+        ctk.CTkButton(self.sidebar, text="🔒 ABRIR SAÍDA", fg_color="#2d1e1e", text_color=COR_ERROR, hover_color="#3b2323", command=lambda: self.abrir_catraca("1"), **btn_st).pack(pady=5, padx=20, fill="x")
 
         # Área Principal
         self.main = ctk.CTkFrame(self, fg_color="transparent")
