@@ -732,6 +732,8 @@ def crm_aluno_detail(request, aluno_id):
     credito = 0.00
     planos = Plan.objects.all()
     
+    ultimo_pago = pagamentos.filter(status='pago').first()
+    
     context = {
         'aluno': aluno,
         'acesso': acesso,
@@ -741,6 +743,7 @@ def crm_aluno_detail(request, aluno_id):
         'rockspoints': rockspoints,
         'credito': credito,
         'planos': planos,
+        'ultimo_pago': ultimo_pago,
     }
     return render(request, 'crm/aluno_detail.html', context)
 
