@@ -675,7 +675,7 @@ def crm_aluno_detail(request, aluno_id):
         plano_id = request.POST.get('plano')
         
         # 1. Registrar no Histórico do Aluno
-        PagamentoHistorico.objects.create(
+        pagamento = PagamentoHistorico.objects.create(
             aluno=aluno,
             plano_id=plano_id if plano_id else None,
             valor=valor,
@@ -684,10 +684,28 @@ def crm_aluno_detail(request, aluno_id):
             metodo_pagamento=metodo
         )
         
-        # 2. Registrar no Caixa (se houver turno aberto)
+        # 2. Atualizar Controle de Acesso Automaticamente
+        if plano_id:
+            from datetime import date, timedelta
+            plano = Plan.objects.get(id=plano_id)
+            dias = plano.duration_days
+            
+            # Se não existe registro de acesso, cria um
+            from blog.models import ControleAcesso
+            acesso, created = ControleAcesso.objects.get_or_create(aluno=aluno)
+            
+            # Se o aluno já tem um vencimento futuro, soma os dias a partir de lá. 
+            # Se já venceu ou é novo, soma a partir de hoje.
+            base_data = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > date.today()) else date.today()
+            acesso.data_vencimento = base_data + timedelta(days=dias)
+            acesso.status_catraca = 'liberado'
+            acesso.save()
+            messages.success(request, f"Acesso LIBERADO até {acesso.data_vencimento.strftime('%d/%m/%Y')}.")
+
+        # 3. Registrar no Caixa (se houver turno aberto)
         registrar_venda_no_caixa(
             valor=float(valor),
-            descricao=f"Mensalidade/Taxa: {aluno.nome_completo}",
+            descricao=f"Pagamento: {aluno.nome_completo} ({plano.name if plano_id else 'Taxa'})",
             metodo=metodo,
             origem='MANUAL'
         )
