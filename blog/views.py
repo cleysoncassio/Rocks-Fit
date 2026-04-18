@@ -627,6 +627,9 @@ def crm_dashboard(request):
     taxa_churn = (inativos / total_alunos * 100) if total_alunos > 0 else 0
     ai_insights = "Análise concluída. Clique no botão de Auditoria para ver o Plano de Ação."
 
+    from blog.models import GymSetting
+    gym_settings = GymSetting.objects.first()
+
     context = {
         'total_alunos': total_alunos,
         'ativos': ativos,
@@ -640,6 +643,7 @@ def crm_dashboard(request):
         'perfil_homens': homens,
         'acoes_gestor': acoes_gestor,
         'user_role': getattr(request.user, 'role', 'ALUNO'),
+        'gym_settings': gym_settings,
     }
     return render(request, 'crm/dashboard.html', context)
 
@@ -663,9 +667,13 @@ def crm_alunos_list(request):
     else:
         alunos = Aluno.objects.all().order_by('-data_cadastro')
     
+    from blog.models import GymSetting
+    gym_settings = GymSetting.objects.first()
+
     context = {
         'alunos': alunos,
-        'query': query
+        'query': query,
+        'gym_settings': gym_settings,
     }
     return render(request, 'crm/alunos_list.html', context)
 
@@ -820,6 +828,9 @@ def crm_aluno_detail(request, aluno_id):
                 acesso = ac
     # -----------------------------------------------------------------------------------
 
+    from blog.models import GymSetting
+    gym_settings = GymSetting.objects.first()
+
     context = {
         'aluno': aluno,
         'acesso': acesso,
@@ -830,6 +841,7 @@ def crm_aluno_detail(request, aluno_id):
         'credito': credito,
         'planos': planos,
         'ultimo_pago': ultimo_pago,
+        'gym_settings': gym_settings,
     }
     return render(request, 'crm/aluno_detail.html', context)
 
@@ -939,15 +951,19 @@ def crm_caixa(request):
             return redirect('crm_caixa')
 
     # 3. Dados do Dashboard (Filtrando as ATIVAS)
+    from blog.models import GymSetting
+    gym_settings = GymSetting.objects.first()
+    
     transacoes = caixa_atual.transacoes.all().order_by('-data_hora')
-    resumo = {'dinheiro': 0, 'pix': 0, 'cartao': 0, 'saidas': 0, 'total': 0, 'volume_h': []}
+    resumo = {'dinheiro': 0, 'pix': 0, 'cartao': 0, 'saidas': 0, 'total': 0, 'entradas': 0, 'volume_h': []}
     
     for t in [tx for tx in transacoes if tx.status == 'NORMAL']:
         if t.tipo == 'ENTRADA':
-            if t.metodo == 'DINHEIRO': resumo['dinheiro'] += t.valor
-            elif t.metodo == 'PIX': resumo['pix'] += t.valor
-            else: resumo['cartao'] += t.valor
+            if t.metodo == 'DINHEIRO': resumo['dinheiro'] += t.float_valor if hasattr(t, 'float_valor') else t.valor
+            elif t.metodo == 'PIX': resumo['pix'] += t.float_valor if hasattr(t, 'float_valor') else t.valor
+            else: resumo['cartao'] += t.float_valor if hasattr(t, 'float_valor') else t.valor
             resumo['total'] += t.valor
+            resumo['entradas'] += t.valor
         else:
             resumo['saidas'] += t.valor
             resumo['total'] -= t.valor
@@ -960,5 +976,6 @@ def crm_caixa(request):
         'transacoes': transacoes,
         'resumo': resumo,
         'historico_caixas': historico_caixas,
+        'gym_settings': gym_settings,
     }
     return render(request, 'crm/caixa.html', context)
