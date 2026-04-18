@@ -988,3 +988,39 @@ def crm_caixa(request):
         'gym_settings': gym_settings,
     }
     return render(request, 'crm/caixa.html', context)
+
+@login_required
+def crm_aluno_delete(request, aluno_id):
+    """
+    Exclusão Segura de Perfil de Aluno com travas de segurança rigorosas.
+    """
+    if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
+        messages.error(request, "Acesso Negado: Permissão insuficiente para exclusão.")
+        return redirect('crm_aluno_detail', aluno_id=aluno_id)
+
+    from blog.models import Aluno, ControleAcesso
+    from django.shortcuts import get_object_or_404
+    
+    aluno = get_object_or_404(Aluno, id=aluno_id)
+    acesso = ControleAcesso.objects.filter(aluno=aluno).first()
+    debitos_pendentes = aluno.pagamentos.filter(status='pendente').count()
+    
+    # 🕵️ Verificação de Travas
+    # 1. Trava de Acesso Ativo
+    if acesso and acesso.status_catraca == 'liberado':
+        messages.error(request, "VETO: Não é possível excluir um aluno com ACESSO ATIVO. Aguarde o vencimento ou bloqueie o acesso manualmente.")
+        return redirect('crm_aluno_detail', aluno_id=aluno_id)
+        
+    # 2. Trava de Inadimplência
+    if debitos_pendentes > 0:
+        messages.error(request, f"VETO FINANCEIRO: O aluno possui {debitos_pendentes} débitos pendentes. Regularize o financeiro antes de excluir.")
+        return redirect('crm_aluno_detail', aluno_id=aluno_id)
+        
+    # 3. Trava de Saldo (Opcional por enquanto, já que credito é 0.00)
+    # Se no futuro houver saldo real, a trava já estaria aqui.
+
+    # Protocolo de Exclusão
+    nome_aluno = aluno.nome_completo
+    aluno.delete()
+    messages.success(request, f"PROTOCOLO CONCLUÍDO: O perfil de {nome_aluno} foi permanentemente removido.")
+    return redirect('crm_alunos_list')
