@@ -198,6 +198,7 @@ class Aluno(models.Model):
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES, blank=True, null=True, verbose_name="Sexo")
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='ATIVO', verbose_name="Status de Gestão")
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Último Valor Pago")
+    is_convenio = models.BooleanField(default=False, verbose_name="É Convênio? (Wellhub/TotalPass)")
     foto = models.ImageField(upload_to="alunos/fotos/", blank=True, null=True, verbose_name="Foto (Reconhecimento Facial)")
     digital = models.TextField(blank=True, null=True, verbose_name="Digital (Template Biométrico)")
     data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
