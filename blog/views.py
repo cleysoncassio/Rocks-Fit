@@ -652,7 +652,7 @@ def crm_dashboard(request):
 
 @login_required
 def crm_dash_gerencial(request):
-    \"\"\"Dashboard Gerencial com métricas reais baseadas na importação de dados\"\"\"
+    """Dashboard Gerencial com métricas reais baseadas na importação de dados"""
     from blog.models import GymSetting, Aluno, PagamentoHistorico, ControleAcesso
     from django.db.models import Sum, Avg
     from datetime import date, timedelta
