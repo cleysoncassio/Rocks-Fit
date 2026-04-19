@@ -652,20 +652,43 @@ def crm_dashboard(request):
 
 @login_required
 def crm_dash_gerencial(request):
-    """Dashboard Gerencial com métricas avançadas de LTV, CAC e retenção"""
-    from blog.models import GymSetting, Aluno
-    gym_settings = GymSetting.objects.first()
-    total_alunos = Aluno.objects.count()
+    \"\"\"Dashboard Gerencial com métricas reais baseadas na importação de dados\"\"\"
+    from blog.models import GymSetting, Aluno, PagamentoHistorico, ControleAcesso
+    from django.db.models import Sum, Avg
+    from datetime import date, timedelta
     
-    # Mock data para os gráficos e métricas conforme as imagens de referência
+    gym_settings = GymSetting.objects.first()
+    hoje = date.today()
+    
+    # 1. Métricas de Volume
+    total_alunos = Aluno.objects.count()
+    alunos_ativos = Aluno.objects.filter(acesso__data_vencimento__gte=hoje).count()
+    inativos = total_alunos - alunos_ativos
+    
+    # 2. Clientes em Risco (Vencem nos próximos 7 dias ou venceram nos últimos 7)
+    janela_risco = hoje + timedelta(days=7)
+    janela_passada = hoje - timedelta(days=7)
+    clientes_risco = Aluno.objects.filter(
+        acesso__data_vencimento__range=[janela_passada, janela_risco]
+    ).count()
+    
+    # 3. Métricas Financeiras Reais (LTV)
+    # Somamos todos os PagamentoHistorico importados
+    faturamento_total = PagamentoHistorico.objects.filter(status='pago').aggregate(Sum('valor'))['valor__sum'] or 0
+    ltv_medio = faturamento_total / total_alunos if total_alunos > 0 else 0
+    
+    # 4. Taxa de Retenção (Alunos Ativos / Total)
+    taxa_retencao = (alunos_ativos / total_alunos * 100) if total_alunos > 0 else 0
+
     context = {
         'gym_settings': gym_settings,
         'total_alunos': total_alunos,
-        'ltv_meses': "4 meses e 16 dias",
-        'churn_evasao': "22%",
-        'cac_valor': "R$ 0,00",
-        'clientes_risco': 128,
-        'taxa_renovacao': "72%",
+        'alunos_ativos': alunos_ativos,
+        'inativos': inativos,
+        'ltv_valor': f"R$ {ltv_medio:,.2f}",
+        'churn_evasao': f"{100 - taxa_retencao:.1f}%",
+        'clientes_risco': clientes_risco,
+        'taxa_renovacao': f"{taxa_retencao:.1f}%",
     }
     return render(request, "crm/dash_gerencial.html", context)
 

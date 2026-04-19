@@ -172,11 +172,11 @@
             }
 
             // Restore submenus
-            const submenus = ['painel-submenu'];
+            const submenus = ['dashboards-submenu'];
             submenus.forEach(id => {
                 const menu = document.getElementById(id);
                 const arrow = document.getElementById(id + '-arrow');
-                const isOpen = localStorage.getItem('submenu-' + id) === 'true';
+                const isOpen = localStorage.getItem('submenu-' + id) === 'true' || id === 'dashboards-submenu';
                 if (isOpen && menu) {
                     menu.classList.remove('hidden');
                     if (arrow) arrow.classList.add('rotate-180');
@@ -215,12 +215,12 @@
                     <!-- LTV -->
                     <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
                         <div class="flex items-center gap-3 mb-2">
-                            <span class="material-symbols-outlined text-purple-400">hourglass_empty</span>
-                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">LTV</p>
+                            <span class="material-symbols-outlined text-purple-400">payments</span>
+                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">LTV Médio</p>
                             <span class="material-symbols-outlined text-neutral-600 text-sm cursor-help">help</span>
                         </div>
-                        <h3 class="text-xl font-black font-headline">{{ ltv_meses }}</h3>
-                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                        <h3 class="text-xl font-black font-headline text-primary">{{ ltv_valor }}</h3>
+                        <p class="text-[9px] text-neutral-600 uppercase mt-2">Valor médio por cliente</p>
                     </div>
                     <!-- Churn -->
                     <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
