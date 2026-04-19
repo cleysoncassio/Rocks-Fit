@@ -5,8 +5,13 @@ import re
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 
+import sys
+
+# Adicionar a raiz do projeto ao PYTHONPATH para encontrar o módulo 'sitio'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 # Configuração do ambiente Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sitio.settings.development")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sitio.settings.production")
 django.setup()
 
 from blog.models import Aluno, ControleAcesso, Plan
