@@ -22,9 +22,22 @@ def clean_money(val):
     try: return Decimal(val)
     except: return Decimal('0.00')
 
+def get_rows(path):
+    if path.endswith('.xlsx'):
+        import openpyxl
+        wb = openpyxl.load_workbook(path, data_only=True)
+        ws = wb.active
+        for row in ws.iter_rows(values_only=True):
+            yield [str(c) if c is not None else "" for c in row]
+    else:
+        with open(path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                yield row
+
 def ingest_finance():
-    folder = 'temp_import'
-    vendas_files = [f for f in os.listdir(folder) if 'Vendas' in f and f.endswith('.csv')]
+    folder = 'temp'
+    vendas_files = [f for f in os.listdir(folder) if 'Vendas' in f and (f.endswith('.csv') or f.endswith('.xlsx'))]
     
     # 1. Garantir um Operador de Caixa (Admin)
     admin_user = User.objects.filter(is_superuser=True).first()
@@ -44,10 +57,13 @@ def ingest_finance():
     
     for filename in vendas_files:
         path = os.path.join(folder, filename)
-        with open(path, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            headers = next(reader)
-            
+        rows = get_rows(path)
+        try:
+            headers = next(rows)
+        except StopIteration:
+            continue
+
+        try:
             idx_cliente = headers.index('Cliente')
             idx_desc = headers.index('Descrição')
             idx_valor = headers.index('Valor')
@@ -55,13 +71,16 @@ def ingest_finance():
             idx_debito = headers.index('Cartão de débito')
             idx_credito = headers.index('Cartão de crédito')
             idx_boleto = headers.index('Boleto')
+        except ValueError as e:
+            print(f"Erro no cabeçalho de {filename}: {e}")
+            continue
             
-            for row in reader:
-                if not row: continue
-                
-                nome_cliente = row[idx_cliente].strip()
-                valor_total = clean_money(row[idx_valor])
-                descricao = row[idx_desc].strip()
+        for row in rows:
+            if not row or len(row) <= max(idx_cliente, idx_boleto): continue
+            
+            nome_cliente = row[idx_cliente].strip()
+            valor_total = clean_money(row[idx_valor])
+            descricao = row[idx_desc].strip()
                 
                 if valor_total <= 0: continue
                 
