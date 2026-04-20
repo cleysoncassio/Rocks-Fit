@@ -11,7 +11,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Configuração do ambiente Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sitio.settings.production")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sitio.settings.development")
 django.setup()
 
 from blog.models import Aluno, PagamentoHistorico, CaixaTurno, TransacaoCaixa, User, Plan
@@ -82,47 +82,47 @@ def ingest_finance():
             valor_total = clean_money(row[idx_valor])
             descricao = row[idx_desc].strip()
                 
-                if valor_total <= 0: continue
-                
-                # Buscar Aluno
-                aluno = Aluno.objects.filter(nome_completo__iexact=nome_cliente).first()
-                if not aluno:
-                    # Tentar busca parcial ou ignorar se não achar
-                    continue
+            if valor_total <= 0: continue
+            
+            # Buscar Aluno
+            aluno = Aluno.objects.filter(nome_completo__iexact=nome_cliente).first()
+            if not aluno:
+                # Tentar busca parcial ou ignorar se não achar
+                continue
 
-                # 3. Criar Histórico de Pagamento
-                pag = PagamentoHistorico.objects.create(
-                    aluno=aluno,
-                    valor=valor_total,
-                    status='pago',
-                    metodo_pagamento='Planilha Import'
-                )
-                p_count += 1
-                
-                # 4. Criar Transações de Caixa por Método
-                v_din = clean_money(row[idx_dinheiro])
-                v_deb = clean_money(row[idx_debito])
-                v_cre = clean_money(row[idx_credito])
-                v_bol = clean_money(row[idx_boleto])
-                
-                metodos = [
-                    (v_din, 'DINHEIRO'),
-                    (v_deb, 'DEBITO'),
-                    (v_cre, 'CREDITO'),
-                    (v_bol, 'PIX') # Assumindo Boleto/Outros como PIX na falta de coluna específica
-                ]
-                
-                for valor, met_key in metodos:
-                    if valor > 0:
-                        TransacaoCaixa.objects.create(
-                            caixa=turno,
-                            tipo='ENTRADA',
-                            origem='MANUAL',
-                            metodo=met_key,
-                            descricao=f"Pagamento Aluno: {aluno.nome_completo} ({descricao})",
-                            valor=valor
-                        )
-                        t_count += 1
+            # 3. Criar Histórico de Pagamento
+            pag = PagamentoHistorico.objects.create(
+                aluno=aluno,
+                valor=valor_total,
+                status='pago',
+                metodo_pagamento='Planilha Import'
+            )
+            p_count += 1
+            
+            # 4. Criar Transações de Caixa por Método
+            v_din = clean_money(row[idx_dinheiro])
+            v_deb = clean_money(row[idx_debito])
+            v_cre = clean_money(row[idx_credito])
+            v_bol = clean_money(row[idx_boleto])
+            
+            metodos = [
+                (v_din, 'DINHEIRO'),
+                (v_deb, 'DEBITO'),
+                (v_cre, 'CREDITO'),
+                (v_bol, 'PIX') # Assumindo Boleto/Outros como PIX na falta de coluna específica
+            ]
+            
+            for valor, met_key in metodos:
+                if valor > 0:
+                    TransacaoCaixa.objects.create(
+                        caixa=turno,
+                        tipo='ENTRADA',
+                        origem='MANUAL',
+                        metodo=met_key,
+                        descricao=f"Pagamento Aluno: {aluno.nome_completo} ({descricao})",
+                        valor=valor
+                    )
+                    t_count += 1
 
     print(f"INGESTÃO FINANCEIRA CONCLUÍDA:")
     print(f"- Pagamentos vinculados a alunos: {p_count}")
