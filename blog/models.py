@@ -418,6 +418,8 @@ import os
 @receiver(post_save, sender=Aluno)
 def exportar_alunos_json(sender, instance, **kwargs):
     """ Gera um cache local em JSON para o Gestor de Alunos """
+    if os.environ.get('SKIP_SIGNALS'):
+        return
     try:
         from blog.models import Aluno
         alunos = Aluno.objects.all().select_related('acesso')
@@ -442,7 +444,8 @@ def exportar_alunos_json(sender, instance, **kwargs):
                 'tem_foto': bool(a.foto),
                 'tem_digital': bool(a.digital)
             })
-        
+        from django.conf import settings
+        caminho = os.path.join(settings.BASE_DIR, 'dados_blog.json')
         with open(caminho, 'w', encoding='utf-8') as f:
             json.dump({'alunos': lista}, f, ensure_ascii=False, indent=4)
         

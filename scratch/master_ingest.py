@@ -11,7 +11,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Configuração do ambiente Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sitio.settings.production")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sitio.settings.development")
 django.setup()
 
 from blog.models import Aluno, ControleAcesso, Plan
