@@ -155,7 +155,8 @@ def process_payment_api(request):
                     'nome_completo': post_data.get('nome_completo'),
                     'email': post_data.get('email'),
                     'whatsapp': post_data.get('whatsapp'),
-                    'data_nascimento': post_data.get('data_nascimento')
+                    'data_nascimento': post_data.get('data_nascimento'),
+                    'status': 'AGUARDANDO'
                 }
             )
             
@@ -250,7 +251,8 @@ def dev_simular_pagamento(request):
                 'nome_completo': nome, 
                 'email': email, 
                 'whatsapp': whatsapp,
-                'data_nascimento': request.POST.get('data_nascimento', '1990-01-01')
+                'data_nascimento': request.POST.get('data_nascimento', '1990-01-01'),
+                'status': 'AGUARDANDO'
             }
         )
 
@@ -268,6 +270,10 @@ def dev_simular_pagamento(request):
             metodo='PIX', 
             origem='SITE'
         )
+
+        # Ativação Automática do Status de Gestão
+        aluno.status = 'ATIVO'
+        aluno.save()
 
         acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
         acesso.status_catraca = 'aguardando_biometria'
@@ -324,6 +330,10 @@ def infinitepay_webhook(request):
                     metodo='CREDITO',
                     origem='APP'
                 )
+
+                # Ativação Automática do Aluno
+                aluno.status = 'ATIVO'
+                aluno.save()
 
             acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
             plano = historico.plano if historico and historico.plano else None
@@ -694,22 +704,48 @@ def crm_dash_gerencial(request):
 
 @login_required
 def crm_alunos_list(request):
-    """Lista de Alunos com Busca por Nome, CPF e Telefone"""
+    """Lista de Alunos otimizada com Busca, Filtros e Paginação"""
     if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
-        messages.error(request, "Acesso Negado: Sua conta não permite gerenciar a lista de alunos.")
-        # Redireciona para o dashboard com a mensagem de erro
+        messages.error(request, "Acesso Negado.")
         return redirect('crm_dashboard')
+    
     query = request.GET.get('q', '')
+    status_filter = request.GET.get('status', '').upper()
+    
+    # 1. Otimização: select_related('acesso') evita 1 query extra por aluno (N+1)
+    alunos_list = Aluno.objects.all().select_related('acesso').order_by('-data_cadastro')
+    
     if query:
-        # Busca tripla: Nome, CPF ou WhatsApp
-        alunos = Aluno.objects.filter(
+        alunos_list = alunos_list.filter(
             models.Q(nome_completo__icontains=query) | 
             models.Q(cpf__icontains=query) | 
             models.Q(whatsapp__icontains=query) |
             models.Q(matricula__icontains=query)
         ).distinct()
-    else:
-        alunos = Aluno.objects.all().order_by('-data_cadastro')
+        
+    if status_filter in ['ATIVO', 'INATIVO', 'INADIMPLENTE', 'SUSPENSO', 'AGUARDANDO']:
+        alunos_list = alunos_list.filter(status=status_filter)
+    
+    total_count = alunos_list.count()
+    
+    # 2. Paginação: 50 alunos por página para não travar o navegador
+    from django.core.paginator import Paginator
+    paginator = Paginator(alunos_list, 50)
+    page_number = request.GET.get('page')
+    alunos = paginator.get_page(page_number)
+    
+    # 3. Contadores Totais (Independente da filtragem atual para os botões)
+    from django.db.models import Count
+    counts = Aluno.objects.values('status').annotate(total=Count('id'))
+    status_counts = {item['status']: item['total'] for item in counts}
+    
+    counts_data = {
+        'total': Aluno.objects.count(),
+        'ativo': status_counts.get('ATIVO', 0),
+        'inativo': status_counts.get('INATIVO', 0),
+        'inadimplente': status_counts.get('INADIMPLENTE', 0),
+        'aguardando': status_counts.get('AGUARDANDO', 0),
+    }
     
     from blog.models import GymSetting
     gym_settings = GymSetting.objects.first()
@@ -717,6 +753,9 @@ def crm_alunos_list(request):
     context = {
         'alunos': alunos,
         'query': query,
+        'status_filter': status_filter,
+        'total_count': total_count,
+        'counts_data': counts_data,
         'gym_settings': gym_settings,
     }
     return render(request, 'crm/alunos_list.html', context)
@@ -1048,15 +1087,19 @@ def crm_aluno_delete(request, aluno_id):
     acesso = ControleAcesso.objects.filter(aluno=aluno).first()
     debitos_pendentes = aluno.pagamentos.filter(status='pendente').count()
     
-    # 🕵️ Verificação de Travas
-    # 1. Trava de Acesso Ativo
-    if acesso and acesso.status_catraca == 'liberado':
-        messages.error(request, "VETO: Não é possível excluir um aluno com ACESSO ATIVO. Aguarde o vencimento ou bloqueie o acesso manualmente.")
+    from django.utils import timezone
+    hoje = timezone.now().date()
+    
+    # 🕵️ Verificação de Travas Rigorosas
+    # 1. Trava de Plano Ativo
+    tem_plano_vigente = acesso and acesso.data_vencimento and acesso.data_vencimento >= hoje
+    if tem_plano_vigente or (acesso and acesso.status_catraca == 'liberado'):
+        messages.error(request, "VETO: Não é possível excluir um aluno com PLANO ATIVO. Aguarde o vencimento ou cancele o plano antes de excluir.")
         return redirect('crm_aluno_detail', aluno_id=aluno_id)
         
-    # 2. Trava de Inadimplência
-    if debitos_pendentes > 0:
-        messages.error(request, f"VETO FINANCEIRO: O aluno possui {debitos_pendentes} débitos pendentes. Regularize o financeiro antes de excluir.")
+    # 2. Trava de Inadimplência (Bloqueia apenas se o status for explicitamente Inadimplente)
+    if aluno.status == 'INADIMPLENTE':
+        messages.error(request, "VETO FINANCEIRO: Alunos com status de INADIMPLENTE não podem ser removidos até a quitação dos débitos.")
         return redirect('crm_aluno_detail', aluno_id=aluno_id)
         
     # 3. Trava de Saldo (Opcional por enquanto, já que credito é 0.00)
