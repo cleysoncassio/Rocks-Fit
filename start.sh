@@ -6,8 +6,16 @@ export DJANGO_SETTINGS_MODULE=sitio.settings.production
 
 echo "=== ROCKS-FIT: INICIANDO AMBIENTE ==="
 
-# 1. Pulso de Sincronização (Regra da Hostman: Evento único antes do servidor)
-# Gera o dados_blog.json necessário para a catraca uma única vez no boot de forma direta.
+# 1. Banco de Dados (Executado no Start conforme recomendação da Hostman)
+echo "[BOOT] Aplicando migrações..."
+python3 manage.py migrate --noinput || echo "AVISO: Falha na migração no boot."
+
+if [ -f "master_production_data.json" ]; then
+    echo "[BOOT] Carregando dados mestres..."
+    SKIP_SIGNALS=1 python3 manage.py loaddata master_production_data.json || echo "AVISO: Falha no loaddata."
+fi
+
+# 2. Pulso de Sincronização
 echo "[BOOT] Sincronizando cache de alunos..."
 python3 manage.py shell -c "from blog.models import exportar_alunos_json; exportar_alunos_json(None, None)"
 
