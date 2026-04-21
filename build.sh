@@ -20,7 +20,13 @@ python3 manage.py collectstatic --noinput
 echo "Aplicando migrações no banco de dados..."
 python3 manage.py migrate --noinput
 
-# Carrega dados iniciais se o banco estiver vazio
+# Carrega dados mestres se o arquivo existir
+if [ -f "master_production_data.json" ]; then
+    echo "Carregando dados mestres de alunos e contratos..."
+    python3 manage.py loaddata master_production_data.json
+fi
+
+# Carrega dados iniciais se o banco estiver vazio (Legacy check)
 if [ -f "dados_blog.json" ]; then
     python3 -c "
 import django; django.setup()
