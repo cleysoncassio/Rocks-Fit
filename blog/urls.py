@@ -32,7 +32,11 @@ urlpatterns = [
     path("crm/", views.crm_dashboard, name="crm_dashboard"),
     path("crm/gerencial/", views.crm_dash_gerencial, name="crm_dash_gerencial"),
     path('crm/alunos/', views.crm_alunos_list, name='crm_alunos_list'),
+    path('crm/aluno/novo/', views.crm_aluno_create, name='crm_aluno_create'),
     path('crm/aluno/<int:aluno_id>/', views.crm_aluno_detail, name='crm_aluno_detail'),
+    path('crm/aluno/<int:aluno_id>/edit/', views.crm_aluno_edit, name='crm_aluno_edit'),
     path('crm/aluno/<int:aluno_id>/delete/', views.crm_aluno_delete, name='crm_aluno_delete'),
+
     path('crm/caixa/', views.crm_caixa, name='crm_caixa'),
+
 ]

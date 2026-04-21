@@ -46,8 +46,8 @@
 </head>
 <body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden">
 
-    <!-- Sidebar Industrial Collapsible -->
-    <aside id="main-sidebar" class="fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
+    <!-- Sidebar Industrial Collapsible (Hidden on mobile) -->
+    <aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
         <!-- Toggle Button -->
         <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-primary text-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
             <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
@@ -179,76 +179,100 @@
         })();
     </script>
 
+    <!-- Bottom Navigation Bar for Mobile -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-container-high/90 backdrop-blur-2xl border-t border-white/10 z-[100] flex items-center justify-around px-4">
+        <a href="{% url 'crm_dashboard' %}" class="flex flex-col items-center gap-1 text-primary">
+            <span class="material-symbols-outlined text-2xl">grid_view</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Dash</span>
+        </a>
+        <a href="{% url 'crm_alunos_list' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-2xl">group</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Membros</span>
+        </a>
+        <div class="relative -top-8">
+            <a href="{% url 'crm_aluno_create' %}" class="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,145,89,0.4)] transition-all">
+                <span class="material-symbols-outlined text-3xl font-black">person_add</span>
+            </a>
+        </div>
+        <a href="{% url 'crm_dash_gerencial' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-2xl">analytics</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Gestão</span>
+        </a>
+        <a href="{% url 'crm_caixa' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-2xl">payments</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Caixa</span>
+        </a>
+    </div>
+
     <!-- Main Content Area -->
-    <main class="ml-64 flex-grow flex flex-col h-screen overflow-y-auto">
+    <main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-y-auto">
         <!-- TopAppBar -->
-        <header class="sticky top-0 w-full bg-surface/80 backdrop-blur-md flex justify-between items-center px-12 py-8 z-40">
+        <header class="sticky top-0 w-full bg-surface/80 backdrop-blur-md flex flex-col md:flex-row justify-between items-start md:items-center px-6 md:px-12 py-6 md:py-8 z-40 gap-4">
             <div class="flex items-center gap-4">
-                <h2 class="font-headline font-black text-2xl tracking-tighter text-on-surface uppercase italic">Estratégia Enterprise</h2>
+                <h2 class="font-headline font-black text-2xl md:text-2xl tracking-tighter text-on-surface uppercase italic">Estratégia <span class="text-primary">Enterprise</span></h2>
             </div>
-            <div class="flex items-center gap-6">
-                <div class="bg-surface-container-high px-5 py-3 rounded-xl flex items-center gap-4 border border-white/5 glow-orange">
+            
+            <div class="flex items-center justify-between w-full md:w-auto gap-4">
+                <div class="bg-surface-container-high px-4 py-2 rounded-xl flex items-center gap-3 border border-white/5 glow-orange">
                     <div class="relative">
-                        <span class="block w-2.5 h-2.5 bg-primary rounded-full"></span>
-                        <span class="absolute top-0 left-0 block w-2.5 h-2.5 bg-primary rounded-full animate-ping opacity-75"></span>
+                        <span class="block w-2 h-2 bg-primary rounded-full"></span>
+                        <span class="absolute top-0 left-0 block w-2 h-2 bg-primary rounded-full animate-ping opacity-75"></span>
                     </div>
-                    <div>
-                        <p class="text-[8px] text-neutral-300 font-headline uppercase tracking-[0.2em]">Status da Academia</p>
-                        <p class="text-xs font-black text-primary font-headline tracking-widest uppercase">ONLINE</p>
-                    </div>
+                    <p class="text-[10px] font-black text-primary font-headline tracking-widest uppercase">ONLINE</p>
                 </div>
-                <button onclick="openAuditModal()" class="bg-gradient-to-r from-primary to-primary-container text-black px-8 py-3.5 rounded-xl font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:scale-105 transition-all active:scale-95">
-                    Auditoria de Estratégia
+                <button onclick="openAuditModal()" class="flex-grow md:flex-none bg-gradient-to-r from-primary to-primary-container text-black px-4 md:px-8 py-3 rounded-xl font-headline font-black text-[9px] uppercase tracking-[0.2em] shadow-lg hover:scale-105 transition-all">
+                    Auditoria
                 </button>
             </div>
         </header>
 
         <!-- Bento Grid -->
-        <div class="p-12 pb-24">
-            <div class="max-w-7xl mx-auto space-y-12">
+        <div class="p-6 md:p-12 pb-32 md:pb-24">
+            <div class="max-w-7xl mx-auto space-y-8 md:space-y-12">
                 <!-- Highlighted Stats -->
-                <div class="grid grid-cols-12 gap-8">
-                    <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 hover:bg-surface-container-high transition-all">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5 hover:bg-surface-container-high transition-all">
                         <p class="text-[9px] font-black text-neutral-300 uppercase tracking-[0.3em] mb-4">Idade Média</p>
-                        <h3 class="text-5xl font-black font-headline tracking-tighter">{{ idade_media }} <span class="text-xs font-bold text-neutral-400 uppercase">Anos</span></h3>
+                        <h3 class="text-4xl md:text-5xl font-black font-headline tracking-tighter">{{ idade_media }} <span class="text-xs font-bold text-neutral-400 uppercase">Anos</span></h3>
                     </div>
-                    <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 border-b-primary shadow-[inset_0_-4px_0_0_rgba(255,145,89,1)]">
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5 border-b-primary shadow-[0_4px_20px_-10px_rgba(255,145,89,0.3)]">
                         <p class="text-[9px] font-black text-neutral-300 uppercase tracking-[0.3em] mb-4">Público Feminino</p>
-                        <h3 class="text-5xl font-black font-headline tracking-tighter text-primary">{{ perfil_mulheres }}</h3>
+                        <h3 class="text-4xl md:text-5xl font-black font-headline tracking-tighter text-primary">{{ perfil_mulheres }}</h3>
                     </div>
-                    <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5 border-b-blue-600 shadow-[inset_0_-4px_0_0_rgba(37,99,235,1)]">
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5 border-b-blue-600 shadow-[0_4px_20px_-10px_rgba(37,99,235,0.3)]">
                         <p class="text-[9px] font-black text-neutral-300 uppercase tracking-[0.3em] mb-4">Público Masculino</p>
-                        <h3 class="text-5xl font-black font-headline tracking-tighter text-blue-500">{{ perfil_homens }}</h3>
+                        <h3 class="text-4xl md:text-5xl font-black font-headline tracking-tighter text-blue-500">{{ perfil_homens }}</h3>
                     </div>
-                    <div class="col-span-12 lg:col-span-3 bg-surface-container-low p-8 rounded-2xl border border-white/5">
+                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
                         <p class="text-[9px] font-black text-neutral-300 uppercase tracking-[0.3em] mb-4">Taxa de Churn</p>
-                        <h3 class="text-5xl font-black font-headline tracking-tighter text-red-500">{{ churn_rate }}<span class="text-xs font-bold text-red-900">%</span></h3>
+                        <h3 class="text-4xl md:text-5xl font-black font-headline tracking-tighter text-red-500">{{ churn_rate }}<span class="text-xs font-bold text-red-900">%</span></h3>
                     </div>
                 </div>
 
                 <!-- Graphs & Insights -->
-                <div class="grid grid-cols-12 gap-8">
-                    <div class="col-span-12 lg:col-span-8 bg-surface-container-low p-10 rounded-2xl border border-white/5">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                    <div class="md:col-span-12 lg:col-span-8 bg-surface-container-low p-6 md:p-10 rounded-2xl border border-white/5 overflow-hidden">
                         <div class="flex justify-between items-center mb-10">
-                            <h4 class="font-headline font-black text-xs uppercase tracking-[0.3em] text-neutral-400">Fluxo de Matrículas</h4>
+                            <h4 class="font-headline font-black text-[10px] uppercase tracking-[0.3em] text-neutral-400">Fluxo de Matrículas</h4>
                             <div class="flex gap-2">
-                                <div class="w-2 h-2 rounded-full bg-primary"></div>
-                                <div class="w-2 h-2 rounded-full bg-neutral-800"></div>
+                                <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
                             </div>
                         </div>
-                        <canvas id="revChart" height="120"></canvas>
+                        <div class="h-[200px] md:h-[300px] w-full">
+                            <canvas id="revChart"></canvas>
+                        </div>
                     </div>
-                    <div class="col-span-12 lg:col-span-4 bg-primary p-10 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden group">
-                        <div class="absolute -right-4 -top-4 opacity-10 group-hover:scale-125 transition-all">
-                            <span class="material-symbols-outlined text-9xl">terminal</span>
+                    <div class="md:col-span-12 lg:col-span-4 bg-primary p-8 md:p-10 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 opacity-10 group-hover:scale-125 transition-all pointer-events-none">
+                            <span class="material-symbols-outlined text-[120px]">terminal</span>
                         </div>
                         <div>
-                            <span class="material-symbols-outlined text-4xl text-black/90 mb-6">bolt</span>
-                            <h4 class="font-headline font-black text-[10px] uppercase tracking-[0.3em] text-black/90 mb-4">Insight Instantâneo</h4>
+                            <span class="material-symbols-outlined text-4xl text-black/90 mb-6 font-black">bolt</span>
+                            <h4 class="font-headline font-black text-[9px] uppercase tracking-[0.3em] text-black/90 mb-4 italic">Insight Instantâneo</h4>
                             <p class="text-xl font-headline font-black italic tracking-tight text-black leading-tight opacity-90">{{ ai_insights }}</p>
                         </div>
                         <div class="mt-8 pt-8 border-t border-black/10">
-                            <p class="text-[9px] font-black uppercase tracking-widest text-black/80">Processado por Rocks Engine v2.4</p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-black/80">Rocks Engine v2.4</p>
                         </div>
                     </div>
                 </div>
