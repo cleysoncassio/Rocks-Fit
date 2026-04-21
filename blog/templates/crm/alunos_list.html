@@ -236,13 +236,14 @@
                 </div>                <!-- Member Grid -->
                 <div class="grid grid-cols-1 gap-4">
                     {% for aluno in alunos %}
-                    <div onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="group relative flex flex-col md:flex-row items-center gap-6 p-6 bg-surface-container-low rounded-2xl transition-all duration-300 hover:bg-surface-container-high cursor-pointer border border-white/5 shadow-xl">
-                        <div class="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full opacity-0 md:group-hover:opacity-100 transition-opacity
+                    <div onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="group relative flex flex-col md:grid md:grid-cols-12 items-center gap-6 p-6 bg-surface-container-low rounded-2xl transition-all duration-300 hover:bg-surface-container-high cursor-pointer border border-white/5 shadow-xl">
+                        <div class="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity
                             {% if aluno.status == 'ATIVO' %}bg-primary
                             {% elif aluno.status == 'INADIMPLENTE' %}bg-error
                             {% else %}bg-neutral-600{% endif %}"></div>
 
-                        <div class="flex items-center gap-6 w-full">
+                        <!-- Lado Esquerdo: Foto e Nome (Col 1-7 no desktop) -->
+                        <div class="flex items-center gap-6 w-full md:col-span-7">
                             <div class="relative w-16 h-16 md:w-20 md:h-20 shrink-0">
                                 <img alt="{{ aluno.nome_completo }}" class="relative w-full h-full object-cover rounded-full border-2 border-surface-container-highest group-hover:border-primary transition-all" src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}https://ui-avatars.com/api/?name={{ aluno.nome_completo }}&background=0e0e0e&color=adaaaa{% endif %}"/>
                             </div>
@@ -261,17 +262,18 @@
                             </div>
                         </div>
 
-                        <div class="hidden md:grid flex-1 grid grid-cols-3 gap-8 items-center w-full">
+                        <!-- Lado Direito: Stats (Col 8-12 no desktop) -->
+                        <div class="hidden md:grid grid-cols-3 gap-6 items-center w-full md:col-span-5">
                             <div>
-                                <p class="text-[9px] text-on-surface-variant font-headline uppercase tracking-[0.3em] mb-1">Vencimento</p>
-                                <p class="text-sm font-black text-on-surface font-headline uppercase">{{ aluno.acesso.data_vencimento|date:"d M Y"|default:"SEM PLANO" }}</p>
+                                <p class="text-[9px] text-on-surface-variant font-headline uppercase tracking-[0.2em] mb-1">Vencimento</p>
+                                <p class="text-[11px] font-black text-on-surface font-headline uppercase truncate">{{ aluno.acesso.data_vencimento|date:"d M Y"|default:"SEM PLANO" }}</p>
                             </div>
                             <div>
-                                <p class="text-[9px] text-on-surface-variant font-headline uppercase tracking-[0.3em] mb-1">Último Acesso</p>
-                                <p class="text-sm font-bold text-on-surface font-headline uppercase italic">{{ aluno.acesso.ultimo_acesso|date:"d/m H:i"|default:"Nunca" }}</p>
+                                <p class="text-[9px] text-on-surface-variant font-headline uppercase tracking-[0.2em] mb-1">Último Acesso</p>
+                                <p class="text-[11px] font-bold text-on-surface font-headline uppercase italic truncate">{{ aluno.acesso.ultimo_acesso|date:"d/m H:i"|default:"Nunca" }}</p>
                             </div>
-                            <div class="justify-self-end">
-                                <span class="px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border
+                            <div class="flex justify-end">
+                                <span class="px-4 py-2 shrink-0 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border text-center
                                     {% if aluno.status == 'ATIVO' %}bg-primary/10 text-primary border-primary/20
                                     {% elif aluno.status == 'INADIMPLENTE' %}bg-error/10 text-error border-error/20
                                     {% else %}bg-neutral-800 text-neutral-400 border-white/5{% endif %}">
@@ -280,7 +282,7 @@
                             </div>
                         </div>
                         
-                        <!-- Mobile Stats Trace -->
+                        <!-- Mobile Stats Trace (Fica visível apenas em telas pequenas) -->
                         <div class="md:hidden flex justify-between items-center w-full pt-4 border-t border-white/5 mt-2">
                              <div class="text-[10px] font-headline font-black uppercase text-neutral-500">Expira em: <span class="text-on-surface ml-1">{{ aluno.acesso.data_vencimento|date:"d/m/y"|default:"---" }}</span></div>
                              <div class="text-[10px] font-headline font-black uppercase text-neutral-500">Acesso: <span class="text-on-surface ml-1">{{ aluno.acesso.ultimo_acesso|date:"d/m"|default:"---" }}</span></div>
