@@ -7,9 +7,9 @@ export DJANGO_SETTINGS_MODULE=sitio.settings.production
 echo "=== ROCKS-FIT: INICIANDO AMBIENTE ==="
 
 # 1. Pulso de Sincronização (Regra da Hostman: Evento único antes do servidor)
-# Isso gera o dados_blog.json necessário para a catraca uma única vez no boot.
-echo "[BOOT] Pulso de sincronização de cache de alunos..."
-python3 manage.py shell -c "from blog.models import Aluno; a=Aluno.objects.first(); a.save() if a else print('Base de alunos vazia.')"
+# Gera o dados_blog.json necessário para a catraca uma única vez no boot de forma direta.
+echo "[BOOT] Sincronizando cache de alunos..."
+python3 manage.py shell -c "from blog.models import exportar_alunos_json; exportar_alunos_json(None, None)"
 
 # 2. Configura a porta
 PORT="${PORT:-8080}"
