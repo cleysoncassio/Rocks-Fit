@@ -207,13 +207,18 @@ class AppRecepcao(ctk.CTk):
 
     def carregar_alunos(self):
         u = f"{SITE_URL}/api/aluno-list-full/?token={SYNC_TOKEN}"
+        print(f"[SYNC] Iniciando sincronização com {SITE_URL}...")
         def f():
             try:
-                r = requests.get(u, timeout=10)
+                r = requests.get(u, timeout=12)
                 if r.status_code == 200:
                     self.alunos_data = r.json().get('alunos', [])
+                    print(f"[SYNC] Sucesso! {len(self.alunos_data)} alunos carregados.")
                     self.after(0, self.mostrar_todos)
-            except: pass
+                else:
+                    print(f"[SYNC] Erro na API: Status {r.status_code}")
+            except Exception as e:
+                print(f"[SYNC] Falha crítica de conexão: {e}")
         threading.Thread(target=f, daemon=True).start()
 
     def mostrar_todos(self): self.render_list("")
