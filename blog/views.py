@@ -1075,10 +1075,11 @@ def crm_aluno_create(request):
         messages.error(request, "Acesso Negado: Permissão insuficiente.")
         return redirect('crm_alunos_list')
     
-    from .forms import AlunoForm
-    from .models import GymSetting, ControleAcesso
+    from .models import GymSetting, ControleAcesso, Plan, PagamentoHistorico
+    from django.utils import timezone
     
     gym_settings = GymSetting.objects.first()
+    planos = Plan.objects.all()
     
     if request.method == 'POST':
         form = AlunoForm(request.POST, request.FILES)
@@ -1099,9 +1100,48 @@ def crm_aluno_create(request):
                     pass
             
             aluno.save()
-            # Criar controle de acesso padrão
-            ControleAcesso.objects.get_or_create(aluno=aluno)
-            messages.success(request, f"Aluno {aluno.nome_completo} cadastrado com sucesso!")
+            
+            # Criar controle de acesso (sempre)
+            acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
+
+            # Lógica de Aporte Inicial (Plano imediato)
+            plano_id = request.POST.get('plano_id')
+            if plano_id:
+                valor = request.POST.get('valor_pagamento')
+                metodo = request.POST.get('metodo_pagamento', 'PIX')
+                plano = Plan.objects.get(id=plano_id)
+                
+                # 1. Registrar Histórico
+                PagamentoHistorico.objects.create(
+                    aluno=aluno,
+                    plano=plano,
+                    valor=valor or plano.price,
+                    status='pago',
+                    metodo_pagamento=metodo
+                )
+                
+                # 2. Configurar Acesso
+                from datetime import timedelta
+                hoje_local = timezone.localtime(timezone.now()).date()
+                base_data = hoje_local
+                if hoje_local.weekday() == 6: # Domingo
+                    base_data = hoje_local + timedelta(days=1)
+                
+                acesso.data_vencimento = base_data + timedelta(days=plano.duration_days)
+                acesso.status_catraca = 'liberado'
+                acesso.save()
+                
+                # 3. Registrar no Caixa
+                registrar_venda_no_caixa(
+                    valor=float(valor or plano.price),
+                    descricao=f"Matrícula + Plano: {aluno.nome_completo} ({plano.name})",
+                    metodo=metodo,
+                    origem='MANUAL'
+                )
+                messages.success(request, f"Membro {aluno.nome_completo} cadastrado com Plano {plano.name}!")
+            else:
+                messages.success(request, f"Aluno {aluno.nome_completo} cadastrado com sucesso!")
+            
             return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
     else:
@@ -1110,6 +1150,7 @@ def crm_aluno_create(request):
     return render(request, 'crm/aluno_form.html', {
         'form': form,
         'gym_settings': gym_settings,
+        'planos': planos,
         'title': 'Novo Membro'
     })
 

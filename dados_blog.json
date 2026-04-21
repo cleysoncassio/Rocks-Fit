@@ -1058,7 +1058,7 @@
         },
         {
             "id": 89,
-            "nome": "Williane Nascimento",
+            "nome": "Adonis Artur De Melo Araujo",
             "matricula": "RF20260090",
             "cpf": "",
             "status": "BLOQUEADO",
@@ -20791,7 +20791,7 @@
             "cpf": "08384232482",
             "status": "BLOQUEADO",
             "vencimento": "SEM VENCIMENTO",
-            "liberar_agora": true,
+            "liberar_agora": false,
             "foto_url": null,
             "tem_foto": false,
             "tem_digital": false
