@@ -16,4 +16,4 @@ pip install -r requirements.txt
 # Coleta arquivos estáticos
 python3 manage.py collectstatic --noinput
 
-echo "Build de ativos e dependências concluído com sucesso."
+echo "Build de ativos e dependências concluído com sucesso."# Force rebuild
