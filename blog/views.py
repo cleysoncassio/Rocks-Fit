@@ -1076,6 +1076,7 @@ def crm_aluno_create(request):
         return redirect('crm_alunos_list')
     
     from .models import GymSetting, ControleAcesso, Plan, PagamentoHistorico
+    from .forms import AlunoForm
     from django.utils import timezone
     
     gym_settings = GymSetting.objects.first()
@@ -1170,7 +1171,7 @@ def crm_aluno_create(request):
 @login_required
 def crm_aluno_edit(request, aluno_id):
     """Edição de alunos existentes"""
-    from .models import Aluno, GymSetting
+    from .models import Aluno, GymSetting, Plan
     from .forms import AlunoForm
     from django.shortcuts import get_object_or_404
     
