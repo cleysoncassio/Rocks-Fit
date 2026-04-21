@@ -426,11 +426,17 @@ from django.dispatch import receiver
 import json
 import os
 
+_sync_in_progress = False
+
 @receiver(post_save, sender=Aluno)
 def exportar_alunos_json(sender, instance, **kwargs):
     """ Gera um cache local em JSON para o Gestor de Alunos """
-    if os.environ.get('SKIP_SIGNALS'):
+    global _sync_in_progress
+    
+    if os.environ.get('SKIP_SIGNALS') or _sync_in_progress:
         return
+        
+    _sync_in_progress = True
     try:
         from blog.models import Aluno
         alunos = Aluno.objects.all().select_related('acesso')
@@ -467,6 +473,8 @@ def exportar_alunos_json(sender, instance, **kwargs):
         print(f"[SYNC] Arquivo local atualizado: {len(lista)} alunos.")
     except Exception as e:
         print(f"[SYNC] Erro ao gerar cache local: {e}")
+    finally:
+        _sync_in_progress = False
 
 class GymSetting(models.Model):
     name = models.CharField(max_length=100, default="Rocks-Fit")

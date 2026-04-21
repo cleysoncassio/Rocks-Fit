@@ -22,8 +22,8 @@ python3 manage.py migrate --noinput
 
 # Carrega dados mestres se o arquivo existir
 if [ -f "master_production_data.json" ]; then
-    echo "Carregando dados mestres de alunos e contratos..."
-    python3 manage.py loaddata master_production_data.json
+    echo "Carregando dados mestres (Sinais desativados para evitar loops)..."
+    SKIP_SIGNALS=1 python3 manage.py loaddata master_production_data.json
 fi
 
 # Carrega dados iniciais se o banco estiver vazio (Legacy check)
