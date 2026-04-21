@@ -211,8 +211,16 @@
                 <div class="flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
                     <!-- Profile Identity -->
                     <div class="relative group">
-                        <div class="w-28 h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden border-2 border-surface-container-highest group-hover:border-primary transition-all duration-500 shadow-2xl relative">
-                            <img id="profile-img" src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}https://ui-avatars.com/api/?name={{ aluno.nome_completo }}&background=0e0e0e&color=adaaaa{% endif %}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                        <div class="w-28 h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden border-2 border-surface-container-highest group-hover:border-primary transition-all duration-500 shadow-2xl relative bg-surface-container-low flex items-center justify-center">
+                            {% if aluno.foto %}
+                                <img id="profile-img" src="{{ aluno.foto.url }}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                            {% else %}
+                                <div id="no-photo-placeholder" class="flex flex-col items-center justify-center text-neutral-600 group-hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined text-4xl">person</span>
+                                    <span class="text-[8px] font-black uppercase tracking-widest mt-1">Sem Foto</span>
+                                </div>
+                                <img id="profile-img" src="" class="hidden w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                            {% endif %}
                             <div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-3">
                                 <button onclick="document.getElementById('file-upload').click()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-sm">upload</span></button>
                                 <button onclick="startCamera()" class="w-10 h-10 rounded-full bg-primary text-black flex items-center justify-center hover:scale-110 transition-transform shadow-lg"><span class="material-symbols-outlined text-lg">videocam</span></button>

@@ -191,6 +191,7 @@ class Aluno(models.Model):
     whatsapp = models.CharField(max_length=20, verbose_name="WhatsApp")
     STATUS_CHOICES = (
         ('ATIVO', 'Ativo'),
+        ('AGUARDANDO', 'Aguardando Pagamento'),
         ('SUSPENSO', 'Suspenso'),
         ('INADIMPLENTE', 'Inadimplente'),
         ('INATIVO', 'Inativo'),
@@ -478,9 +479,11 @@ class GymSetting(models.Model):
         verbose_name = "Configuração da Academia"
         verbose_name_plural = "Configuração da Academia"
 
-# Também disparar quando o Controle de Acesso mudar (vencimento, etc)
-from django.db.models.signals import post_save
+# Também disparar quando o Controle de Acesso mudar ou Aluno for deletado
+from django.db.models.signals import post_save, post_delete
 from .models import ControleAcesso
+
 @receiver(post_save, sender=ControleAcesso)
-def exportar_pelo_acesso(sender, instance, **kwargs):
+@receiver(post_delete, sender=Aluno)
+def exportar_pelo_vinculo(sender, instance, **kwargs):
     exportar_alunos_json(sender=Aluno, instance=None)
