@@ -9,6 +9,10 @@ echo    SISTEMA DE ACESSO ROCKS FIT
 echo ==========================================
 echo.
 
+:: Limpa processos fantasmas para evitar erro de porta
+taskkill /F /IM python.exe /T >nul 2>&1
+echo [INFO] Inicializando ambiente limpo...
+
 :: Tenta encontrar o Python
 set PY_CMD=
 where py >nul 2>&1
@@ -23,12 +27,19 @@ if not defined PY_CMD (
 )
 
 echo [OK] Python detectado: %PY_CMD%
-echo Verificando bibliotecas basicas (Interface)...
-%PY_CMD% -m pip install requests pillow customtkinter opencv-python --quiet
+echo Verificando integridade das bibliotecas...
 
-echo Verificando bibliotecas de IA (Opcional)...
-:: Nao usamos --quiet aqui para o usuario ver se ha erro, mas nao interrompemos o script
-%PY_CMD% -m pip install face-recognition cmake dlib
+:: Verifica se a biblioteca base ja existe para evitar o delay do pip install em todos os acessos
+%PY_CMD% -c "import requests, PIL, customtkinter" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Instalando dependencias pela primeira vez (isso pode levar 1 minuto)...
+    %PY_CMD% -m pip install requests pillow customtkinter opencv-python --quiet
+) else (
+    echo [OK] Bibliotecas verificadas.
+)
+
+:: Tentativa silenciosa de upgrade apenas de bibliotecas criticas se necessario
+:: %PY_CMD% -m pip install --upgrade requests --quiet
 
 echo.
 echo [INFO] Abrindo monitor da recepcao...
