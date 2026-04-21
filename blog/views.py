@@ -500,11 +500,12 @@ def aluno_list_full_api(request):
     if token != getattr(settings, 'CATRACA_SYNC_TOKEN', None):
         return JsonResponse({'status': 'error', 'message': 'Não autorizado'}, status=401)
     
-    import datetime
-    hoje = datetime.date.today()
+    from django.utils import timezone
+    hoje = timezone.now().date()
     
     alunos = Aluno.objects.all().select_related('acesso').order_by('-data_cadastro')
     data = []
+    
     for a in alunos:
         try:
             status_pagamento = "INATIVO"
@@ -514,7 +515,7 @@ def aluno_list_full_api(request):
 
             if hasattr(a, 'acesso'):
                 ac = a.acesso
-                status_catraca = ac.status_catraca
+                status_catraca = str(ac.status_catraca)
 
                 if ac.status_catraca == 'aguardando_biometria':
                     status_pagamento = "PAGO (Aguard. Biometria)"
@@ -536,11 +537,15 @@ def aluno_list_full_api(request):
                     status_pagamento = "BLOQUEADO (Não Pago)"
                     borda_cor = "vermelho"
 
-            foto_url = a.foto.url if a.foto else None
+            # Crítico: O Bridge (ponte_rocksfit) precisa de URL ABSOLUTA para carregar imagens
+            try:
+                foto_url = request.build_absolute_uri(a.foto.url) if a.foto else None
+            except:
+                foto_url = None
 
             data.append({
                 'id': a.id,
-                'nome': str(a.nome_completo)[:50],
+                'nome': str(a.nome_completo or "Sem Nome")[:50],
                 'matricula': a.matricula or f"RF{a.id:04d}",
                 'status': status_pagamento,
                 'status_catraca': status_catraca,
@@ -552,7 +557,8 @@ def aluno_list_full_api(request):
             })
         except:
             continue
-    return JsonResponse({'alunos': data})
+
+    return JsonResponse({'alunos': data, 'total': len(data)})
 
 @csrf_exempt
 def aluno_update_data_api(request):
@@ -804,9 +810,9 @@ def crm_aluno_detail(request, aluno_id):
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
     if request.method == 'POST' and 'faturar' in request.POST:
-        valor = request.POST.get('valor')
-        metodo = request.POST.get('metodo')
-        plano_id = request.POST.get('plano')
+        valor = request.POST.get('valor', '0.00')
+        metodo = request.POST.get('metodo', 'DINHEIRO')
+        plano_id = request.POST.get('plano', '')
         
         # 1. Registrar no Histórico do Aluno
         pagamento = PagamentoHistorico.objects.create(
