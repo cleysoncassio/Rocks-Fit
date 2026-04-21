@@ -6,6 +6,17 @@ export DJANGO_SETTINGS_MODULE=sitio.settings.production
 
 echo "=== ROCKS-FIT: INICIANDO AMBIENTE ==="
 
+# 0. AUTO-REPARO DE PERMISSÕES (Tenta liberar o banco antes de tudo)
+echo "[BOOT] Executando auto-reparo de permissões do banco..."
+python3 manage.py shell -c "from django.db import connection; 
+with connection.cursor() as cursor:
+    try:
+        cursor.execute('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO Rocksfit;')
+        cursor.execute('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO Rocksfit;')
+        print('✅ Permissões concedidas com sucesso!')
+    except Exception as e:
+        print(f'❌ Falha no auto-reparo: {e}')" || echo "Aviso: Script de reparo falhou."
+
 # 1. Banco de Dados e Sincronização (Executado em BACKGROUND para não travar o Gunicorn)
 echo "[BOOT] Iniciando migrações e sincronização em segundo plano..."
 (
