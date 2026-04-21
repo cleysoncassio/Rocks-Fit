@@ -39,44 +39,48 @@ def registrar_venda_no_caixa(valor, descricao, metodo='PIX', origem='SITE'):
 
 
 def home(request):
-    from django.utils import timezone
-    trainers_list = Trainer.objects.all().order_by('order')
-    plans_list = Plan.objects.all().order_by('order')
-    
-    # Horários de Funcionamento
-    days_order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    schedules = Schedule.objects.all().select_related('trainer', 'program')
-    
-    # Reorganizar dias para facilitar no template
-    days_data = []
-    for d_id, d_name in [
-        ('monday', 'Segunda'),
-        ('tuesday', 'Terça'),
-        ('wednesday', 'Quarta'),
-        ('thursday', 'Quinta'),
-        ('friday', 'Sexta'),
-        ('saturday', 'Sábado'),
-        ('sunday', 'Domingo'),
-    ]:
-        days_data.append({
-            'id': d_id,
-            'name': d_name,
-            'schedules': [s for s in schedules if s.day == d_id]
-        })
-    
-    # Dia atual para o destaque
-    today = days_order[timezone.now().weekday()]
-    
-    programs_list = Program.objects.all().order_by('order')
-    
-    context = {
-        "trainers": trainers_list,
-        "plans": plans_list,
-        "programs": programs_list,
-        "days_data": days_data,
-        "today": today,
-    }
-    return render(request, "base/home.html", context)
+    try:
+        from django.utils import timezone
+        trainers_list = Trainer.objects.all().order_by('order')
+        plans_list = Plan.objects.all().order_by('order')
+        
+        # Horários de Funcionamento
+        days_order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        schedules = Schedule.objects.all().select_related('trainer', 'program')
+        
+        # Reorganizar dias para facilitar no template
+        days_data = []
+        for d_id, d_name in [
+            ('monday', 'Segunda'),
+            ('tuesday', 'Terça'),
+            ('wednesday', 'Quarta'),
+            ('thursday', 'Quinta'),
+            ('friday', 'Sexta'),
+            ('saturday', 'Sábado'),
+            ('sunday', 'Domingo'),
+        ]:
+            days_data.append({
+                'id': d_id,
+                'name': d_name,
+                'schedules': [s for s in schedules if s.day == d_id]
+            })
+        
+        # Dia atual para o destaque
+        today = days_order[timezone.now().weekday()]
+        
+        programs_list = Program.objects.all().order_by('order')
+        
+        context = {
+            "trainers": trainers_list,
+            "plans": plans_list,
+            "programs": programs_list,
+            "days_data": days_data,
+            "today": today,
+        }
+        return render(request, "base/home.html", context)
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"ERRO DE DIAGNÓSTICO ROCKS-FIT (HOME): {str(e)}<br><pre>{traceback.format_exc()}</pre>", status=500)
 
 def programs(request):
     programs_list = Program.objects.all()
@@ -603,71 +607,75 @@ def whatsapp_webhook(request):
 @login_required
 def crm_dashboard(request):
     """Dashboard com Inteligência Artificial, Demografia e Plano de Ação"""
-    alunos = Aluno.objects.all()
-    total_alunos = alunos.count()
-    hoje = date.today()
-    proximos_7_dias = hoje + timedelta(days=7)
-    
-    ativos = Aluno.objects.filter(acesso__data_vencimento__gte=hoje).count()
-    inativos = total_alunos - ativos
-    
-    # 1. Análise Demográfica (Inspirado no request do usuário)
-    # Gênero
-    mulheres = alunos.filter(sexo='F').count()
-    homens = alunos.filter(sexo='M').count()
-    
-    # Idade Média
-    idades = []
-    for a in alunos:
-        if a.data_nascimento:
-            idade = hoje.year - a.data_nascimento.year - ((hoje.month, hoje.day) < (a.data_nascimento.month, a.data_nascimento.day))
-            idades.append(idade)
-    
-    idade_media = sum(idades) / len(idades) if idades else 0
-    
-    # 2. Geração de Ações Estratégicas (Relatório Automatizado)
-    acoes_gestor = []
-    taxa_churn_atual = (inativos / total_alunos * 100) if total_alunos > 0 else 0
-    
-    if total_alunos > 0:
-        if taxa_churn_atual > 15:
-            acoes_gestor.append({"titulo": "Reduzir Evasão", "msg": "Ofertar 10% de desconto para renovações feitas hoje."})
+    try:
+        alunos = Aluno.objects.all()
+        total_alunos = alunos.count()
+        hoje = date.today()
+        proximos_7_dias = hoje + timedelta(days=7)
         
-        if mulheres > homens:
-            acoes_gestor.append({"titulo": "Marketing Feminino", "msg": "Criar campanha de modalidade focada no público feminino (ex: Dance/Pilates)."})
+        ativos = Aluno.objects.filter(acesso__data_vencimento__gte=hoje).count()
+        inativos = total_alunos - ativos
         
-        if idade_media > 40:
-             acoes_gestor.append({"titulo": "Saúde Senior", "msg": "Implementar horários de treinamento focado em mobilidade."})
-        else:
-             acoes_gestor.append({"titulo": "Performance Jovem", "msg": "Lançar desafios e rankings de força no Instagram."})
-    
-    # Alertas
-    aniversariantes = Aluno.objects.filter(data_nascimento__month=hoje.month, data_nascimento__day=hoje.day)
-    vencimentos_proximos = Aluno.objects.filter(acesso__data_vencimento__range=[hoje, proximos_7_dias])
-    
-    # Insights curtos para o painel principal
-    ai_insights = "Análise concluída. Clique no botão de Auditoria para ver o Plano de Ação."
-    taxa_churn = taxa_churn_atual
+        # 1. Análise Demográfica (Inspirado no request do usuário)
+        # Gênero
+        mulheres = alunos.filter(sexo='F').count()
+        homens = alunos.filter(sexo='M').count()
+        
+        # Idade Média
+        idades = []
+        for a in alunos:
+            if a.data_nascimento:
+                idade = hoje.year - a.data_nascimento.year - ((hoje.month, hoje.day) < (a.data_nascimento.month, a.data_nascimento.day))
+                idades.append(idade)
+        
+        idade_media = sum(idades) / len(idades) if idades else 0
+        
+        # 2. Geração de Ações Estratégicas (Relatório Automatizado)
+        acoes_gestor = []
+        taxa_churn_atual = (inativos / total_alunos * 100) if total_alunos > 0 else 0
+        
+        if total_alunos > 0:
+            if taxa_churn_atual > 15:
+                acoes_gestor.append({"titulo": "Reduzir Evasão", "msg": "Ofertar 10% de desconto para renovações feitas hoje."})
+            
+            if mulheres > homens:
+                acoes_gestor.append({"titulo": "Marketing Feminino", "msg": "Criar campanha de modalidade focada no público feminino (ex: Dance/Pilates)."})
+            
+            if idade_media > 40:
+                 acoes_gestor.append({"titulo": "Saúde Senior", "msg": "Implementar horários de treinamento focado em mobilidade."})
+            else:
+                 acoes_gestor.append({"titulo": "Performance Jovem", "msg": "Lançar desafios e rankings de força no Instagram."})
+        
+        # Alertas
+        aniversariantes = Aluno.objects.filter(data_nascimento__month=hoje.month, data_nascimento__day=hoje.day)
+        vencimentos_proximos = Aluno.objects.filter(acesso__data_vencimento__range=[hoje, proximos_7_dias])
+        
+        # Insights curtos para o painel principal
+        ai_insights = "Análise concluída. Clique no botão de Auditoria para ver o Plano de Ação."
+        taxa_churn = taxa_churn_atual
 
-    from blog.models import GymSetting
-    gym_settings = GymSetting.objects.first()
+        from blog.models import GymSetting
+        gym_settings = GymSetting.objects.first()
 
-    context = {
-        'total_alunos': total_alunos,
-        'ativos': ativos,
-        'inativos': inativos,
-        'aniversariantes': aniversariantes,
-        'vencimentos_proximos': vencimentos_proximos,
-        'ai_insights': ai_insights,
-        'churn_rate': round(taxa_churn, 1),
-        'idade_media': round(idade_media, 1),
-        'perfil_mulheres': mulheres,
-        'perfil_homens': homens,
-        'acoes_gestor': acoes_gestor,
-        'user_role': getattr(request.user, 'role', 'ALUNO'),
-        'gym_settings': gym_settings,
-    }
-    return render(request, 'crm/dashboard.html', context)
+        context = {
+            'total_alunos': total_alunos,
+            'ativos': ativos,
+            'inativos': inativos,
+            'aniversariantes': aniversariantes,
+            'vencimentos_proximos': vencimentos_proximos,
+            'ai_insights': ai_insights,
+            'churn_rate': round(taxa_churn, 1),
+            'idade_media': round(idade_media, 1),
+            'perfil_mulheres': mulheres,
+            'perfil_homens': homens,
+            'acoes_gestor': acoes_gestor,
+            'user_role': getattr(request.user, 'role', 'ALUNO'),
+            'gym_settings': gym_settings,
+        }
+        return render(request, 'crm/dashboard.html', context)
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"ERRO DE DIAGNÓSTICO ROCKS-FIT (DASHBOARD): {str(e)}<br><pre>{traceback.format_exc()}</pre>", status=500)
 
 @login_required
 def crm_dash_gerencial(request):
