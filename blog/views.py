@@ -86,7 +86,9 @@ def home(request):
         # Horários de Funcionamento (Envolvido em try específico pois a tabela schedule está com erro de permissão)
         try:
             days_order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-            schedules = list(Schedule.objects.all().select_related('trainer', 'program'))
+            # O Segredo: Transformar em list() IMEDIATAMENTE para capturar o erro aqui e não depois
+            schedules_qs = Schedule.objects.all().select_related('trainer', 'program')
+            schedules = list(schedules_qs) 
             
             for d_id, d_name in [
                 ('monday', 'Segunda'), ('tuesday', 'Terça'), ('wednesday', 'Quarta'),
