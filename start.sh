@@ -6,9 +6,11 @@ export DJANGO_SETTINGS_MODULE=sitio.settings.production
 
 echo "=== ROCKS-FIT: INICIANDO AMBIENTE ==="
 
-# 0. AUTO-REPARO DE PERMISSÕES (Tenta liberar o banco antes de tudo)
-echo "[BOOT] Executando auto-reparo de permissões do banco..."
-python3 manage.py shell -c "from django.db import connection; 
+# 1. Tarefas Pré-Start (Executadas em BACKGROUND para não travar o Gunicorn)
+echo "[BOOT] Iniciando auto-reparo, migrações e sincronização em segundo plano..."
+(
+    echo "[BOOT] Executando auto-reparo de permissões do banco..."
+    python3 manage.py shell -c "from django.db import connection; 
 with connection.cursor() as cursor:
     try:
         cursor.execute('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO Rocksfit;')
@@ -17,9 +19,6 @@ with connection.cursor() as cursor:
     except Exception as e:
         print(f'❌ Falha no auto-reparo: {e}')" || echo "Aviso: Script de reparo falhou."
 
-# 1. Banco de Dados e Sincronização (Executado em BACKGROUND para não travar o Gunicorn)
-echo "[BOOT] Iniciando migrações e sincronização em segundo plano..."
-(
     python3 manage.py migrate --noinput || echo "AVISO: Falha na migração no boot."
     if [ -f "master_production_data.json" ]; then
         SKIP_SIGNALS=1 python3 manage.py loaddata master_production_data.json || echo "AVISO: Falha no loaddata."
