@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     "cloudinary",
     "sass_processor",
     "ordered_model",
-    "axes",
+    # "axes", # Desativado temporariamente para debugar o health check da Hostman
     "csp",
     "corsheaders",
     "rest_framework",
@@ -46,7 +46,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "axes.middleware.AxesMiddleware",
+    # "axes.middleware.AxesMiddleware", # Desativado para evitar bloqueios no health check com o DB travado
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -125,12 +125,12 @@ CATRACA_SYNC_TOKEN = "rocksfit@2024"
 
 # Django-Axes (Proteção Brute Force)
 AUTHENTICATION_BACKENDS = [
-    'axes.backends.AxesBackend',
+    # 'axes.backends.AxesBackend', # Desativado pelo mesmo motivo
     'django.contrib.auth.backends.ModelBackend',
 ]
 
 AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = 1
+# AXES_COOLOFF_TIME = 1
 AXES_LOCKOUT_TEMPLATE = "base/fake_admin.html"
 AXES_RESET_ON_SUCCESS = True
 
