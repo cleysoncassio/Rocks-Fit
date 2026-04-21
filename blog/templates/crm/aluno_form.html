@@ -291,6 +291,43 @@
                         </div>
                     </div>
 
+                    <!-- Plan & Payment (Aporte Inicial) -->
+                    <div class="bg-surface-container-low p-8 md:p-10 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                            <h3 class="font-headline font-black uppercase text-sm tracking-widest text-primary flex items-center gap-3">
+                                <span class="material-symbols-outlined">payments</span> Assinatura de Plano (Aporte Inicial)
+                            </h3>
+                            <span class="px-4 py-1 bg-primary/10 text-primary text-[8px] font-black uppercase tracking-widest rounded-full border border-primary/20">Opcional para novos cadastros</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="space-y-2">
+                                <label>Selecionar Plano</label>
+                                <select name="plano_id" id="plano_select" onchange="updatePlanPrice()" class="w-full">
+                                    <option value="">NENHUM (CADASTRO SEM PLANO)</option>
+                                    {% for p in planos %}
+                                    <option value="{{ p.id }}" data-price="{{ p.price }}">{{ p.name }} - R$ {{ p.price }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label>Valor do Recebimento (R$)</label>
+                                <input type="number" step="0.01" name="valor_pagamento" id="valor_pagamento" class="text-primary font-black text-lg" placeholder="0,00">
+                            </div>
+                            <div class="space-y-2">
+                                <label>Método de Pagamento</label>
+                                <select name="metodo_pagamento" class="w-full">
+                                    <option value="DINHEIRO">DINHEIRO (Industrial RKS)</option>
+                                    <option value="PIX">PROTOCOLO PIX</option>
+                                    <option value="CREDITO">CARTÃO DE CRÉDITO</option>
+                                    <option value="DEBITO">CARTÃO DE DÉBITO</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="text-[8px] font-bold text-neutral-500 uppercase tracking-widest mt-6 italic text-center md:text-left">Nota: Ao selecionar um plano, o acesso será liberado automaticamente após a conclusão.</p>
+                    </div>
+
                     <!-- Footer Actions -->
                     <div class="flex justify-end gap-6 pt-10">
                         <a href="{% url 'crm_alunos_list' %}" class="px-10 py-4 rounded-2xl font-headline font-black uppercase text-[10px] tracking-widest text-neutral-400 hover:text-white transition-colors">Abortar Operação</a>
@@ -305,6 +342,22 @@
     </main>
 
     <script>
+        // --- Plan Price Logic ---
+        function updatePlanPrice() {
+            const select = document.getElementById('plano_select');
+            const priceInput = document.getElementById('valor_pagamento');
+            const selectedOption = select.options[select.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            
+            if (price) {
+                // Remove R$ if present and replace comma with dot
+                const cleanPrice = price.replace('R$', '').replace(',', '.').trim();
+                priceInput.value = parseFloat(cleanPrice).toFixed(2);
+            } else {
+                priceInput.value = '';
+            }
+        }
+
         // --- Sidebar Logic ---
         function toggleSidebar() {
             const sidebar = document.getElementById('main-sidebar');
