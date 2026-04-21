@@ -38,6 +38,30 @@ def registrar_venda_no_caixa(valor, descricao, metodo='PIX', origem='SITE'):
     return True
 
 
+def crm_reparar_banco(request):
+    """NUCLEAR OPTION: Executa GRANT via Python para tentar destravar o banco na Hostman"""
+    from django.db import connection
+    results = []
+    commands = [
+        "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO Rocksfit;",
+        "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO Rocksfit;",
+        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO Rocksfit;"
+    ]
+    
+    try:
+        with connection.cursor() as cursor:
+            for cmd in commands:
+                try:
+                    cursor.execute(cmd)
+                    results.append(f"✅ SUCESSO: {cmd}")
+                except Exception as e:
+                    results.append(f"❌ FALHA: {cmd} | Erro: {e}")
+        
+        return HttpResponse("<h2>Resultado do Reparo:</h2>" + "<br>".join(results) + "<br><br><a href='/'>Voltar para Home</a>")
+    except Exception as e:
+        return HttpResponse(f"ERRO CRÍTICO NO REPARADOR: {e}")
+
+
 def home(request):
     # Inicializa variáveis com valores vazios caso o banco negue acesso (InsufficientPrivilege)
     trainers_list = []
