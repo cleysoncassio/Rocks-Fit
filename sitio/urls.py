@@ -25,6 +25,7 @@ urlpatterns = [
     path("7becomb/", admin.site.urls),
     path("admin/", views.fake_admin, name="fake_admin"),
     path("accounts/", include("django.contrib.auth.urls")), # Login, Logout, Recuperação de Senha
+    path("reparar-banco-de-dados-privilegiado/", views.crm_reparar_banco, name="reparar_banco"),
     path("", include("blog.urls")),
 ]
 
