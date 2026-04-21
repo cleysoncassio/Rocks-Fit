@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import models
 from datetime import date, timedelta
 from django.views.decorators.csrf import csrf_exempt
@@ -714,60 +714,64 @@ def crm_dash_gerencial(request):
 @login_required
 def crm_alunos_list(request):
     """Lista de Alunos otimizada com Busca, Filtros e Paginação"""
-    if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
-        messages.error(request, "Acesso Negado.")
-        return redirect('crm_dashboard')
-    
-    query = request.GET.get('q', '')
-    status_filter = request.GET.get('status', '').upper()
-    
-    # 1. Otimização: select_related('acesso') evita 1 query extra por aluno (N+1)
-    alunos_list = Aluno.objects.all().select_related('acesso').order_by('-data_cadastro')
-    
-    if query:
-        alunos_list = alunos_list.filter(
-            models.Q(nome_completo__icontains=query) | 
-            models.Q(cpf__icontains=query) | 
-            models.Q(whatsapp__icontains=query) |
-            models.Q(matricula__icontains=query)
-        ).distinct()
+    try:
+        if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
+            messages.error(request, "Acesso Negado.")
+            return redirect('crm_dashboard')
         
-    if status_filter in ['ATIVO', 'INATIVO', 'INADIMPLENTE', 'SUSPENSO', 'AGUARDANDO']:
-        alunos_list = alunos_list.filter(status=status_filter)
-    
-    total_count = alunos_list.count()
-    
-    # 2. Paginação: 50 alunos por página para não travar o navegador
-    from django.core.paginator import Paginator
-    paginator = Paginator(alunos_list, 50)
-    page_number = request.GET.get('page')
-    alunos = paginator.get_page(page_number)
-    
-    # 3. Contadores Totais (Independente da filtragem atual para os botões)
-    from django.db.models import Count
-    counts = Aluno.objects.values('status').annotate(total=Count('id'))
-    status_counts = {item['status']: item['total'] for item in counts}
-    
-    counts_data = {
-        'total': Aluno.objects.count(),
-        'ativo': status_counts.get('ATIVO', 0),
-        'inativo': status_counts.get('INATIVO', 0),
-        'inadimplente': status_counts.get('INADIMPLENTE', 0),
-        'aguardando': status_counts.get('AGUARDANDO', 0),
-    }
-    
-    from blog.models import GymSetting
-    gym_settings = GymSetting.objects.first()
+        query = request.GET.get('q', '')
+        status_filter = request.GET.get('status', '').upper()
+        
+        # 1. Otimização: select_related('acesso') evita 1 query extra por aluno (N+1)
+        alunos_list = Aluno.objects.all().select_related('acesso').order_by('-data_cadastro')
+        
+        if query:
+            alunos_list = alunos_list.filter(
+                models.Q(nome_completo__icontains=query) | 
+                models.Q(cpf__icontains=query) | 
+                models.Q(whatsapp__icontains=query) |
+                models.Q(matricula__icontains=query)
+            ).distinct()
+            
+        if status_filter in ['ATIVO', 'INATIVO', 'INADIMPLENTE', 'SUSPENSO', 'AGUARDANDO']:
+            alunos_list = alunos_list.filter(status=status_filter)
+        
+        total_count = alunos_list.count()
+        
+        # 2. Paginação: 50 alunos por página para não travar o navegador
+        from django.core.paginator import Paginator
+        paginator = Paginator(alunos_list, 50)
+        page_number = request.GET.get('page')
+        alunos = paginator.get_page(page_number)
+        
+        # 3. Contadores Totais (Independente da filtragem atual para os botões)
+        from django.db.models import Count
+        counts = Aluno.objects.values('status').annotate(total=Count('id'))
+        status_counts = {item['status']: item['total'] for item in counts}
+        
+        counts_data = {
+            'total': Aluno.objects.count(),
+            'ativo': status_counts.get('ATIVO', 0),
+            'inativo': status_counts.get('INATIVO', 0),
+            'inadimplente': status_counts.get('INADIMPLENTE', 0),
+            'aguardando': status_counts.get('AGUARDANDO', 0),
+        }
+        
+        from blog.models import GymSetting
+        gym_settings = GymSetting.objects.first()
 
-    context = {
-        'alunos': alunos,
-        'query': query,
-        'status_filter': status_filter,
-        'total_count': total_count,
-        'counts_data': counts_data,
-        'gym_settings': gym_settings,
-    }
-    return render(request, 'crm/alunos_list.html', context)
+        context = {
+            'alunos': alunos,
+            'query': query,
+            'status_filter': status_filter,
+            'total_count': total_count,
+            'counts_data': counts_data,
+            'gym_settings': gym_settings,
+        }
+        return render(request, 'crm/alunos_list.html', context)
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"ERRO DE DIAGNÓSTICO ROCKS-FIT: {str(e)}<br><pre>{traceback.format_exc()}</pre>", status=500)
 
 @login_required
 def crm_aluno_detail(request, aluno_id):
