@@ -261,8 +261,12 @@ class Aluno(models.Model):
         return f"{self.matricula} - {self.nome_completo}"
 
     class Meta:
-        verbose_name = "Aluno para Matrícula"
-        verbose_name_plural = "01. Gestão: Alunos para Matrícula"
+        verbose_name = "Aluno"
+        verbose_name_plural = "02. Gestão: Alunos"
+        permissions = [
+            ("can_manage_students", "Pode gerenciar alunos no CRM"),
+            ("can_access_financial", "Pode acessar o setor financeiro"),
+        ]
 
 class PagamentoHistorico(models.Model):
     STATUS_CHOICES = [
