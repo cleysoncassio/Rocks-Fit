@@ -1107,15 +1107,24 @@ def crm_aluno_create(request):
             # Lógica de Aporte Inicial (Plano imediato)
             plano_id = request.POST.get('plano_id')
             if plano_id:
-                valor = request.POST.get('valor_pagamento')
+                valor_raw = request.POST.get('valor_pagamento')
                 metodo = request.POST.get('metodo_pagamento', 'PIX')
                 plano = Plan.objects.get(id=plano_id)
                 
+                # Tratamento robusto do valor (conversão de vírgula para ponto)
+                try:
+                    if valor_raw:
+                        valor_final = float(valor_raw.replace(',', '.'))
+                    else:
+                        valor_final = float(plano.price)
+                except (ValueError, TypeError):
+                    valor_final = float(plano.price)
+
                 # 1. Registrar Histórico
                 PagamentoHistorico.objects.create(
                     aluno=aluno,
                     plano=plano,
-                    valor=valor or plano.price,
+                    valor=valor_final,
                     status='pago',
                     metodo_pagamento=metodo
                 )
@@ -1131,13 +1140,17 @@ def crm_aluno_create(request):
                 acesso.status_catraca = 'liberado'
                 acesso.save()
                 
-                # 3. Registrar no Caixa
-                registrar_venda_no_caixa(
-                    valor=float(valor or plano.price),
-                    descricao=f"Matrícula + Plano: {aluno.nome_completo} ({plano.name})",
-                    metodo=metodo,
-                    origem='MANUAL'
-                )
+                # 3. Registrar no Caixa (Se possível)
+                try:
+                    registrar_venda_no_caixa(
+                        valor=valor_final,
+                        descricao=f"Matrícula + Plano: {aluno.nome_completo} ({plano.name})",
+                        metodo=metodo,
+                        origem='MANUAL'
+                    )
+                except Exception as e:
+                    messages.warning(request, "Cadastro realizado, mas não foi possível registrar no caixa (verifique se há um caixa aberto).")
+                
                 messages.success(request, f"Membro {aluno.nome_completo} cadastrado com Plano {plano.name}!")
             else:
                 messages.success(request, f"Aluno {aluno.nome_completo} cadastrado com sucesso!")
@@ -1168,6 +1181,7 @@ def crm_aluno_edit(request, aluno_id):
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
     
     gym_settings = GymSetting.objects.first()
+    planos = Plan.objects.all()
     
     if request.method == 'POST':
         form = AlunoForm(request.POST, request.FILES, instance=aluno)
@@ -1196,6 +1210,7 @@ def crm_aluno_edit(request, aluno_id):
     return render(request, 'crm/aluno_form.html', {
         'form': form,
         'gym_settings': gym_settings,
+        'planos': planos,
         'title': 'Editar Membro',
         'aluno': aluno
     })

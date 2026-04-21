@@ -24,6 +24,8 @@ python3 manage.py migrate --noinput
 if [ -f "master_production_data.json" ]; then
     echo "Carregando dados mestres de alunos e contratos..."
     python3 manage.py loaddata master_production_data.json
+    echo "Sincronizando cache JSON..."
+    python3 manage.py shell -c "from blog.models import Aluno; a=Aluno.objects.first(); a.save() if a else None"
 fi
 
 # Carrega dados iniciais se o banco estiver vazio (Legacy check)
