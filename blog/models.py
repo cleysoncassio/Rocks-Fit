@@ -203,6 +203,16 @@ class Aluno(models.Model):
     digital = models.TextField(blank=True, null=True, verbose_name="Digital (Template Biométrico)")
     data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
     
+    # Endereço Completo
+    cep = models.CharField(max_length=9, blank=True, null=True, verbose_name="CEP")
+    endereco = models.CharField(max_length=255, blank=True, null=True, verbose_name="Endereço")
+    numero = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número")
+    bairro = models.CharField(max_length=100, blank=True, null=True, verbose_name="Bairro")
+    cidade = models.CharField(max_length=100, blank=True, null=True, verbose_name="Cidade")
+    estado = models.CharField(max_length=2, blank=True, null=True, verbose_name="UF")
+    complemento = models.CharField(max_length=255, blank=True, null=True, verbose_name="Complemento")
+
+    
     def is_active_pay(self):
         """Verifica se o aluno tem pagamento em dia"""
         from datetime import date

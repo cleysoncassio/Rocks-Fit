@@ -45,8 +45,8 @@
 </head>
 <body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden">
 
-    <!-- Sidebar Industrial Collapsible -->
-    <aside id="main-sidebar" class="fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
+    <!-- Sidebar Industrial Collapsible (Hidden on mobile) -->
+    <aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
         <!-- Toggle Button -->
         <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-primary text-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
             <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
@@ -174,28 +174,52 @@
         })();
     </script>
 
+    <!-- Bottom Navigation Bar for Mobile -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-container-high/90 backdrop-blur-2xl border-t border-white/10 z-[100] flex items-center justify-around px-4">
+        <a href="{% url 'crm_dashboard' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-2xl">grid_view</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Dash</span>
+        </a>
+        <a href="{% url 'crm_alunos_list' %}" class="flex flex-col items-center gap-1 text-primary">
+            <span class="material-symbols-outlined text-2xl">group</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Membros</span>
+        </a>
+        
+        <!-- Quick Action Center -->
+        <div class="relative -top-8">
+            <a href="{% url 'crm_aluno_create' %}" class="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,145,89,0.4)] hover:scale-110 active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-3xl font-black">person_add</span>
+            </a>
+        </div>
+
+        <a href="{% url 'crm_dash_gerencial' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-2xl">analytics</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Gestão</span>
+        </a>
+        <a href="{% url 'crm_caixa' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-2xl">payments</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Caixa</span>
+        </a>
+    </div>
+
     <!-- Main Content Area -->
-    <main class="ml-64 flex-grow flex flex-col h-screen overflow-hidden">
-        <!-- TopAppBar -->
-        <header class="w-full bg-surface flex justify-between items-center px-12 py-8 z-40">
-            <div class="flex items-center gap-12">
-                <h2 class="font-headline font-black text-5xl tracking-tighter text-on-surface uppercase italic">Membros <span class="text-primary">Ativos</span></h2>
+    <main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-hidden">
+        <header class="w-full bg-surface flex flex-col md:flex-row justify-between items-start md:items-center px-6 md:px-12 py-6 md:py-8 z-40 gap-6">
+            <div class="flex items-center gap-4">
+                <h2 class="font-headline font-black text-3xl md:text-5xl tracking-tighter text-on-surface uppercase italic">Membros <span class="text-primary">Ativos</span></h2>
             </div>
-            <div class="flex items-center gap-6">
-                <!-- Search Industrial -->
-                <div class="relative w-80 hidden md:block">
-                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600 text-lg">search</span>
-                    <form method="get">
-                        <input name="q" value="{{ query|default:'' }}" class="w-full bg-surface-container-low border-none rounded-full py-3.5 pl-12 pr-6 text-xs text-on-surface focus:ring-1 focus:ring-primary placeholder:text-neutral-500 font-headline font-black uppercase tracking-widest" placeholder="Pesquisar por ID ou Nome..." type="text"/>
-                    </form>
-                </div>
-                <div class="h-8 w-px bg-white/5 mx-2"></div>
-                <!-- Status Stats -->
-                <div class="flex items-center gap-3">
-                    <div class="bg-surface-container-high px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3">
-                        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                        <span class="text-[9px] font-black uppercase tracking-widest text-neutral-300 font-headline">Sincronizando...</span>
+            
+            <div class="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full md:w-auto">
+                <div class="relative w-full md:w-80 flex items-center gap-4">
+                    <div class="relative flex-grow">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600 text-lg">search</span>
+                        <form method="get">
+                            <input name="q" value="{{ query|default:'' }}" class="w-full bg-surface-container-low border-none rounded-full py-3 md:py-3.5 pl-12 pr-6 text-xs text-on-surface focus:ring-1 focus:ring-primary placeholder:text-neutral-500 font-headline font-black uppercase tracking-widest" placeholder="Pesquisar..." type="text"/>
+                        </form>
                     </div>
+                    <a href="{% url 'crm_aluno_create' %}" class="hidden md:flex shrink-0 bg-primary text-black w-12 h-12 rounded-full items-center justify-center hover:scale-110 transition-all shadow-[0_0_20px_rgba(255,145,89,0.3)] group">
+                        <span class="material-symbols-outlined font-black">person_add</span>
+                    </a>
                 </div>
             </div>
         </header>
@@ -209,32 +233,35 @@
                     <button class="px-8 py-2.5 bg-primary text-on-primary-fixed rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Todos</button>
                     <button class="px-8 py-2.5 bg-surface-container-high text-neutral-400 hover:text-primary transition-colors rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Vencidos</button>
                     <button class="px-8 py-2.5 bg-surface-container-high text-neutral-400 hover:text-primary transition-colors rounded-full text-[10px] font-headline font-black uppercase tracking-[0.2em]">Bloqueados</button>
-                </div>
-
-                <!-- Member Grid -->
-                <div class="space-y-4">
+                </div>                <!-- Member Grid -->
+                <div class="grid grid-cols-1 gap-4">
                     {% for aluno in alunos %}
-                    <div onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="group relative flex items-center gap-8 p-6 bg-surface-container-low rounded-2xl transition-all duration-300 hover:bg-surface-container-high hover:-translate-y-1 cursor-pointer border border-white/5 shadow-xl">
-                        <!-- Directional Indicator -->
-                        <div class="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity
+                    <div onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="group relative flex flex-col md:flex-row items-center gap-6 p-6 bg-surface-container-low rounded-2xl transition-all duration-300 hover:bg-surface-container-high cursor-pointer border border-white/5 shadow-xl">
+                        <div class="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full opacity-0 md:group-hover:opacity-100 transition-opacity
                             {% if aluno.status == 'ATIVO' %}bg-primary
                             {% elif aluno.status == 'INADIMPLENTE' %}bg-error
                             {% else %}bg-neutral-600{% endif %}"></div>
 
-                        <!-- Photo Grayscale to Color -->
-                        <div class="relative w-20 h-20 shrink-0">
-                            <div class="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-20 transition-opacity
-                                {% if aluno.status == 'ATIVO' %}bg-primary
-                                {% elif aluno.status == 'INADIMPLENTE' %}bg-error
-                                {% else %}bg-neutral-600{% endif %}"></div>
-                            <img alt="{{ aluno.nome_completo }}" class="relative w-full h-full object-cover rounded-full grayscale group-hover:grayscale-0 transition-all duration-500 border-2 border-surface-container-highest group-hover:border-primary" src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}https://ui-avatars.com/api/?name={{ aluno.nome_completo }}&background=0e0e0e&color=adaaaa{% endif %}"/>
+                        <div class="flex items-center gap-6 w-full">
+                            <div class="relative w-16 h-16 md:w-20 md:h-20 shrink-0">
+                                <img alt="{{ aluno.nome_completo }}" class="relative w-full h-full object-cover rounded-full border-2 border-surface-container-highest group-hover:border-primary transition-all" src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}https://ui-avatars.com/api/?name={{ aluno.nome_completo }}&background=0e0e0e&color=adaaaa{% endif %}"/>
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg md:text-xl font-black font-headline tracking-tighter text-on-surface uppercase truncate">{{ aluno.nome_completo }}</h3>
+                                <div class="flex items-center gap-4 mt-1">
+                                    <p class="text-[9px] text-on-surface-variant font-headline uppercase font-bold tracking-widest">Matrícula: <span class="text-primary">#{{ aluno.matricula }}</span></p>
+                                    <span class="md:hidden px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/5
+                                        {% if aluno.status == 'ATIVO' %}bg-primary/10 text-primary
+                                        {% elif aluno.status == 'INADIMPLENTE' %}bg-error/10 text-error
+                                        {% else %}bg-neutral-800 text-neutral-400{% endif %}">
+                                        {{ aluno.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="flex-1 grid grid-cols-4 gap-8 items-center">
-                            <div>
-                                <h3 class="text-xl font-black font-headline tracking-tighter text-on-surface uppercase">{{ aluno.nome_completo }}</h3>
-                                <p class="text-[10px] text-on-surface-variant font-headline uppercase font-bold tracking-widest mt-1">Matrícula: <span class="text-primary">#{{ aluno.matricula }}</span></p>
-                            </div>
+                        <div class="hidden md:grid flex-1 grid grid-cols-3 gap-8 items-center w-full">
                             <div>
                                 <p class="text-[9px] text-on-surface-variant font-headline uppercase tracking-[0.3em] mb-1">Vencimento</p>
                                 <p class="text-sm font-black text-on-surface font-headline uppercase">{{ aluno.acesso.data_vencimento|date:"d M Y"|default:"SEM PLANO" }}</p>
@@ -252,8 +279,15 @@
                                 </span>
                             </div>
                         </div>
+                        
+                        <!-- Mobile Stats Trace -->
+                        <div class="md:hidden flex justify-between items-center w-full pt-4 border-t border-white/5 mt-2">
+                             <div class="text-[10px] font-headline font-black uppercase text-neutral-500">Expira em: <span class="text-on-surface ml-1">{{ aluno.acesso.data_vencimento|date:"d/m/y"|default:"---" }}</span></div>
+                             <div class="text-[10px] font-headline font-black uppercase text-neutral-500">Acesso: <span class="text-on-surface ml-1">{{ aluno.acesso.ultimo_acesso|date:"d/m"|default:"---" }}</span></div>
+                        </div>
                     </div>
                     {% empty %}
+
                     <div class="p-20 text-center">
                         <span class="material-symbols-outlined text-6xl text-neutral-800 mb-4">search_off</span>
                         <p class="text-neutral-500 font-headline font-black uppercase text-sm tracking-widest">Nenhum membro identificado no perímetro.</p>

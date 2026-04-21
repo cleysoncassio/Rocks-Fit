@@ -1067,3 +1067,96 @@ def crm_aluno_delete(request, aluno_id):
     aluno.delete()
     messages.success(request, f"PROTOCOLO CONCLUÍDO: O perfil de {nome_aluno} foi permanentemente removido.")
     return redirect('crm_alunos_list')
+
+@login_required
+def crm_aluno_create(request):
+    """Criação de novos alunos com dados completos"""
+    if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
+        messages.error(request, "Acesso Negado: Permissão insuficiente.")
+        return redirect('crm_alunos_list')
+    
+    from .forms import AlunoForm
+    from .models import GymSetting, ControleAcesso
+    
+    gym_settings = GymSetting.objects.first()
+    
+    if request.method == 'POST':
+        form = AlunoForm(request.POST, request.FILES)
+        if form.is_valid():
+            aluno = form.save(commit=False)
+            
+            # Processar imagem da webcam (Base64) se houver
+            webcam_image = request.POST.get('webcam_image')
+            if webcam_image and not request.FILES.get('foto'):
+                import base64
+                from django.core.files.base import ContentFile
+                try:
+                    format, imgstr = webcam_image.split(';base64,')
+                    ext = format.split('/')[-1]
+                    data = ContentFile(base64.b64decode(imgstr), name=f"aluno_webcam_{aluno.cpf}.{ext}")
+                    aluno.foto = data
+                except:
+                    pass
+            
+            aluno.save()
+            # Criar controle de acesso padrão
+            ControleAcesso.objects.get_or_create(aluno=aluno)
+            messages.success(request, f"Aluno {aluno.nome_completo} cadastrado com sucesso!")
+            return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
+    else:
+        form = AlunoForm()
+    
+    return render(request, 'crm/aluno_form.html', {
+        'form': form,
+        'gym_settings': gym_settings,
+        'title': 'Novo Membro'
+    })
+
+@login_required
+def crm_aluno_edit(request, aluno_id):
+    """Edição de alunos existentes"""
+    from .models import Aluno, GymSetting
+    from .forms import AlunoForm
+    from django.shortcuts import get_object_or_404
+    
+    aluno = get_object_or_404(Aluno, id=aluno_id)
+    
+    if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
+        messages.error(request, "Acesso Negado: Permissão insuficiente.")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+    
+    gym_settings = GymSetting.objects.first()
+    
+    if request.method == 'POST':
+        form = AlunoForm(request.POST, request.FILES, instance=aluno)
+        if form.is_valid():
+            aluno = form.save(commit=False)
+            
+            # Processar imagem da webcam (Base64) se houver nova
+            webcam_image = request.POST.get('webcam_image')
+            if webcam_image and not request.FILES.get('foto'):
+                import base64
+                from django.core.files.base import ContentFile
+                try:
+                    format, imgstr = webcam_image.split(';base64,')
+                    ext = format.split('/')[-1]
+                    data = ContentFile(base64.b64decode(imgstr), name=f"aluno_webcam_{aluno.cpf}.{ext}")
+                    aluno.foto = data
+                except:
+                    pass
+            
+            aluno.save()
+            messages.success(request, f"Cadastro de {aluno.nome_completo} atualizado!")
+            return redirect('crm_aluno_detail', aluno_id=aluno.id)
+    else:
+        form = AlunoForm(instance=aluno)
+    
+    return render(request, 'crm/aluno_form.html', {
+        'form': form,
+        'gym_settings': gym_settings,
+        'title': 'Editar Membro',
+        'aluno': aluno
+    })
+
+

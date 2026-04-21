@@ -52,8 +52,8 @@
 </head>
 <body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden">
 
-    <!-- Sidebar Industrial Collapsible (Consistent with other CRM pages) -->
-    <aside id="main-sidebar" class="fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
+    <!-- Sidebar Industrial Collapsible (Hidden on Mobile) -->
+    <aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
         <!-- Toggle Button -->
         <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-primary text-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
             <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
@@ -185,80 +185,93 @@
         })();
     </script>
 
+    <!-- Bottom Navigation Bar for Mobile -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-container-high/90 backdrop-blur-2xl border-t border-white/10 z-[100] flex items-center justify-around px-4">
+        <a href="{% url 'crm_dashboard' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+            <span class="material-symbols-outlined text-2xl">grid_view</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Dash</span>
+        </a>
+        <a href="{% url 'crm_alunos_list' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+            <span class="material-symbols-outlined text-2xl">group</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Membros</span>
+        </a>
+        <div class="relative -top-8">
+            <a href="{% url 'crm_aluno_create' %}" class="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,145,89,0.4)]">
+                <span class="material-symbols-outlined text-3xl font-black">person_add</span>
+            </a>
+        </div>
+        <a href="{% url 'crm_dash_gerencial' %}" class="flex flex-col items-center gap-1 text-primary">
+            <span class="material-symbols-outlined text-2xl">analytics</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Gestão</span>
+        </a>
+        <a href="{% url 'crm_caixa' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+            <span class="material-symbols-outlined text-2xl">payments</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Caixa</span>
+        </a>
+    </div>
+
     <!-- Main Content Area -->
-    <main class="ml-64 flex-grow flex flex-col h-screen overflow-y-auto">
+    <main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-y-auto">
         <!-- TopAppBar -->
-        <header class="sticky top-0 w-full bg-surface/80 backdrop-blur-md flex justify-between items-center px-12 py-8 z-40">
+        <header class="sticky top-0 w-full bg-surface/80 backdrop-blur-md flex flex-col md:flex-row justify-between items-start md:items-center px-6 md:px-12 py-6 md:py-8 z-40 gap-4">
             <div class="flex items-center gap-4">
-                <h2 class="font-headline font-black text-2xl tracking-tighter text-on-surface uppercase italic">Gestão Gerencial</h2>
+                <h2 class="font-headline font-black text-2xl md:text-2xl tracking-tighter text-on-surface uppercase italic truncate">Gestão <span class="text-primary">Gerencial</span></h2>
             </div>
-            <div class="flex items-center gap-6">
-                <div class="bg-surface-container-high px-5 py-3 rounded-xl flex items-center gap-4 border border-white/5 glow-orange">
+            <div class="flex items-center gap-4">
+                <div class="bg-surface-container-high px-4 py-2 rounded-xl flex items-center gap-3 border border-white/5 glow-orange">
                     <div class="relative">
-                        <span class="block w-2.5 h-2.5 bg-primary rounded-full"></span>
-                        <span class="absolute top-0 left-0 block w-2.5 h-2.5 bg-primary rounded-full animate-ping opacity-75"></span>
+                        <span class="block w-2 h-2 bg-primary rounded-full"></span>
                     </div>
-                    <div>
-                        <p class="text-[8px] text-neutral-300 font-headline uppercase tracking-[0.2em]">Status da Academia</p>
-                        <p class="text-xs font-black text-primary font-headline tracking-widest uppercase">ONLINE</p>
-                    </div>
+                    <p class="text-[10px] font-black text-primary font-headline tracking-widest uppercase">REAL-TIME</p>
                 </div>
             </div>
         </header>
 
         <!-- Bento Grid -->
-        <div class="p-12 pb-24">
-            <div class="max-w-7xl mx-auto space-y-8">
+        <div class="p-6 md:p-12 pb-32 md:pb-24">
+            <div class="max-w-7xl mx-auto space-y-6 md:space-y-8">
                 
-                <!-- Metrics Row -->
-                <div class="grid grid-cols-5 gap-4">
+                <!-- Metrics Row (Horizontal scroll on mobile) -->
+                <div class="flex md:grid md:grid-cols-5 gap-4 overflow-x-auto no-scrollbar pb-2 md:pb-0">
                     <!-- LTV -->
-                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                    <div class="shrink-0 w-64 md:w-auto bg-surface-container-low p-6 rounded-2xl border border-white/5">
                         <div class="flex items-center gap-3 mb-2">
-                            <span class="material-symbols-outlined text-purple-400">payments</span>
-                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">LTV Médio</p>
-                            <span class="material-symbols-outlined text-neutral-600 text-sm cursor-help">help</span>
+                            <span class="material-symbols-outlined text-purple-400 text-lg">payments</span>
+                            <p class="text-[9px] font-black text-neutral-400 uppercase tracking-widest">LTV Médio</p>
                         </div>
-                        <h3 class="text-xl font-black font-headline text-primary">{{ ltv_valor }}</h3>
-                        <p class="text-[9px] text-neutral-600 uppercase mt-2">Valor médio por cliente</p>
+                        <h3 class="text-lg md:text-xl font-black font-headline text-primary">{{ ltv_valor }}</h3>
                     </div>
                     <!-- Churn -->
-                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                    <div class="shrink-0 w-64 md:w-auto bg-surface-container-low p-6 rounded-2xl border border-white/5">
                         <div class="flex items-center gap-3 mb-2">
-                            <span class="material-symbols-outlined text-red-400">trending_down</span>
-                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Churn (Evasão)</p>
-                            <span class="material-symbols-outlined text-neutral-600 text-sm cursor-help">help</span>
+                            <span class="material-symbols-outlined text-red-400 text-lg">trending_down</span>
+                            <p class="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Churn</p>
                         </div>
-                        <h3 class="text-xl font-black font-headline">{{ churn_evasao }}</h3>
-                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                        <h3 class="text-lg md:text-xl font-black font-headline">{{ churn_evasao }}</h3>
                     </div>
                     <!-- CAC -->
-                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                    <div class="shrink-0 w-64 md:w-auto bg-surface-container-low p-6 rounded-2xl border border-white/5">
                         <div class="flex items-center gap-3 mb-2">
-                            <span class="material-symbols-outlined text-blue-400">group_add</span>
-                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">CAC</p>
-                            <span class="material-symbols-outlined text-neutral-600 text-sm cursor-help">help</span>
+                            <span class="material-symbols-outlined text-blue-400 text-lg">group_add</span>
+                            <p class="text-[9px] font-black text-neutral-400 uppercase tracking-widest">CAC</p>
                         </div>
-                        <h3 class="text-xl font-black font-headline">{{ cac_valor }}</h3>
-                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                        <h3 class="text-lg md:text-xl font-black font-headline">{{ cac_valor }}</h3>
                     </div>
                     <!-- Clientes em Risco -->
-                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                    <div class="shrink-0 w-64 md:w-auto bg-surface-container-low p-6 rounded-2xl border border-white/5">
                         <div class="flex items-center gap-3 mb-2">
-                            <span class="material-symbols-outlined text-yellow-400">warning</span>
-                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Clientes em risco</p>
+                            <span class="material-symbols-outlined text-yellow-400 text-lg">warning</span>
+                            <p class="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Risco</p>
                         </div>
-                        <h3 class="text-xl font-black font-headline">{{ clientes_risco }}</h3>
-                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                        <h3 class="text-lg md:text-xl font-black font-headline">{{ clientes_risco }}</h3>
                     </div>
                     <!-- Taxa de Renovação -->
-                    <div class="bg-surface-container-low p-6 rounded-2xl border border-white/5">
+                    <div class="shrink-0 w-64 md:w-auto bg-surface-container-low p-6 rounded-2xl border border-white/5">
                         <div class="flex items-center gap-3 mb-2">
-                            <span class="material-symbols-outlined text-green-400">autorenew</span>
-                            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Taxa de renovação</p>
+                            <span class="material-symbols-outlined text-green-400 text-lg">autorenew</span>
+                            <p class="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Renovação</p>
                         </div>
-                        <h3 class="text-xl font-black font-headline">{{ taxa_renovacao }}</h3>
-                        <p class="text-[9px] text-neutral-600 uppercase mt-2">-- da meta de --</p>
+                        <h3 class="text-lg md:text-xl font-black font-headline">{{ taxa_renovacao }}</h3>
                     </div>
                 </div>
 
