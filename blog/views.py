@@ -547,6 +547,7 @@ def aluno_list_full_api(request):
                 'id': a.id,
                 'nome': str(a.nome_completo or "Sem Nome")[:50],
                 'matricula': a.matricula or f"RF{a.id:04d}",
+                'cpf': a.cpf or "",
                 'status': status_pagamento,
                 'status_catraca': status_catraca,
                 'borda_cor': borda_cor,
