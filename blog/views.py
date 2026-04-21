@@ -506,50 +506,52 @@ def aluno_list_full_api(request):
     alunos = Aluno.objects.all().select_related('acesso').order_by('-data_cadastro')
     data = []
     for a in alunos:
-        status_pagamento = "INATIVO"
-        vencimento = "SEM PLANO"
-        borda_cor = "vermelho"
-        status_catraca = "bloqueado"
+        try:
+            status_pagamento = "INATIVO"
+            vencimento = "SEM PLANO"
+            borda_cor = "vermelho"
+            status_catraca = "bloqueado"
 
-        if hasattr(a, 'acesso'):
-            ac = a.acesso
-            status_catraca = ac.status_catraca
+            if hasattr(a, 'acesso'):
+                ac = a.acesso
+                status_catraca = ac.status_catraca
 
-            if ac.status_catraca == 'aguardando_biometria':
-                status_pagamento = "PAGO (Aguard. Biometria)"
-                borda_cor = "laranja"
-                vencimento = "Ativação na 1ª entrada"
-            elif ac.status_catraca == 'aguardando_pagamento':
-                status_pagamento = "AGUARDANDO PIX (WhatsApp)"
-                borda_cor = "amarelo"
-                vencimento = "Pendente"
-            elif ac.data_vencimento:
-                vencimento = ac.data_vencimento.strftime('%d/%m/%Y')
-                if ac.data_vencimento >= hoje:
-                    status_pagamento = "ATIVO"
-                    borda_cor = "verde"
+                if ac.status_catraca == 'aguardando_biometria':
+                    status_pagamento = "PAGO (Aguard. Biometria)"
+                    borda_cor = "laranja"
+                    vencimento = "Ativação na 1ª entrada"
+                elif ac.status_catraca == 'aguardando_pagamento':
+                    status_pagamento = "AGUARDANDO PIX (WhatsApp)"
+                    borda_cor = "amarelo"
+                    vencimento = "Pendente"
+                elif ac.data_vencimento:
+                    vencimento = ac.data_vencimento.strftime('%d/%m/%Y')
+                    if ac.data_vencimento >= hoje:
+                        status_pagamento = "ATIVO"
+                        borda_cor = "verde"
+                    else:
+                        status_pagamento = "INATIVO (VENCIDO)"
+                        borda_cor = "vermelho"
                 else:
-                    status_pagamento = "INATIVO (VENCIDO)"
+                    status_pagamento = "BLOQUEADO (Não Pago)"
                     borda_cor = "vermelho"
-            else:
-                 status_pagamento = "BLOQUEADO (Não Pago)"
-                 borda_cor = "vermelho"
 
-        foto_url = request.build_absolute_uri(a.foto.url) if a.foto else None
+            foto_url = a.foto.url if a.foto else None
 
-        data.append({
-            'id': a.id,
-            'nome': a.nome_completo,
-            'matricula': a.matricula or f"RF{a.id:04d}",
-            'cpf': a.cpf,
-            'status': status_pagamento,
-            'status_catraca': status_catraca,
-            'borda_cor': borda_cor,
-            'vencimento': vencimento,
-            'foto_url': foto_url,
-            'tem_foto': bool(a.foto),
-            'tem_digital': bool(a.digital)
-        })
+            data.append({
+                'id': a.id,
+                'nome': str(a.nome_completo)[:50],
+                'matricula': a.matricula or f"RF{a.id:04d}",
+                'status': status_pagamento,
+                'status_catraca': status_catraca,
+                'borda_cor': borda_cor,
+                'vencimento': vencimento,
+                'foto_url': foto_url,
+                'tem_foto': bool(a.foto),
+                'tem_digital': bool(a.digital)
+            })
+        except:
+            continue
     return JsonResponse({'alunos': data})
 
 @csrf_exempt
@@ -1091,15 +1093,15 @@ def crm_aluno_delete(request, aluno_id):
     hoje = timezone.now().date()
     
     # 🕵️ Verificação de Travas Rigorosas
-    # 1. Trava de Plano Ativo
+    # 1. Trava de Plano Ativo (Verifica data de vencimento real)
     tem_plano_vigente = acesso and acesso.data_vencimento and acesso.data_vencimento >= hoje
-    if tem_plano_vigente or (acesso and acesso.status_catraca == 'liberado'):
-        messages.error(request, "VETO: Não é possível excluir um aluno com PLANO ATIVO. Aguarde o vencimento ou cancele o plano antes de excluir.")
+    if tem_plano_vigente:
+        messages.error(request, "VETO: Não é possível excluir um aluno com PLANO VIGENTE. Aguarde o vencimento ou cancele o contrato antes de excluir.")
         return redirect('crm_aluno_detail', aluno_id=aluno_id)
         
-    # 2. Trava de Inadimplência (Bloqueia apenas se o status for explicitamente Inadimplente)
+    # 2. Trava de Inadimplência
     if aluno.status == 'INADIMPLENTE':
-        messages.error(request, "VETO FINANCEIRO: Alunos com status de INADIMPLENTE não podem ser removidos até a quitação dos débitos.")
+        messages.error(request, "VETO FINANCEIRO: Alunos com status de INADIMPLENTE não podem ser removidos até a quitação total dos débitos.")
         return redirect('crm_aluno_detail', aluno_id=aluno_id)
         
     # 3. Trava de Saldo (Opcional por enquanto, já que credito é 0.00)
