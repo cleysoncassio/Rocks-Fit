@@ -11,15 +11,15 @@ CATRACA_PORTA = 3000
 SERVIDOR_PORTA = 5000
 POLLING_INTERVAL = 3
 
-# Design System Industrial
-COR_BG = "#0a0a0a"
-COR_PRIMARY = "#5991ff"
-COR_CARD = "#141414" 
-COR_CARD_HIGH = "#1f1f1f"
-COR_TEXTO = "#ffffff"
-COR_TEXT_SEC = "#808080"
-COR_SUCCESS = "#4caf50"
-COR_ERROR = "#f44336"
+# Design System Industrial - Restaurado para Legibilidade
+COR_BG = "#0f172a" 
+COR_PRIMARY = "#22d3ee"
+COR_CARD = "#1e293b" 
+COR_CARD_HIGH = "#334155"
+COR_TEXTO = "#f8fafc"
+COR_TEXT_SEC = "#94a3b8"
+COR_SUCCESS = "#4ade80"
+COR_ERROR = "#f87171"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
