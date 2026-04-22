@@ -27,15 +27,15 @@ if not defined PY_CMD (
 )
 
 echo [OK] Python detectado: %PY_CMD%
-echo Verificando integridade das bibliotecas...
+echo Verificando e atualizando bibliotecas essenciais...
 
-:: Verifica se a biblioteca base ja existe para evitar o delay do pip install em todos os acessos
-%PY_CMD% -c "import requests, PIL, customtkinter" >nul 2>&1
+:: Força a atualização do customtkinter porque versões antigas não tem o CTkScrollableFrame
+%PY_CMD% -m pip install --upgrade customtkinter requests pillow opencv-python --quiet
+
 if %errorlevel% neq 0 (
-    echo [INFO] Instalando dependencias pela primeira vez (isso pode levar 1 minuto)...
-    %PY_CMD% -m pip install requests pillow customtkinter opencv-python --quiet
+    echo [AVISO] Houve um problema ao atualizar bibliotecas. Tentando iniciar assim mesmo...
 ) else (
-    echo [OK] Bibliotecas verificadas.
+    echo [OK] Bibliotecas prontas e atualizadas.
 )
 
 :: Tentativa silenciosa de upgrade apenas de bibliotecas criticas se necessario

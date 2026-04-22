@@ -14,8 +14,9 @@ import json
 SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
 CATRACA_IP = "169.254.37.150"
-CATRACA_PORTA = 1001
+CATRACA_PORTA = 3000  # Port 3000 is standard for most Toletus/Henry devices
 SERVIDOR_PORTA = 5000
+POLLING_INTERVAL = 3  # Seconds between remote release checks
 
 # Palette Industrial RKS
 COR_BG = "#0e0e0e"
@@ -31,11 +32,19 @@ COR_ERROR = "#ff7351"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def _encontrar_arquivo(nome_relativo):
-    caminho = os.path.join(BASE_DIR, nome_relativo)
-    return caminho if os.path.exists(caminho) else nome_relativo
+    possibilidades = [
+        os.path.join(BASE_DIR, nome_relativo),
+        os.path.join(BASE_DIR, os.path.basename(nome_relativo)),
+        os.path.join(BASE_DIR, "media", "images", os.path.basename(nome_relativo)),
+        os.path.join(BASE_DIR, "media", "rks01.png"), 
+        os.path.join(BASE_DIR, "rks01.png")
+    ]
+    for p in possibilidades:
+        if os.path.exists(p): return p
+    return os.path.join(BASE_DIR, nome_relativo)
 
-CAMINHO_CACHE = _encontrar_arquivo(os.path.join("rks-catraca", "alunos_local.json"))
-CAMINHO_LOGO  = _encontrar_arquivo(os.path.join("media", "images", "rkslogo.png"))
+CAMINHO_CACHE = _encontrar_arquivo("alunos_local.json")
+CAMINHO_LOGO  = _encontrar_arquivo("rkslogo.png")
 
 try:
     import cv2
@@ -132,12 +141,28 @@ class JanelaMonitor(ctk.CTkToplevel):
                 self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text=""))
             time.sleep(0.01)
 
-    def indentificar_aluno(self, d):
-        self.lbl_nome.configure(text=d.get('nome', 'IDENTIFIED').upper())
+    def flash_effect(self):
+        # Efeito visual de disparador de câmera
+        self.cam_f.configure(border_color="#ffffff")
+        self.after(100, lambda: self.cam_f.configure(border_color=COR_CARD_HIGH))
+
+    def identificar_aluno(self, d):
+        self.lbl_nome.configure(text=d.get('nome', 'IDENTIFICADO').upper())
         self.lbl_status.configure(text="ACESSO AUTORIZADO | STATUS: ATIVO", text_color=COR_SUCCESS)
         self.bar_fill.configure(width=300, fg_color=COR_SUCCESS)
         if d.get('foto_url'): threading.Thread(target=self.carregar_foto, args=(d.get('foto_url'),), daemon=True).start()
         threading.Timer(5, self.reset).start()
+
+    def reset(self):
+        self.lbl_nome.configure(text="ÁREA DE ESCANEAMENTO")
+        self.lbl_status.configure(text="AGUARDANDO BIOMETRIA", text_color=COR_TEXT_SEC)
+        self.lbl_aluno_foto.configure(image=None, text="PRONTO")
+        self.bar_fill.configure(width=0, fg_color=COR_PRIMARY)
+
+    def fechar(self):
+        self.rodando = False
+        if OPENCV_OK: self.cap.release()
+        self.destroy()
 
     def carregar_foto(self, url):
         try:
@@ -146,26 +171,58 @@ class JanelaMonitor(ctk.CTkToplevel):
             p = ImageTk.PhotoImage(i); self.lbl_aluno_foto.configure(image=p, text=""); self.lbl_aluno_foto.image = p
         except: pass
 
-    def reset(self):
-        self.lbl_nome.configure(text="SCANNING AREA")
-        self.lbl_status.configure(text="AGUARDANDO BIOMETRIA", text_color=COR_TEXT_SEC)
-        self.lbl_aluno_foto.configure(image=None, text="READY")
-        self.bar_fill.configure(width=0, fg_color=COR_PRIMARY)
+class JanelaCadastroBio(ctk.CTkToplevel):
+    """ JANELA DE AGUARDAR DIGITAL """
+    def __init__(self, parent, aluno_nome):
+        super().__init__(parent)
+        self.title("REGISTRO BIOMÉTRICO")
+        self.geometry("500x400")
+        self.configure(fg_color=COR_BG)
+        self.transient(parent); self.grab_set()
+        
+        # Centralizar na tela
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (500 // 2)
+        y = (self.winfo_screenheight() // 2) - (400 // 2)
+        self.geometry(f"+{x}+{y}")
 
-    def fechar(self):
-        self.rodando = False
-        if OPENCV_OK: self.cap.release()
-        self.destroy()
+        ctk.CTkLabel(self, text="☝️", font=("Inter", 80)).pack(pady=(40, 10))
+        ctk.CTkLabel(self, text="CADASTRO BIOMÉTRICO", font=("Space Grotesk", 20, "bold"), text_color=COR_PRIMARY).pack()
+        self.lbl_aluno = ctk.CTkLabel(self, text=aluno_nome.upper(), font=("Inter", 14), text_color=COR_TEXT_SEC)
+        self.lbl_aluno.pack(pady=10)
+        
+        self.lbl_status = ctk.CTkLabel(self, text="AGUARDANDO DEDO NO LEITOR...", font=("Inter", 12, "bold"), text_color=COR_SUCCESS)
+        self.lbl_status.pack(pady=30)
+        
+        # Barra de progresso infinita (Simulação)
+        self.p = ctk.CTkProgressBar(self, width=300, orientation="horizontal", mode="indeterminate", progress_color=COR_PRIMARY)
+        self.p.pack()
+        self.p.start()
+
+    def sucesso(self):
+        self.lbl_status.configure(text="✅ DIGITAL VINCULADA COM SUCESSO!", text_color=COR_SUCCESS)
+        self.p.stop()
+        self.p.configure(mode="determinate")
+        self.p.set(1)
+        self.after(2000, self.destroy)
 
 class AppRecepcao(ctk.CTk):
     def __init__(self):
         super().__init__()
+        # DPI Awareness para Windows
+        try:
+            from ctypes import windll
+            windll.shcore.SetProcessDpiAwareness(1)
+        except: pass
+
         self.title("ROCKS FIT | TERMINAL INDUSTRIAL RKS")
         self.geometry("1100x850"); self.configure(fg_color=COR_BG)
         self.monitor = None; self.alunos_data = []; self.aluno_em_registro = None
+        self.janela_bio = None
         
         self.setup_ui()
         threading.Thread(target=self.servidor_bio, daemon=True).start()
+        threading.Thread(target=self.remote_polling, daemon=True).start()
         self.carregar_alunos()
         self.after(30000, self.auto_sync)
 
@@ -221,49 +278,101 @@ class AppRecepcao(ctk.CTk):
                 print(f"[SYNC] Falha crítica de conexão: {e}")
         threading.Thread(target=f, daemon=True).start()
 
-    def mostrar_todos(self): self.render_list("")
+    def mostrar_todos(self): 
+        self.render_list("")
 
-    def render_list(self, filter=""):
+    def render_list(self, filter_text=""):
         for w in self.sr.winfo_children(): w.destroy()
-        for a in self.alunos_data:
-            if filter.lower() in a['nome'].lower() or filter in a['cpf']:
-                st_c = COR_SUCCESS if "ATIVO" in a['status'] else COR_ERROR
-                
-                c = ctk.CTkFrame(self.sr, fg_color=COR_CARD, height=100, corner_radius=25, border_width=1, border_color=COR_CARD_HIGH)
-                c.pack(fill="x", pady=8, padx=5); c.pack_propagate(False)
-                
-                # Barra de Status Lateral
-                ctk.CTkFrame(c, width=6, fg_color=st_c, corner_radius=3).pack(side="left", fill="y", padx=2, pady=15)
-                
-                # Conteúdo
-                info = f"{a['nome'].upper()}\nMAT: {a['matricula']} | {a['status']}"
-                lbl = ctk.CTkLabel(c, text=info, font=("Inter", 13, "bold"), text_color=COR_TEXTO, justify="left")
-                lbl.pack(side="left", padx=25)
-                
-                # Ações Rápidas
-                a_f = ctk.CTkFrame(c, fg_color="transparent")
-                a_f.pack(side="right", padx=15)
-                ctk.CTkButton(a_f, text="📸", width=40, font=("Inter", 14), fg_color=COR_CARD_HIGH, command=lambda aid=a['id']: self.reg_foto_imediata(aid)).pack(side="left", padx=5)
-                ctk.CTkButton(a_f, text="☝️", width=40, font=("Inter", 14), fg_color=COR_CARD_HIGH, command=lambda aid=a['id']: self.iniciar_registro_digital(aid)).pack(side="left", padx=5)
+        
+        if filter_text:
+            resultados = [a for a in self.alunos_data if filter_text.lower() in str(a.get('nome','')).lower() or filter_text in str(a.get('cpf',''))]
+            render_data = resultados[:100]
+            msg = f"🔍 ENCONTRADOS: {len(resultados)} DE {len(self.alunos_data)}"
+        else:
+            render_data = self.alunos_data[:50]
+            msg = f"📋 MOSTRANDO ÚLTIMOS 50 (TOTAL: {len(self.alunos_data)})"
+        
+        self.e_search.configure(placeholder_text=msg)
+
+        for a in render_data:
+            nome = a.get('nome', 'Sem Nome')
+            status = a.get('status', 'INATIVO')
+            st_c = COR_SUCCESS if "ATIVO" in status.upper() or "LIBERADO" in status.upper() else COR_ERROR
+            
+            c = ctk.CTkFrame(self.sr, fg_color=COR_CARD, height=85, corner_radius=15, border_width=1, border_color=COR_CARD_HIGH)
+            c.pack(fill="x", pady=5, padx=10); c.pack_propagate(False)
+            
+            ctk.CTkFrame(c, width=4, fg_color=st_c, corner_radius=2).pack(side="left", fill="y", padx=2, pady=10)
+            
+            info = f"{nome.upper()[:40]}\nMAT: {a.get('matricula', '---')} | {status}"
+            lbl = ctk.CTkLabel(c, text=info, font=("Inter", 12, "bold"), text_color=COR_TEXTO, justify="left")
+            lbl.pack(side="left", padx=15)
+
+            a_f = ctk.CTkFrame(c, fg_color="transparent")
+            a_f.pack(side="right", padx=15)
+            ctk.CTkButton(a_f, text="📸", width=40, font=("Inter", 14), fg_color=COR_CARD_HIGH, command=lambda aid=a['id']: self.reg_foto_imediata(aid)).pack(side="left", padx=5)
+            ctk.CTkButton(a_f, text="☝️", width=40, font=("Inter", 14), fg_color=COR_CARD_HIGH, command=lambda aid=a['id']: self.iniciar_registro_digital(aid)).pack(side="left", padx=5)
 
     def reg_foto_imediata(self, aid):
-        if self.monitor and self.monitor.winfo_exists():
-            ret, frame = self.monitor.cap.read()
-            if ret:
-                _, b = cv2.imencode('.jpg', frame)
-                b64 = f"data:image/jpeg;base64,{base64.b64encode(b).decode('utf-8')}"
-                threading.Thread(target=lambda: requests.post(f"{SITE_URL}/api/aluno-update-data/", data={'aluno_id': aid, 'foto': b64, 'token': SYNC_TOKEN})).start()
+        # Se o monitor não estiver aberto, abre ele primeiro
+        if not self.monitor or not self.monitor.winfo_exists():
+            self.saltar_monitor()
+            # Dá um pequeno tempo para a câmera inicializar
+            self.after(1500, lambda: self.reg_foto_imediata(aid))
+            return
+
+        ret, frame = self.monitor.cap.read()
+        if ret:
+            # Feedback visual de flash
+            self.monitor.flash_effect() 
+            _, b = cv2.imencode('.jpg', frame)
+            b64 = f"data:image/jpeg;base64,{base64.b64encode(b).decode('utf-8')}"
+            threading.Thread(target=lambda: requests.post(f"{SITE_URL}/api/aluno-update-data/", data={'aluno_id': aid, 'foto': b64, 'token': SYNC_TOKEN})).start()
+            print(f"[FOTO] Foto capturada e enviada para o aluno ID: {aid}")
+
+    def iniciar_registro_digital(self, aid):
+        aluno = next((a for a in self.alunos_data if a['id'] == aid), {'nome': 'Aluno'})
+        self.aluno_em_registro = aid
+        
+        # Fecha se já houver uma aberta
+        if self.janela_bio and self.janela_bio.winfo_exists(): self.janela_bio.destroy()
+        
+        # Abre a nova janela de espera
+        self.janela_bio = JanelaCadastroBio(self, aluno['nome'])
+        
+        print(f"[BIO] Modo de registro ATIVO para aluno: {aluno['nome']}. Aguardando leitura...")
 
     def auto_sync(self): self.carregar_alunos(); self.after(30000, self.auto_sync)
     
     def abrir_catraca(self, s="0"):
         def c():
             try:
-                p = b"lgu" + (b"\x00" if s == "0" else b"\x01") + b"Protocol Access"
+                # Protocolo LGU: b"lgu" + b"\x00" (Entrada) ou b"\x01" (Saída) + Mensagem
+                msg = "Acesso Liberado" if s == "0" else "Saida Liberada"
+                p = b"lgu" + (b"\x00" if s == "0" else b"\x01") + msg.encode('utf-8')
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
-                    k.settimeout(2); k.connect((CATRACA_IP, CATRACA_PORTA)); k.sendall(p)
-            except: pass
+                    k.settimeout(3)
+                    k.connect((CATRACA_IP, CATRACA_PORTA))
+                    k.sendall(p)
+                    print(f"[CATRACA] Comando de {'ENTRADA' if s=='0' else 'SAIDA'} enviado com sucesso.")
+            except Exception as e:
+                print(f"[ERRO] Falha ao comunicar com catraca ({CATRACA_IP}:{CATRACA_PORTA}): {e}")
         threading.Thread(target=c, daemon=True).start()
+
+    def remote_polling(self):
+        """Verifica se o CRM enviou um comando remoto de abertura (Abri Catraca Agora)"""
+        u = f"{SITE_URL}/api/catraca-polling/?token={SYNC_TOKEN}"
+        while True:
+            try:
+                r = requests.get(u, timeout=10)
+                if r.status_code == 200:
+                    liberacoes = r.json().get('liberacoes', [])
+                    for lib in liberacoes:
+                        print(f"[REMOTE] Comando de abertura recebido para: {lib.get('nome')}")
+                        self.abrir_catraca("0")
+            except:
+                pass
+            time.sleep(POLLING_INTERVAL)
 
     def iniciar_registro_digital(self, aid): self.aluno_em_registro = aid
 
@@ -280,16 +389,33 @@ class AppRecepcao(ctk.CTk):
                         else: self.validar(tag)
 
     def vincular_bio(self, aid, tag):
-        try: requests.post(f"{SITE_URL}/api/aluno-update-data/", data={'aluno_id': aid, 'digital': tag, 'token': SYNC_TOKEN})
-        except: pass
+        try: 
+            requests.post(f"{SITE_URL}/api/aluno-update-data/", data={'aluno_id': aid, 'digital': tag, 'token': SYNC_TOKEN})
+            print(f"[BIO] Sucesso: Digital vinculada ao aluno ID: {aid}")
+            if self.janela_bio and self.janela_bio.winfo_exists():
+                self.janela_bio.sucesso()
+            self.after(3000, lambda: self.render_list(""))
+        except Exception as e:
+            print(f"[BIO] Erro ao vincular: {e}")
+            if self.janela_bio and self.janela_bio.winfo_exists():
+                self.janela_bio.lbl_status.configure(text=f"❌ ERRO: {e}", text_color=COR_ERROR)
 
     def validar(self, tag):
         try:
             r = requests.get(f"{SITE_URL}/api/catraca-check/{tag}/?token={SYNC_TOKEN}").json()
             if r.get('status') != 'vencido': 
                 self.abrir_catraca("0")
-                if self.monitor and self.monitor.winfo_exists(): self.after(0, lambda: self.monitor.indentificar_aluno(r))
+                if self.monitor and self.monitor.winfo_exists(): self.after(0, lambda: self.monitor.identificar_aluno(r))
         except: pass
 
 if __name__ == "__main__":
-    AppRecepcao().mainloop()
+    try:
+        app = AppRecepcao()
+        app.mainloop()
+    except Exception as e:
+        import traceback
+        erro_msg = f"ERRO CRITICO NA INICIALIZACAO:\n{str(e)}\n\n{traceback.format_exc()}"
+        print(erro_msg)
+        with open("ERRO_SISTEMA.txt", "w", encoding="utf-8") as f:
+            f.write(erro_msg)
+        input("\nO sistema travou. Pressione ENTER para sair...")
