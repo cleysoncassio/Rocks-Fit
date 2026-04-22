@@ -171,44 +171,8 @@ class JanelaMonitor(ctk.CTkToplevel):
             p = ImageTk.PhotoImage(i); self.lbl_aluno_foto.configure(image=p, text=""); self.lbl_aluno_foto.image = p
         except: pass
 
-class JanelaCadastroBio(ctk.CTkToplevel):
-    """ JANELA DE AGUARDAR DIGITAL """
-    def __init__(self, parent, aluno_nome):
-        super().__init__(parent)
-        self.title("REGISTRO BIOMÉTRICO")
-        self.geometry("500x400")
-        self.configure(fg_color=COR_BG)
-        self.transient(parent)
-        
-        # Forçar a janela para a frente
-        self.lift()
-        self.focus_force()
-        
-        # Centralizar na tela
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (500 // 2)
-        y = (self.winfo_screenheight() // 2) - (400 // 2)
-        self.geometry(f"+{x}+{y}")
-
-        ctk.CTkLabel(self, text="☝️", font=("Inter", 80)).pack(pady=(40, 10))
-        ctk.CTkLabel(self, text="CADASTRO BIOMÉTRICO", font=("Space Grotesk", 20, "bold"), text_color=COR_PRIMARY).pack()
-        self.lbl_aluno = ctk.CTkLabel(self, text=aluno_nome.upper(), font=("Inter", 14), text_color=COR_TEXT_SEC)
-        self.lbl_aluno.pack(pady=10)
-        
-        self.lbl_status = ctk.CTkLabel(self, text="AGUARDANDO DEDO NO LEITOR...", font=("Inter", 12, "bold"), text_color=COR_SUCCESS)
-        self.lbl_status.pack(pady=30)
-        
-        # Barra de progresso infinita (Simulação)
-        self.p = ctk.CTkProgressBar(self, width=300, orientation="horizontal", mode="indeterminate", progress_color=COR_PRIMARY)
-        self.p.pack()
-        self.p.start()
-
-    def sucesso(self):
-        self.lbl_status.configure(text="✅ DIGITAL VINCULADA COM SUCESSO!", text_color=COR_SUCCESS)
-        self.p.stop()
-        self.p.configure(mode="determinate")
-        self.p.set(1)
-        self.after(2000, self.destroy)
+# --- 🧬 JANELAS E OVERLAYS ---
+# Removida JanelaCadastroBio externa para usar Overlay interno (mais estável no Windows)
 
 class AppRecepcao(ctk.CTk):
     def __init__(self):
@@ -222,7 +186,7 @@ class AppRecepcao(ctk.CTk):
         self.title("ROCKS FIT | TERMINAL INDUSTRIAL RKS")
         self.geometry("1100x850"); self.configure(fg_color=COR_BG)
         self.monitor = None; self.alunos_data = []; self.aluno_em_registro = None
-        self.janela_bio = None
+        self.overlay_bio = None
         
         self.setup_ui()
         threading.Thread(target=self.servidor_bio, daemon=True).start()
@@ -338,14 +302,29 @@ class AppRecepcao(ctk.CTk):
         aluno = next((a for a in self.alunos_data if a['id'] == aid), {'nome': 'Aluno'})
         self.aluno_em_registro = aid
         
-        # Fecha se já houver uma aberta
-        if self.janela_bio and self.janela_bio.winfo_exists(): self.janela_bio.destroy()
+        print(f"[CLIQUE] Abrindo painel de cadastro para: {aluno['nome']}")
         
-        # Abre a nova janela de espera
-        self.janela_bio = JanelaCadastroBio(self, aluno['nome'])
+        # Cria Overlay Interno
+        if self.overlay_bio: self.overlay_bio.destroy()
         
-        print(f"[CLIQUE] Abrindo cadastro para o aluno: {aluno['nome']} (ID: {aid})")
-        print(f"[BIO] Modo de registro ATIVO. Aguardando leitura no hardware...")
+        self.overlay_bio = ctk.CTkFrame(self, fg_color=COR_BG)
+        self.overlay_bio.place(relx=0, rely=0, relwidth=1, relheight=1)
+        
+        ctk.CTkLabel(self.overlay_bio, text="☝️", font=("Inter", 120)).pack(pady=(150, 20))
+        ctk.CTkLabel(self.overlay_bio, text="MODO DE CADASTRO ATIVO", font=("Space Grotesk", 32, "bold"), text_color=COR_PRIMARY).pack()
+        ctk.CTkLabel(self.overlay_bio, text=f"ALUNO: {aluno['nome'].upper()}", font=("Inter", 18), text_color=COR_TEXTO).pack(pady=10)
+        
+        self.lbl_bio_status = ctk.CTkLabel(self.overlay_bio, text="AGUARDANDO DIGITAL NO LEITOR...", font=("Inter", 14, "bold"), text_color=COR_SUCCESS)
+        self.lbl_bio_status.pack(pady=40)
+        
+        ctk.CTkButton(self.overlay_bio, text="CANCELAR REGISTRO (VOLTAR)", fg_color=COR_CARD_HIGH, command=self.fechar_overlay_bio).pack(pady=20)
+
+    def fechar_overlay_bio(self):
+        if self.overlay_bio:
+            self.overlay_bio.destroy()
+            self.overlay_bio = None
+        self.aluno_em_registro = None
+        self.render_list(self.e_search.get())
 
     def auto_sync(self): self.carregar_alunos(); self.after(30000, self.auto_sync)
     
@@ -397,13 +376,13 @@ class AppRecepcao(ctk.CTk):
         try: 
             requests.post(f"{SITE_URL}/api/aluno-update-data/", data={'aluno_id': aid, 'digital': tag, 'token': SYNC_TOKEN})
             print(f"[BIO] Sucesso: Digital vinculada ao aluno ID: {aid}")
-            if self.janela_bio and self.janela_bio.winfo_exists():
-                self.janela_bio.sucesso()
-            self.after(3000, lambda: self.render_list(""))
+            if self.overlay_bio:
+                self.lbl_bio_status.configure(text="✅ DIGITAL VINCULADA COM SUCESSO!", text_color=COR_SUCCESS)
+                self.after(2000, self.fechar_overlay_bio)
         except Exception as e:
             print(f"[BIO] Erro ao vincular: {e}")
-            if self.janela_bio and self.janela_bio.winfo_exists():
-                self.janela_bio.lbl_status.configure(text=f"❌ ERRO: {e}", text_color=COR_ERROR)
+            if self.overlay_bio:
+                self.lbl_bio_status.configure(text=f"❌ ERRO: {e}", text_color=COR_ERROR)
 
     def validar(self, tag):
         try:
