@@ -1,3 +1,4 @@
+
 """
 Configurações de PRODUÇÃO.
 Ativado na Hostman (academiarocksfit.com.br).
@@ -6,21 +7,33 @@ import dj_database_url
 from decouple import config
 from .base import *
 
-# Configurações de segurança: DEBUG deve ser False em produção para segurança e performance
+# Configurações de segurança: DEBUG deve ser False em produção
 DEBUG = config("DEBUG", default=False, cast=bool)
 
-# Hosts configurados para produção
-# Temporariamente aceitando tudo para garantir que testes internos da infra (Health Check) passem.
-ALLOWED_HOSTS = ['*']
+# ============================================
+# ALLOWED_HOSTS CORRIGIDO - NÃO usar '*' em produção!
+# ============================================
+# Domínios permitidos
+ALLOWED_HOSTS = [
+    "academiarocksfit.com.br",
+    "www.academiarocksfit.com.br",
+    ".hostman.site",  # Domínio interno da Hostman
+    "195.133.93.36",  # IP público
+]
+
+# Adicionar IPs internos da Hostman para health check
+for ip in ["127.0.0.1", "localhost", "192.168.0.4", "172.18.0.3", "172.18.0.4", "172.18.0.7"]:
+    if ip not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(ip)
 
 # CSRF Trust
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
-    default="https://academiarocksfit.com.br,https://www.academiarocksfit.com.br,https://*.hostman.site",
+    default="https://academiarocksfit.com.br,https://www.academiarocksfit.com.br,https://*.hostman.site,http://*.hostman.site",
     cast=lambda v: [s.strip() for s in v.split(",") if s.strip()],
 )
 
-# Banco de Dados PostgreSQL (DATABASE_URL fornecido pela Hostman)
+# Banco de Dados PostgreSQL
 DATABASES = {
     "default": dj_database_url.config(
         default=config("DATABASE_URL", default=""),
@@ -29,8 +42,33 @@ DATABASES = {
     )
 }
 
-# Segurança HTTPS: Desativado por padrão no código (recomendado ativar via variável de ambiente na Hostman)
-SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
+# ============================================
+# FUNÇÃO PARA CONCEDER PERMISSÕES (executa na inicialização)
+# ============================================
+def grant_db_permissions():
+    """Concede permissões no PostgreSQL para o usuário atual"""
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO CURRENT_USER;")
+            cursor.execute("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO CURRENT_USER;")
+            cursor.execute("GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO CURRENT_USER;")
+            cursor.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO CURRENT_USER;")
+            cursor.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO CURRENT_USER;")
+            print("✅ Permissões do banco concedidas com sucesso")
+            return True
+    except Exception as e:
+        print(f"⚠️ Aviso ao conceder permissões: {e}")
+        return False
+
+# Executar concessão de permissões (tenta, mas não quebra se falhar)
+try:
+    grant_db_permissions()
+except Exception as e:
+    print(f"⚠️ Erro na concessão de permissões: {e}")
+
+# Segurança HTTPS
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # HSTS
@@ -48,10 +86,10 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 X_FRAME_OPTIONS = 'DENY'
 
-# Email backend
+# Email backend (configurar depois)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# Configuração de Logs Padrão para Produção (Limpo e Eficiente)
+# Logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -73,22 +111,21 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': config("CLOUDINARY_API_SECRET", default="Ggc4LL8P_3FZggiJdu6u4DPjG_A"),
 }
 
-# Configuração de Storage de Produção
+
+# STORAGES - Use WhiteNoise para estáticos (mais simples)
 STORAGES = {
     "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "cloudinary_storage.storage.StaticCloudinaryStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 
-# Configurações de Segurança de Acesso (Django-Axes)
-# Ajuste para Hostman: Usamos AXES_BEHIND_REVERSE_PROXY = True para que o Axes 
-# identifique corretamente o IP do cliente através do cabeçalho X-Forwarded-For fornecido pelo LB.
-AXES_ENABLED = True
+# Django-Axes (reativar após permissões funcionarem)
+AXES_ENABLED = False  # Mantenha False até resolver as permissões
 AXES_BEHIND_REVERSE_PROXY = True
 
-# Configurações Legado (Necessárias para compatibilidade de scripts de build na Hostman)
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-STATICFILES_STORAGE = 'cloudinary_storage.storage.StaticCloudinaryStorage'
+# Ratelimit
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'
