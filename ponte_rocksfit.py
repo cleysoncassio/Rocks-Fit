@@ -178,7 +178,11 @@ class JanelaCadastroBio(ctk.CTkToplevel):
         self.title("REGISTRO BIOMÉTRICO")
         self.geometry("500x400")
         self.configure(fg_color=COR_BG)
-        self.transient(parent); self.grab_set()
+        self.transient(parent)
+        
+        # Forçar a janela para a frente
+        self.lift()
+        self.focus_force()
         
         # Centralizar na tela
         self.update_idletasks()
@@ -286,13 +290,13 @@ class AppRecepcao(ctk.CTk):
         
         if filter_text:
             resultados = [a for a in self.alunos_data if filter_text.lower() in str(a.get('nome','')).lower() or filter_text in str(a.get('cpf',''))]
-            render_data = resultados[:100]
-            msg = f"🔍 ENCONTRADOS: {len(resultados)} DE {len(self.alunos_data)}"
+            # Mostra apenas os 10 primeiros resultados da busca também para ser ultra rápido
+            render_data = resultados[:10]
         else:
-            render_data = self.alunos_data[:50]
-            msg = f"📋 MOSTRANDO ÚLTIMOS 50 (TOTAL: {len(self.alunos_data)})"
+            # Mostra apenas os 10 primeiros (conforme solicitado)
+            render_data = self.alunos_data[:10]
         
-        self.e_search.configure(placeholder_text=msg)
+        # REMOVIDO: self.e_search.configure(placeholder_text=msg) para evitar lag ao digitar
 
         for a in render_data:
             nome = a.get('nome', 'Sem Nome')
@@ -340,7 +344,8 @@ class AppRecepcao(ctk.CTk):
         # Abre a nova janela de espera
         self.janela_bio = JanelaCadastroBio(self, aluno['nome'])
         
-        print(f"[BIO] Modo de registro ATIVO para aluno: {aluno['nome']}. Aguardando leitura...")
+        print(f"[CLIQUE] Abrindo cadastro para o aluno: {aluno['nome']} (ID: {aid})")
+        print(f"[BIO] Modo de registro ATIVO. Aguardando leitura no hardware...")
 
     def auto_sync(self): self.carregar_alunos(); self.after(30000, self.auto_sync)
     
