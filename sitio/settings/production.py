@@ -112,13 +112,15 @@ CLOUDINARY_STORAGE = {
 }
 
 
-# STORAGES - Use WhiteNoise para estáticos (mais simples)
+# STORAGES - Cloudinary para media, Cloudinary para estáticos (conforme solicitado)
+STATICFILES_STORAGE = 'cloudinary_storage.storage.StaticCloudinaryStorage'
+
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "cloudinary_storage.storage.StaticCloudinaryStorage",
     },
 }
 
