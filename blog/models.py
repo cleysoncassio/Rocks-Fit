@@ -466,7 +466,7 @@ def exportar_alunos_json(sender, instance, **kwargs):
                 'tem_digital': bool(a.digital)
             })
         from django.conf import settings
-        caminho = os.path.join(settings.BASE_DIR, 'dados_blog.json')
+        caminho = os.path.join(settings.BASE_DIR, 'rks-catraca', 'alunos_local.json')
         with open(caminho, 'w', encoding='utf-8') as f:
             json.dump({'alunos': lista}, f, ensure_ascii=False, indent=4)
         

@@ -29,11 +29,14 @@ print(f"  BASE_DIR detectado: {BASE_DIR}")
 
 # --- 2. CACHE ---
 print("\n[2/5] VERIFICAÇÃO DO CACHE LOCAL")
-CAMINHO_CACHE = os.path.join(BASE_DIR, "rks-catraca", "alunos_local.json")
-PASTA_CACHE   = os.path.join(BASE_DIR, "rks-catraca")
+# Tenta encontrar o arquivo no root ou na pasta rks-catraca
+paths_to_try = [
+    os.path.join(BASE_DIR, "alunos_local.json"),
+    os.path.join(BASE_DIR, "rks-catraca", "alunos_local.json"),
+    os.path.join(BASE_DIR, "..", "alunos_local.json")
+]
+CAMINHO_CACHE = next((p for p in paths_to_try if os.path.exists(p)), paths_to_try[0])
 
-print(f"  Pasta rks-catraca : {PASTA_CACHE}")
-print(f"  Pasta existe?     : {os.path.exists(PASTA_CACHE)}")
 print(f"  Arquivo cache     : {CAMINHO_CACHE}")
 print(f"  Arquivo existe?   : {os.path.exists(CAMINHO_CACHE)}")
 
@@ -55,15 +58,20 @@ else:
 
 # --- 3. LOGO ---
 print("\n[3/5] VERIFICAÇÃO DA LOGO")
-CAMINHO_LOGO = os.path.join(BASE_DIR, "media", "images", "rkslogo.png")
+logo_paths = [
+    os.path.join(BASE_DIR, "media", "images", "rkslogo.png"),
+    os.path.join(BASE_DIR, "rkslogo.png")
+]
+CAMINHO_LOGO = next((p for p in logo_paths if os.path.exists(p)), logo_paths[0])
 print(f"  Logo path         : {CAMINHO_LOGO}")
 print(f"  Logo existe?      : {os.path.exists(CAMINHO_LOGO)}")
 
 # --- 4. API ---
-print("\n[4/5] TESTE DA API DJANGO")
+print("\n[4/5] TESTE DA API PRODUÇÃO")
 try:
     import requests
-    r = requests.get("http://127.0.0.1:8000/api/aluno-list-full/?token=rocksfit@2024", timeout=5)
+    SITE_URL = "https://academiarocksfit.com.br"
+    r = requests.get(f"{SITE_URL}/api/aluno-list-full/?token=rocksfit@2024", timeout=10)
     print(f"  Status HTTP       : {r.status_code}")
     if r.status_code == 200:
         alunos_api = r.json().get('alunos', [])
@@ -78,7 +86,7 @@ except Exception as e:
 # --- 5. CATRACA ---
 print("\n[5/5] TESTE DE CONEXÃO COM A CATRACA")
 CATRACA_IP   = "169.254.37.150"
-CATRACA_PORT = 1001
+CATRACA_PORT = 3000
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(2)
