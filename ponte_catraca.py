@@ -31,28 +31,33 @@ def enviar_comando_catraca():
         print(f"Erro ao falar com a catraca: {e}")
         return False
 
-def check_for_releases():
-    try:
-        response = requests.get(API_ENDPOINT, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            liberacoes = data.get('liberacoes', [])
-            
-            for lib in liberacoes:
-                print(f"📢 Liberando para: {lib['nome']} (CPF: {lib['cpf']})")
-                if enviar_comando_catraca():
-                    print(f"✅ Catraca aberta com sucesso!")
-                else:
-                    print(f"❌ Falha ao abrir catraca.")
         else:
-            print(f"⚠ Erro na API: {response.status_code}")
+            print(f"⚠ Erro na API: {response.status_code} (Verifique o Token)")
     except Exception as e:
         print(f"⚠ Erro de conexão com o site: {e}")
 
 # Loop Infinito de Monitoramento (Polling)
 try:
     while True:
-        check_for_releases()
-        time.sleep(3) # Verifica a cada 3 segundos
+        # Adicionado o Token de Sincronização
+        API_ENDPOINT_AUTH = f"{API_ENDPOINT}?token=rocksfit@2024"
+        try:
+            response = requests.get(API_ENDPOINT_AUTH, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                liberacoes = data.get('liberacoes', [])
+                
+                for lib in liberacoes:
+                    print(f"📢 Liberando para: {lib['nome']} (CPF: {lib['cpf']})")
+                    if enviar_comando_catraca():
+                        print(f"✅ Catraca aberta com sucesso!")
+                    else:
+                        print(f"❌ Falha ao abrir catraca.")
+            else:
+                print(f"⚠ Erro na API: {response.status_code}")
+        except Exception as e:
+            print(f"⚠ Erro de polling: {e}")
+            
+        time.sleep(3) 
 except KeyboardInterrupt:
     print("\nEncerrando monitoramento...")

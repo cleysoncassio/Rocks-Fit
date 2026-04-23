@@ -388,27 +388,61 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // Industrial Chart Style
+        // Industrial Chart Style (Sincronizado com o Backend)
         const ctx = document.getElementById('revChart').getContext('2d');
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                labels: {{ chart_labels|safe }},
                 datasets: [{
-                    data: [20, 45, 28, 60, 52, 75],
+                    data: {{ chart_data|safe }},
                     borderColor: '#ff9159',
                     borderWidth: 6,
                     fill: true,
                     backgroundColor: 'rgba(255, 145, 89, 0.05)',
                     tension: 0.5,
-                    pointRadius: 0
+                    pointRadius: 4,
+                    pointBackgroundColor: '#ff9159',
+                    pointBorderColor: '#0e0e0e',
+                    pointBorderWidth: 2
                 }]
             },
             options: {
-                plugins: { legend: { display: false } },
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#131313',
+                        titleFont: { family: 'Space Grotesk', size: 12, weight: 'bold' },
+                        bodyFont: { family: 'Inter', size: 14 },
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Faturamento: R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#1a1919' }, ticks: { display: false } },
-                    x: { grid: { display: false }, ticks: { color: '#adaaaa', font: { family: 'Space Grotesk', weight: '900', size: 10 } } }
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: 'rgba(255,255,255,0.05)' }, 
+                        ticks: { 
+                            color: '#adaaaa',
+                            font: { family: 'Inter', size: 10 },
+                            callback: function(value) { return 'R$ ' + value; }
+                        } 
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { 
+                            color: '#adaaaa', 
+                            font: { family: 'Space Grotesk', weight: '900', size: 10 } 
+                        } 
+                    }
                 }
             }
         });
