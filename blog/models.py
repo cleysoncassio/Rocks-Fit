@@ -31,7 +31,7 @@ class User(AbstractUser):
         "auth.Permission",
         verbose_name="user permissions",
         blank=True,
-        related_name="blog_users",
+        related_name="blog_user_permissions",
         related_query_name="blog_user",
     )
 
@@ -58,14 +58,17 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
         
         # Atribuir permissões específicas após o primeiro save (necessário ID)
-        if self.role == 'SECRETARIA':
-            from django.contrib.auth.models import Permission
-            perms = Permission.objects.filter(codename__in=['can_access_financial', 'can_manage_students'])
-            self.user_permissions.add(*perms)
-        elif self.role == 'PROFESSOR':
-            from django.contrib.auth.models import Permission
-            perms = Permission.objects.filter(codename__in=['can_manage_workouts'])
-            self.user_permissions.add(*perms)
+        try:
+            if self.role == 'SECRETARIA':
+                from django.contrib.auth.models import Permission
+                perms = Permission.objects.filter(codename__in=['can_access_financial', 'can_manage_students'])
+                self.user_permissions.add(*perms)
+            elif self.role == 'PROFESSOR':
+                from django.contrib.auth.models import Permission
+                perms = Permission.objects.filter(codename__in=['can_manage_workouts'])
+                self.user_permissions.add(*perms)
+        except Exception as e:
+            print(f"Erro ao atribuir permissões automáticas: {e}")
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
