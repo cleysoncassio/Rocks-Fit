@@ -650,12 +650,83 @@ def whatsapp_webhook(request):
 @login_required
 def crm_dashboard(request):
     """Dashboard com Inteligência Artificial, Demografia e Plano de Ação (Super Defensivo)"""
+    from blog.models import GymSetting, Aluno, Plan, PagamentoHistorico, ControleAcesso
+    from datetime import date, timedelta
+    from django.contrib import messages
+    from django.utils import timezone
+    
+    # Safely import the helper function if it exists. Sometimes it's inside views.py
+    try:
+        from blog.views import registrar_venda_no_caixa
+    except ImportError:
+        pass
+
+    if request.method == 'POST' and 'faturar_rapido' in request.POST:
+        aluno_id = request.POST.get('aluno_id')
+        valor_raw = request.POST.get('valor', '0.00').strip()
+        metodo = request.POST.get('metodo', 'DINHEIRO')
+        plano_id = request.POST.get('plano', '')
+        
+        if ',' in valor_raw:
+            valor = valor_raw.replace('.', '').replace(',', '.')
+        else:
+            valor = valor_raw
+            
+        try:
+            aluno = Aluno.objects.get(id=aluno_id)
+            # 1. Registro Histórico
+            PagamentoHistorico.objects.create(
+                aluno=aluno,
+                plano_id=plano_id if plano_id else None,
+                valor=valor,
+                status='pago',
+                data_pagamento=timezone.now(),
+                metodo_pagamento=metodo
+            )
+            
+            # 2. Atualizar Acesso (se tiver plano)
+            plano_name = 'Taxa Adicional'
+            if plano_id:
+                plano = Plan.objects.get(id=plano_id)
+                plano_name = plano.name
+                acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
+                hoje_local = timezone.localtime(timezone.now()).date()
+                base_data = hoje_local
+                if hoje_local.weekday() == 6: # Domingo
+                    base_data = hoje_local + timedelta(days=1)
+                    
+                if plano.plan_type == 'diaria':
+                    acesso.data_vencimento = base_data + timedelta(days=plano.duration_days)
+                else:
+                    start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > hoje_local) else base_data
+                    acesso.data_vencimento = start_date + timedelta(days=plano.duration_days)
+                
+                acesso.status_catraca = 'liberado'
+                acesso.esta_dentro = False
+                acesso.save()
+                
+            # 3. Caixa
+            if 'registrar_venda_no_caixa' in globals() or 'registrar_venda_no_caixa' in locals():
+                registrar_venda_no_caixa(
+                    valor=float(valor),
+                    descricao=f"Recebimento Rápido: {aluno.nome_completo} ({plano_name})",
+                    metodo=metodo,
+                    origem='MANUAL'
+                )
+            messages.success(request, f"Recebimento Rápido: R$ {valor} computado para o membro '{aluno.nome_completo}'.")
+        except Exception as e:
+            messages.error(request, f"Aconteceu um erro no aporte rápido: {str(e)}")
+            
+        return redirect('crm_dashboard')
+
     context = {'ai_insights': 'Acesso limitado ao banco.'}
     try:
         hoje = date.today()
         # Blocos isolados
         try:
             alunos = Aluno.objects.all()
+            context['alunos_lista'] = alunos.order_by('nome_completo')
+            context['planos'] = Plan.objects.all()
             context['total_alunos'] = alunos.count()
             context['perfil_mulheres'] = alunos.filter(sexo='F').count()
             context['perfil_homens'] = alunos.filter(sexo='M').count()
@@ -672,6 +743,81 @@ def crm_dashboard(request):
         return render(request, 'crm/dashboard.html', context)
     except Exception as e:
         return HttpResponse(f"Erro Dashboard: {e}", status=500)
+
+@login_required
+def crm_config(request):
+    """Gestão de permissões de SEGURANÇA MÁXIMA: Apenas modelos CORE do CRM"""
+    if not request.user.is_superuser:
+        return HttpResponse("Acesso Negado", status=403)
+
+    from django.contrib.auth.models import Permission
+    from .models import RolePermission, User
+    
+    # 1. WHITELIST: Apenas estes modelos aparecem no CRM
+    modelos_autorizados = [
+        'user', 'aluno', 'caixaturno', 'caixamovimentacao', 
+        'pagamentohistorico', 'plano', 'controleacesso', 
+        'nutricionista', 'rolepermission', 'exercicio', 'treino', 'avaliacao'
+    ]
+    
+    # 2. Mapeamento de termos técnicos para Português amigável
+    traducoes = {
+        'Can add': 'Adicionar',
+        'Can change': 'Editar',
+        'Can delete': 'Excluir',
+        'Can view': 'Visualizar',
+        # Modelos
+        'user': 'Usuários',
+        'aluno': 'Alunos',
+        'caixaturno': 'Turno de Caixa',
+        'caixamovimentacao': 'Movimento de Caixa',
+        'pagamentohistorico': 'Histórico Financeiro',
+        'plano': 'Planos e Pacotes',
+        'controleacesso': 'Acesso/Catraca',
+        'nutricionista': 'Nutrição',
+        'rolepermission': 'Cargos e Permissões',
+        'treino': 'Treinos',
+        'avaliacao': 'Avaliações Fis.',
+    }
+
+    target_roles = [User.TYPE_SECRETARY, User.TYPE_TRAINER, User.TYPE_NUTRITIONIST, User.TYPE_STUDENT]
+    
+    if request.method == 'POST':
+        for r_type in target_roles:
+            role_perm, _ = RolePermission.objects.get_or_create(role=r_type)
+            perm_ids = request.POST.getlist(f'perms_{r_type}')
+            role_perm.permissions.set(Permission.objects.filter(id__in=perm_ids))
+        return redirect('crm_config')
+
+    # Busca apenas permissões dos modelos autorizados
+    all_perms_queryset = Permission.objects.filter(
+        content_type__app_label='blog',
+        content_type__model__in=modelos_autorizados
+    ).order_by('content_type__model', 'codename')
+    
+    # Prepara nomes amigáveis baseados na tradução técnica e de modelos
+    all_perms_friendly = []
+    for p in all_perms_queryset:
+        modelo_eng = p.content_type.model
+        modelo_pt = traducoes.get(modelo_eng, modelo_eng.capitalize())
+        
+        prefixo_pt = "Ação"
+        for eng, pt in traducoes.items():
+            if p.name.startswith(eng):
+                prefixo_pt = pt
+                break
+        
+        p.friendly_name = f"{prefixo_pt} {modelo_pt}"
+        all_perms_friendly.append(p)
+    
+    role_configs = [RolePermission.objects.get_or_create(role=r)[0] for r in target_roles]
+
+    context = {
+        'role_configs': role_configs,
+        'all_perms': all_perms_friendly,
+        'ai_insights': 'Módulo CRM Blindado - Apenas Operação.',
+    }
+    return render(request, 'crm/config.html', context)
 
 @login_required
 def crm_dash_gerencial(request):
@@ -819,7 +965,12 @@ def crm_aluno_detail(request, aluno_id):
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
     if request.method == 'POST' and 'faturar' in request.POST:
-        valor = request.POST.get('valor', '0.00')
+        valor_raw = request.POST.get('valor', '0.00').strip()
+        if ',' in valor_raw:
+            valor = valor_raw.replace('.', '').replace(',', '.')
+        else:
+            valor = valor_raw
+            
         metodo = request.POST.get('metodo', 'DINHEIRO')
         plano_id = request.POST.get('plano', '')
         
@@ -1168,14 +1319,17 @@ def crm_aluno_create(request):
             # Lógica de Aporte Inicial (Plano imediato)
             plano_id = request.POST.get('plano_id')
             if plano_id:
-                valor_raw = request.POST.get('valor_pagamento')
+                valor_raw = request.POST.get('valor_pagamento', '').strip()
                 metodo = request.POST.get('metodo_pagamento', 'PIX')
                 plano = Plan.objects.get(id=plano_id)
                 
-                # Tratamento robusto do valor (conversão de vírgula para ponto)
+                # Tratamento robusto do valor mascara de real (ex: "1.250,50" -> 1250.50)
                 try:
                     if valor_raw:
-                        valor_final = float(valor_raw.replace(',', '.'))
+                        if ',' in valor_raw:
+                            valor_final = float(valor_raw.replace('.', '').replace(',', '.'))
+                        else:
+                            valor_final = float(valor_raw)
                     else:
                         valor_final = float(plano.price)
                 except (ValueError, TypeError):

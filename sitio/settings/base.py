@@ -4,6 +4,7 @@ Não use este arquivo diretamente — use development.py ou production.py.
 """
 import os
 from pathlib import Path
+from datetime import timedelta
 from decouple import Csv, config
 from dotenv import load_dotenv
 
@@ -31,10 +32,12 @@ INSTALLED_APPS = [
     "cloudinary",
     "sass_processor",
     "ordered_model",
-    # "axes", # Desativado temporariamente para debugar o health check da Hostman
+    "axes", 
     "csp",
     "corsheaders",
     "rest_framework",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
 ]
 
 MIDDLEWARE = [
@@ -46,7 +49,10 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    # "axes.middleware.AxesMiddleware", # Desativado para evitar bloqueios no health check com o DB travado
+    # "django_otp.middleware.OTPMiddleware", # Desativado temporariamente 
+    "axes.middleware.AxesMiddleware",
+    "blog.middleware.SessionTimeoutMiddleware",
+    # "blog.middleware.Enforce2FAMiddleware", # Desativado a pedido do usuário
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -123,16 +129,30 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Configurações do Controle de Acesso (Catraca)
 CATRACA_SYNC_TOKEN = "rocksfit@2024"
 
-# Django-Axes (Proteção Brute Force)
+# --- Autenticação e Usuário ---
+AUTH_USER_MODEL = 'blog.User'
+
 AUTHENTICATION_BACKENDS = [
-    # 'axes.backends.AxesBackend', # Desativado pelo mesmo motivo
+    'axes.backends.AxesBackend',
+    'blog.auth_backends.EmailOrCPFBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
 AXES_FAILURE_LIMIT = 5
-# AXES_COOLOFF_TIME = 1
-AXES_LOCKOUT_TEMPLATE = "base/fake_admin.html"
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_LOCKOUT_TEMPLATE = "registration/locked_out.html"
 AXES_RESET_ON_SUCCESS = True
+AXES_BEHIND_REVERSE_PROXY = True
+
+# --- Sessões e Segurança ---
+SESSION_COOKIE_AGE = 1800 # 30 min padrão (Alunos)
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# --- 2FA (OTP) ---
+OTP_TOTP_ISSUER = 'Rocks Fit Academy'
+OTP_TOTP_DIGITS = 6
+OTP_TOTP_INTERVAL = 30
 
 # Configuração do Django-CSP
 CONTENT_SECURITY_POLICY = {
@@ -144,7 +164,7 @@ CONTENT_SECURITY_POLICY = {
         'connect-src': ("'self'", 'https://res.cloudinary.com', 'https://www.googletagmanager.com', 'https://viacep.com.br'),
 
         'script-src': ("'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://res.cloudinary.com', 'https://www.googletagmanager.com', 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net'),
-        'style-src': ("'self'", "'unsafe-inline'", 'https://res.cloudinary.com', 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://res.cloudinary.com', 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'),
         'style-src-attr': ("'self'", "'unsafe-inline'")
     }
 }
@@ -161,5 +181,6 @@ CORS_ALLOW_ALL_ORIGINS = True  # Para desenvolvimento do App do Aluno
 AUTH_USER_MODEL = 'blog.User'
 
 # Redirecionamento de Login/Logout
-LOGIN_REDIRECT_URL = '/crm/'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/admin/'
+LOGOUT_REDIRECT_URL = '/login/'

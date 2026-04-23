@@ -1,0 +1,63 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="section-padding bg-black min-vh-100 d-flex align-items-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <div class="bg-dark p-5 rounded-4 border border-secondary shadow-lg">
+                    <div class="text-center mb-5">
+                        <span class="badge bg-orange text-black px-3 py-2 mb-3">SEGURANÇA ROCKS FIT</span>
+                        <h2 class="text-white fw-bold">Ativar Autenticação 2FA</h2>
+                        <p class="text-secondary">Para sua segurança, Administradores precisam de autenticação em duas etapas.</p>
+                    </div>
+
+                    {% if already_enabled %}
+                        <div class="alert alert-success bg-success bg-opacity-10 text-success border-success text-center">
+                            <i class="bi bi-check-circle-fill me-2"></i> Sua conta já possui 2FA ativado.
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="{% url 'dashboard_admin' %}" class="btn btn-orange px-5">Ir para Dashboard</a>
+                        </div>
+                    {% else %}
+                        <div class="text-center mb-4 p-3 bg-white rounded-3 d-inline-block w-100">
+                            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code 2FA" class="img-fluid" style="max-width: 200px;">
+                        </div>
+
+                        <div class="text-secondary mb-4">
+                            <ol class="small">
+                                <li>Instale o <strong>Google Authenticator</strong> ou <strong>Authy</strong> no seu celular.</li>
+                                <li>Escaneie o código acima ou insira a chave: <code>{{ secret_key }}</code></li>
+                                <li>Insira o código de 6 dígitos gerado abaixo para confirmar.</li>
+                            </ol>
+                        </div>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-4">
+                                {{ form.token }}
+                                {% if form.token.errors %}
+                                    <div class="text-danger small mt-2">{{ form.token.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-orange w-100 py-3 fw-bold">CONFIRMAR E ATIVAR</button>
+                        </form>
+                    {% endif %}
+
+                    <div class="text-center mt-4 pt-4 border-top border-secondary">
+                        <a href="{% url 'logout' %}" class="text-secondary text-decoration-none small">Sair do Sistema</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .bg-orange { background-color: #f27121; }
+    .btn-orange { background-color: #f27121; color: #000; border: None; }
+    .btn-orange:hover { background-color: #ff8533; color: #000; }
+    .text-orange { color: #f27121; }
+</style>
+{% endblock %}

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Rocks Fit - Alta Performance{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --rocks-orange: #f27121;
+            --rocks-black: #000000;
+            --rocks-dark-gray: #0c0c0c;
+            --rocks-border: #333333;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--rocks-black);
+            color: #ffffff;
+        }
+
+        h1, h2, h3, .space-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .text-orange { color: var(--rocks-orange) !important; }
+        .bg-orange { background-color: var(--rocks-orange) !important; }
+        .border-orange { border-color: var(--rocks-orange) !important; }
+
+        .btn-orange {
+            background-color: var(--rocks-orange);
+            color: #000;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-orange:hover {
+            background-color: #ff8533;
+            transform: translateY(-2px);
+            color: #000;
+        }
+
+        .card-industrial {
+            background-color: var(--rocks-dark-gray);
+            border: 1px solid var(--rocks-border);
+            border-radius: 1rem;
+        }
+
+        .form-control-rocks {
+            background-color: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+        }
+
+        .form-control-rocks:focus {
+            background-color: #111;
+            border-color: var(--rocks-orange);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--rocks-orange); }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

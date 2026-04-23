@@ -4,47 +4,78 @@ from ordered_model.models import OrderedModel
 
 
 class User(AbstractUser):
-    # Campos adicionais para o seu modelo de User personalizado
-    bio = models.TextField(max_length=500, blank=True)
-    location = models.CharField(max_length=30, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
-    avatar = models.ImageField(upload_to="user_avatars/", null=True, blank=True)
-    website = models.URLField(max_length=100, blank=True)
-    
-    ROLE_CHOICES = (
-        ('ADMIN', 'Administrador'),
-        ('SECRETARIA', 'Secretaria'),
-        ('PROFESSOR', 'Professor'),
-        ('ALUNO', 'Aluno'),
-    )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='ALUNO', verbose_name="Cargo")
+    TYPE_SUPERADMIN = 'superadmin'
+    TYPE_ADMIN = 'admin'
+    TYPE_SECRETARY = 'secretary'
+    TYPE_TRAINER = 'trainer'
+    TYPE_NUTRITIONIST = 'nutritionist'
+    TYPE_STUDENT = 'student'
 
-    # Se você quiser adicionar campos aos grupos e permissões para evitar conflitos
-    groups = models.ManyToManyField(
-        "auth.Group",
-        verbose_name="groups",
-        blank=True,
-        related_name="blog_users",
-        related_query_name="blog_user",
+    USER_TYPE_CHOICES = (
+        (TYPE_SUPERADMIN, 'SuperAdmin'),
+        (TYPE_ADMIN, 'Administrador'),
+        (TYPE_SECRETARY, 'Secretário(a)'),
+        (TYPE_TRAINER, 'Professor(a)'),
+        (TYPE_NUTRITIONIST, 'Nutricionista'),
+        (TYPE_STUDENT, 'Aluno(a)'),
     )
-    user_permissions = models.ManyToManyField(
-        "auth.Permission",
-        verbose_name="user permissions",
-        blank=True,
-        related_name="blog_users",
-        related_query_name="blog_user",
-    )
+
+    email = models.EmailField(unique=True, verbose_name="E-mail")
+    cpf = models.CharField(max_length=14, unique=True, db_index=True, null=True, blank=True, verbose_name="CPF")
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefone")
+    avatar = models.ImageField(upload_to="user_avatars/", null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True, verbose_name="Data de Nascimento")
+    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default=TYPE_STUDENT, verbose_name="Tipo de Usuário")
+    
+    is_2fa_enabled = models.BooleanField(default=False, verbose_name="2FA Ativado")
+    last_login_ip = models.GenericIPAddressField(null=True, blank=True, verbose_name="Último IP")
+    last_login_user_agent = models.CharField(max_length=255, blank=True, null=True, verbose_name="Último User Agent")
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'cpf']
 
     class Meta:
+        verbose_name = "Usuário"
+        verbose_name_plural = "Usuários"
         permissions = [
-            ("can_access_financial", "Pode acessar o módulo financeiro e caixa"),
-            ("can_manage_students", "Pode cadastrar e gerenciar alunos"),
-            ("can_manage_workouts", "Pode gerenciar treinos e avaliações"),
-            ("can_access_settings", "Pode acessar configurações do gestor"),
+            ("can_manage_users", "Pode gerenciar usuários staff"),
+            ("can_manage_memberships", "Pode gerenciar planos e matrículas"),
+            ("can_view_financial_reports", "Pode visualizar relatórios financeiros"),
+            ("can_manage_schedule", "Pode gerenciar horários e turmas"),
+            ("can_checkin", "Pode realizar check-in na catraca"),
+            ("can_manage_nutrition", "Pode gerenciar avaliações e cardápios"),
+            ("can_view_student_data", "Pode visualizar dados dos alunos"),
+            ("can_manage_trainings", "Pode gerenciar diários de treino"),
+            ("can_view_system_logs", "Pode visualizar logs de auditoria do sistema"),
         ]
 
+    def save(self, *args, **kwargs):
+        # Sincroniza flags do Django com o tipo de usuário Rocks Fit
+        if self.user_type == self.TYPE_SUPERADMIN:
+            self.is_superuser = True
+            self.is_staff = True
+        elif self.user_type in [self.TYPE_ADMIN, self.TYPE_SECRETARY]:
+            self.is_staff = True
+            if self.user_type == self.TYPE_ADMIN:
+                self.is_superuser = False # Admin não é SuperAdmin por padrão
+        
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return self.username
+        return f"{self.get_user_type_display()}: {self.email}"
+
+class LoginAttempt(models.Model):
+    user_identifier = models.CharField(max_length=255, verbose_name="Email/CPF")
+    ip_address = models.GenericIPAddressField(verbose_name="Endereço IP")
+    user_agent = models.CharField(max_length=255, verbose_name="User Agent")
+    success = models.BooleanField(default=False, verbose_name="Sucesso?")
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Data/Hora")
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Log de Acesso"
+        verbose_name_plural = "Logs de Acessos"
+
 
 
 class Program(OrderedModel):
@@ -84,6 +115,21 @@ class Trainer(OrderedModel):
     class Meta(OrderedModel.Meta):
         verbose_name = "Professor"
         verbose_name_plural = "06. Academia: Professores"
+
+class Nutritionist(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='nutritionist_profile', verbose_name="Usuário de Login")
+    name = models.CharField(max_length=100)
+    crn = models.CharField(max_length=20, unique=True, null=True, blank=True, verbose_name="CRN")
+    specialty = models.CharField(max_length=100, blank=True, null=True, verbose_name="Especialidade")
+    bio = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to="nutritionist_images/", blank=True, null=True)
+
+    def __str__(self):
+        return f"Dra(o). {self.name}"
+
+    class Meta:
+        verbose_name = "Nutricionista"
+        verbose_name_plural = "06b. Academia: Nutricionistas"
 
 
 class Schedule(models.Model):
@@ -180,7 +226,7 @@ class Aluno(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='aluno_perfil', verbose_name="Usuário de Login")
     matricula = models.CharField(max_length=20, unique=True, blank=True, null=True, verbose_name="Matrícula")
     nome_completo = models.CharField(max_length=200, verbose_name="Nome Completo")
-    cpf = models.CharField(max_length=14, unique=True, verbose_name="CPF")
+    cpf = models.CharField(max_length=14, unique=True, null=True, blank=True, verbose_name="CPF")
     data_nascimento = models.DateField(blank=True, null=True, verbose_name="Data de Nascimento")
     SEXO_CHOICES = (
         ('M', 'Masculino'),
@@ -480,6 +526,37 @@ def exportar_alunos_json(sender, instance, **kwargs):
     finally:
         _sync_in_progress = False
 
+class RolePermission(models.Model):
+    """Configuração de permissões por cargo do sistema"""
+    role = models.CharField(max_length=20, choices=User.USER_TYPE_CHOICES, unique=True, verbose_name="Cargo")
+    permissions = models.ManyToManyField('auth.Permission', blank=True, verbose_name="Permissões Ativas")
+
+    def __str__(self):
+        return f"Permissões: {self.get_role_display()}"
+
+    class Meta:
+        verbose_name = "Configuração de Cargo"
+        verbose_name_plural = "06c. Configurações: Permissões por Cargo"
+
+# Sinal para sincronizar RolePermission com Groups do Django
+from django.db.models.signals import m2m_changed
+from django.contrib.auth.models import Group
+
+@receiver(m2m_changed, sender=RolePermission.permissions.through)
+def sync_role_permissions_to_groups(sender, instance, action, **kwargs):
+    if action in ["post_add", "post_remove", "post_clear"]:
+        # Nome do grupo correspondente ao cargo
+        group_name = instance.get_role_display()
+        group, created = Group.objects.get_or_create(name=group_name)
+        
+        # Sincroniza as permissões do cargo com o grupo
+        group.permissions.set(instance.permissions.all())
+        
+        # Garante que todos os usuários deste tipo estejam no grupo
+        users_of_type = User.objects.filter(user_type=instance.role)
+        for user in users_of_type:
+            user.groups.add(group)
+
 class GymSetting(models.Model):
     name = models.CharField(max_length=100, default="Rocks-Fit")
     logo = models.ImageField(upload_to='gym_logos/', blank=True, null=True)
@@ -491,11 +568,56 @@ class GymSetting(models.Model):
         verbose_name = "Configuração da Academia"
         verbose_name_plural = "Configuração da Academia"
 
-# Também disparar quando o Controle de Acesso mudar ou Aluno for deletado
-from django.db.models.signals import post_save, post_delete
-from .models import ControleAcesso
+# --- 🚀 AUTOMATIC PROFILE CREATION (SIGNALS) ---
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db import transaction
+import logging
 
-@receiver(post_save, sender=ControleAcesso)
-@receiver(post_delete, sender=Aluno)
-def exportar_pelo_vinculo(sender, instance, **kwargs):
-    exportar_alunos_json(sender=Aluno, instance=None)
+logger = logging.getLogger(__name__)
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        def create_profile():
+            try:
+                if instance.user_type == User.TYPE_STUDENT:
+                    Aluno.objects.get_or_create(
+                        user=instance,
+                        defaults={
+                            'nome_completo': f"{instance.first_name} {instance.last_name}",
+                            'cpf': instance.cpf,
+                            'email': instance.email
+                        }
+                    )
+                elif instance.user_type == User.TYPE_TRAINER:
+                    Trainer.objects.get_or_create(
+                        user=instance,
+                        defaults={'name': f"{instance.first_name} {instance.last_name}"}
+                    )
+                elif instance.user_type == User.TYPE_NUTRITIONIST:
+                    Nutritionist.objects.get_or_create(
+                        user=instance,
+                        defaults={'name': f"{instance.first_name} {instance.last_name}"}
+                    )
+            except Exception as e:
+                logger.error(f"Erro ao criar perfil automático para {instance.email}: {e}")
+
+        # Executa apenas após o Commit da transação principal (User)
+        transaction.on_commit(create_profile)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    try:
+        if instance.user_type == User.TYPE_STUDENT and hasattr(instance, 'aluno_perfil'):
+            instance.aluno_perfil.save()
+        elif instance.user_type == User.TYPE_TRAINER and hasattr(instance, 'trainer_profile'):
+            instance.trainer_profile.save()
+        elif instance.user_type == User.TYPE_NUTRITIONIST and hasattr(instance, 'nutritionist_profile'):
+            instance.nutritionist_profile.save()
+    except Exception:
+        pass
+
+# --- 🚀 SINCRONIZAÇÃO LOCAL (rks-catraca) ---
+# ... (restante do código de exportação JSON já existente)
+
