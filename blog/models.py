@@ -19,21 +19,8 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='ALUNO', verbose_name="Cargo")
 
-    # Se você quiser adicionar campos aos grupos e permissões para evitar conflitos
-    groups = models.ManyToManyField(
-        "auth.Group",
-        verbose_name="groups",
-        blank=True,
-        related_name="blog_user_groups",
-        related_query_name="blog_users_g",
-    )
-    user_permissions = models.ManyToManyField(
-        "auth.Permission",
-        verbose_name="user permissions",
-        blank=True,
-        related_name="blog_user_permissions",
-        related_query_name="blog_users_p",
-    )
+    # Removidos campos manuais de groups e permissions para evitar conflitos no DB
+    # O Django já os gerencia automaticamente via AbstractUser
 
     class Meta:
         permissions = [
