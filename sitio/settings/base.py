@@ -49,10 +49,10 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    # "django_otp.middleware.OTPMiddleware", # Desativado temporariamente 
+    "django_otp.middleware.OTPMiddleware",
     "axes.middleware.AxesMiddleware",
     "blog.middleware.SessionTimeoutMiddleware",
-    # "blog.middleware.Enforce2FAMiddleware", # Desativado a pedido do usuário
+    "blog.middleware.Enforce2FAMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
