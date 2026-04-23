@@ -1,0 +1,160 @@
+<!-- Sidebar Industrial Collapsible -->
+<aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
+    <!-- Toggle Button -->
+    <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-[#ff9159] text-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
+        <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
+    </button>
+
+    <div class="px-4 mb-12 text-center group">
+        <a href="{% url 'crm_dashboard' %}" class="block hover:opacity-80 transition-all">
+            {% if gym_settings.logo %}
+                <img src="{{ gym_settings.logo.url }}" class="h-28 w-full mx-auto mb-4 object-contain sidebar-logo" alt="{{ gym_settings.name }}">
+            {% else %}
+                <h1 class="text-3xl font-black text-[#ff9159] font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
+            {% endif %}
+        </a>
+        <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-400 mt-2 sidebar-label">Industrial RKS</p>
+    </div>
+
+    <nav class="flex-grow">
+        <ul class="space-y-1">
+            <!-- Menu Dashboards com Submenu -->
+            <li>
+                <button onclick="toggleSubmenu('dashboards-submenu')" class="nav-link w-full py-4 px-8 flex items-center justify-between font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all text-neutral-500 hover:bg-neutral-800/40 hover:text-neutral-200">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-lg">grid_view</span>
+                        <span class="nav-text">Dashboards</span>
+                    </div>
+                    <span id="dashboards-submenu-arrow" class="material-symbols-outlined text-sm transition-transform duration-200">expand_more</span>
+                </button>
+                <ul id="dashboards-submenu" class="hidden bg-black/20 space-y-1 py-1">
+                    <li>
+                        <a class="nav-link py-3 px-12 flex items-center gap-3 font-headline uppercase text-[9px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_dashboard' %}text-primary{% else %}text-neutral-500 hover:text-white{% endif %}" href="{% url 'crm_dashboard' %}">
+                            <span class="material-symbols-outlined text-base">dashboard</span>
+                            <span class="nav-text">Visão Geral</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link py-3 px-12 flex items-center gap-3 font-headline uppercase text-[9px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_dash_gerencial' %}text-primary{% else %}text-neutral-500 hover:text-white{% endif %}" href="{% url 'crm_dash_gerencial' %}">
+                            <span class="material-symbols-outlined text-base">analytics</span>
+                            <span class="nav-text">Gerencial</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            
+            {% if perms.blog.can_manage_students or user.is_superuser %}
+            <li>
+                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_alunos_list' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}text-neutral-500 hover:bg-neutral-800/40 hover:text-neutral-200{% endif %}" href="{% url 'crm_alunos_list' %}">
+                    <span class="material-symbols-outlined text-lg">group</span>
+                    <span class="nav-text">Membros</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% if perms.blog.can_access_financial or user.is_superuser %}
+            <li>
+                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_caixa' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}text-neutral-500 hover:bg-neutral-800/40 hover:text-neutral-200{% endif %}" href="{% url 'crm_caixa' %}">
+                    <span class="material-symbols-outlined text-lg">payments</span>
+                    <span class="nav-text">Financeiro</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- NOVO MÓDULO: CONFIGURAÇÕES -->
+            {% if user.is_superuser %}
+            <li>
+                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_config' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}text-neutral-500 hover:bg-neutral-800/40 hover:text-neutral-200{% endif %}" href="{% url 'crm_config' %}">
+                    <span class="material-symbols-outlined text-lg">settings</span>
+                    <span class="nav-text">Configurações</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <div class="px-6 mt-auto pt-8 border-t border-white/5 flex flex-col gap-6">
+        
+        <!-- User Avatar Component -->
+        <div class="flex flex-col items-center justify-center px-2 group cursor-pointer text-center" title="{{ request.user.username }}">
+            <div class="w-10 h-10 rounded-full bg-surface-container-highest border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-primary/50 transition-all text-white shadow-lg mb-2">
+                {% if request.user.avatar %}
+                    <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="w-full h-full object-cover">
+                {% else %}
+                    <span class="font-headline font-black text-xs uppercase">{{ request.user.username|make_list|first }}</span>
+                {% endif %}
+            </div>
+            <div class="nav-text overflow-hidden transition-opacity w-full">
+                <p class="font-headline font-black text-white text-[11px] uppercase tracking-[0.15em] truncate w-full">{{ request.user.get_full_name|default:request.user.username }}</p>
+                <p class="text-[9px] font-bold text-[#ff9159] uppercase tracking-[0.2em] truncate w-full mt-1">
+                    {% if request.user.is_superuser %}
+                        Super Admin
+                    {% elif request.user.get_user_type_display %}
+                        {{ request.user.get_user_type_display }}
+                    {% else %}
+                        Usuário
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <a class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors px-2" href="{% url 'logout' %}">
+            <span class="material-symbols-outlined text-lg">logout</span>
+            <span class="nav-text">Sair</span>
+        </a>
+    </div>
+</aside>
+
+<script>
+    function toggleSubmenu(id) {
+        const menu = document.getElementById(id);
+        const arrow = document.getElementById(id + '-arrow');
+        if (menu) {
+            const isHidden = menu.classList.toggle('hidden');
+            if (arrow) arrow.classList.toggle('rotate-180', !isHidden);
+        }
+    }
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('main-sidebar');
+        const toggleIcon = document.getElementById('toggle-icon');
+        const mainContent = document.querySelector('main');
+        
+        sidebar.classList.toggle('w-64');
+        sidebar.classList.toggle('w-20');
+        
+        const isCollapsed = sidebar.classList.contains('w-20');
+        localStorage.setItem('sidebar-collapsed', isCollapsed);
+        
+        document.querySelectorAll('.nav-text, .sidebar-label, .sidebar-text').forEach(el => {
+            el.classList.toggle('hidden', isCollapsed);
+        });
+        
+        if(mainContent) {
+            mainContent.classList.toggle('ml-64', !isCollapsed);
+            mainContent.classList.toggle('ml-20', isCollapsed);
+        }
+        
+        if (toggleIcon) toggleIcon.innerText = isCollapsed ? 'chevron_right' : 'chevron_left';
+    }
+
+    (function() {
+        const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+        if (isCollapsed) {
+            const sidebar = document.getElementById('main-sidebar');
+            const toggleIcon = document.getElementById('toggle-icon');
+            const mainContent = document.querySelector('main');
+            
+            if (sidebar) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-20');
+                document.querySelectorAll('.nav-text, .sidebar-label, .sidebar-text').forEach(el => el.classList.add('hidden'));
+                if(mainContent) {
+                    mainContent.classList.remove('ml-64');
+                    mainContent.classList.add('ml-20');
+                }
+                if(toggleIcon) toggleIcon.innerText = 'chevron_right';
+            }
+        }
+    })();
+</script>

@@ -1,0 +1,81 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="min-vh-100 bg-black text-white">
+    <!-- Navbar Custom Performance -->
+    <nav class="navbar navbar-expand-lg border-bottom border-secondary bg-dark px-4">
+        <div class="container-fluid">
+            <span class="navbar-brand fw-bold">ROCKS <span class="text-orange">FIT</span> <span class="ms-3 badge bg-orange text-black small">ADMIN</span></span>
+            <div class="ms-auto d-flex align-items-center">
+                <span class="text-secondary small me-3">{{ user.get_full_name|default:user.email }}</span>
+                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">SAIR</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row g-4">
+            <!-- Sidebar / Info Quick Access -->
+            <div class="col-lg-3">
+                <div class="card bg-dark border-secondary p-4 rounded-4">
+                    <div class="text-center mb-4">
+                        {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover; border: 2px solid #f27121;">
+                        {% else %}
+                            <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                <i class="bi bi-person-fill fs-2"></i>
+                            </div>
+                        {% endif %}
+                        <h5 class="mb-0">{{ user.get_user_type_display }}</h5>
+                        <p class="text-secondary small">{{ user.email }}</p>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-decoration-none text-white hover-orange"><i class="bi bi-gear me-2"></i> Configurações</a></li>
+                        <li class="mb-2"><a href="{% url 'setup_2fa' %}" class="text-decoration-none text-white hover-orange"><i class="bi bi-shield-lock me-2"></i> Segurança 2FA</a></li>
+                        <li><a href="/7becomb/" class="text-decoration-none text-white hover-orange"><i class="bi bi-database me-2"></i> Painel de Dados</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Dashboard Content Area -->
+            <div class="col-lg-9">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary p-4 rounded-4 text-center">
+                            <h2 class="text-orange fw-bold">--</h2>
+                            <p class="text-secondary small mb-0">ALUNOS ATIVOS</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary p-4 rounded-4 text-center">
+                            <h2 class="text-orange fw-bold">--</h2>
+                            <p class="text-secondary small mb-0">FATURAMENTO MÊS</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary p-4 rounded-4 text-center">
+                            <h2 class="text-orange fw-bold">--</h2>
+                            <p class="text-secondary small mb-0">ACESSOS HOJE</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-dark border-secondary mt-4 p-5 rounded-4 text-center">
+                    <i class="bi bi-cone-striped fs-1 text-orange mb-3"></i>
+                    <h3>Painel de Controle em Centralização</h3>
+                    <p class="text-secondary">Estamos integrando os dados financeiros e de acesso nesta nova arquitetura de segurança.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .bg-dark { background-color: #0c0c0c !important; }
+    .text-orange { color: #f27121 !important; }
+    .bg-orange { background-color: #f27121 !important; }
+    .border-secondary { border-color: #333 !important; }
+    .hover-orange:hover { color: #f27121 !important; }
+</style>
+{% endblock %}

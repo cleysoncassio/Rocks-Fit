@@ -74,46 +74,7 @@
 </head>
 <body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden">
 
-    <!-- Sidebar Industrial Collapsible (Hidden on Mobile) -->
-    <aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
-        <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-primary text-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
-            <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
-        </button>
-
-        <div class="px-4 mb-12 text-center group">
-            <a href="{% url 'crm_dashboard' %}" class="block hover:opacity-80 transition-all">
-                {% if gym_settings.logo %}
-                    <img src="{{ gym_settings.logo.url }}" class="h-28 w-full mx-auto mb-4 object-contain sidebar-logo" alt="{{ gym_settings.name }}">
-                {% else %}
-                    <h1 class="text-3xl font-black text-primary font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
-                {% endif %}
-            </a>
-            <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-300 mt-2 sidebar-label">Industrial RKS</p>
-        </div>
-
-        <nav class="flex-grow overflow-y-auto">
-            <ul class="space-y-1">
-                <li>
-                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all hover:bg-neutral-800/40 hover:text-neutral-200" href="{% url 'crm_dashboard' %}">
-                        <span class="material-symbols-outlined text-lg">grid_view</span>
-                        <span class="nav-text">Dashboards</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="nav-link text-primary bg-primary/5 border-r-4 border-primary py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all" href="{% url 'crm_alunos_list' %}">
-                        <span class="material-symbols-outlined text-lg">group</span>
-                        <span class="nav-text">Membros</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="nav-link text-neutral-500 py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:bg-neutral-800/40 hover:text-neutral-200 transition-all" href="{% url 'crm_caixa' %}">
-                        <span class="material-symbols-outlined text-lg">payments</span>
-                        <span class="nav-text">Financeiro</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+    {% include "crm/sidebar.html" %}
 
     <!-- Bottom Navigation Bar for Mobile -->
     <div class="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-container-high/90 backdrop-blur-2xl border-t border-white/10 z-[100] flex items-center justify-around px-4">
@@ -321,8 +282,12 @@
                             </div>
                             <div class="space-y-2">
                                 <label>Valor do Recebimento (R$)</label>
-                                <input type="number" step="0.01" name="valor_pagamento" id="valor_pagamento" class="text-primary font-black text-lg" placeholder="0,00">
+                                <div class="relative group">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-neutral-800 transition-colors group-focus-within:text-primary">R$</span>
+                                    <input type="text" name="valor_pagamento" id="valor_pagamento" oninput="formatarMoedaReal(this)" class="w-full bg-surface-container-low border-none rounded-2xl py-4 pl-12 pr-6 font-black font-headline text-lg text-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner" placeholder="0,00">
+                                </div>
                             </div>
+
                             <div class="space-y-2">
                                 <label>Método de Pagamento</label>
                                 <select name="metodo_pagamento" class="w-full">
@@ -350,6 +315,14 @@
     </main>
 
     <script>
+        // --- Currency Mask (BRL) ---
+        function formatarMoedaReal(input) {
+            let value = input.value.replace(/\D/g, '');
+            value = (value / 100).toFixed(2).replace('.', ',');
+            value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+            input.value = value;
+        }
+
         // --- Plan Price Logic ---
         function updatePlanPrice() {
             const select = document.getElementById('plano_select');
@@ -358,30 +331,17 @@
             const price = selectedOption.getAttribute('data-price');
             
             if (price) {
-                // Remove R$ if present and replace comma with dot
-                const cleanPrice = price.replace('R$', '').replace(',', '.').trim();
-                priceInput.value = parseFloat(cleanPrice).toFixed(2);
+                // Convert value to BRL format (ex: 0.00 to 0,00)
+                let cleanPrice = price.toString().replace('.', ',');
+                if (!cleanPrice.includes(',')) cleanPrice += ',00';
+                else if (cleanPrice.split(',')[1].length === 1) cleanPrice += '0';
+                
+                priceInput.value = cleanPrice;
             } else {
                 priceInput.value = '';
             }
         }
 
-        // --- Sidebar Logic ---
-        function toggleSidebar() {
-            const sidebar = document.getElementById('main-sidebar');
-            const toggleIcon = document.getElementById('toggle-icon');
-            const mainContent = document.querySelector('main');
-            sidebar.classList.toggle('w-64');
-            sidebar.classList.toggle('w-20');
-            const isCollapsed = sidebar.classList.contains('w-20');
-            localStorage.setItem('sidebar-collapsed', isCollapsed);
-            document.querySelectorAll('.nav-text').forEach(el => el.classList.toggle('hidden', isCollapsed));
-            if(mainContent) {
-                mainContent.classList.toggle('ml-64', !isCollapsed);
-                mainContent.classList.toggle('ml-20', isCollapsed);
-            }
-            toggleIcon.innerText = isCollapsed ? 'chevron_right' : 'chevron_left';
-        }
 
         // --- Webcam Logic ---
         const video = document.getElementById('video');
@@ -488,11 +448,6 @@
         }
 
 
-        // Initialize
-        (function() {
-            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-            if (isCollapsed) toggleSidebar();
-        })();
     </script>
 </body>
 </html>

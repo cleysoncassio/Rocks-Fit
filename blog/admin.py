@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from ordered_model.admin import OrderedModelAdmin
 
 from .models import (ContactInfo, ContactMessage, Program,
-                     Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso, SiteConfiguration, TrainerSocial, DeveloperSocial, User, CaixaTurno, TransacaoCaixa, GymSetting)
+                     Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso, SiteConfiguration, TrainerSocial, DeveloperSocial, User, CaixaTurno, TransacaoCaixa, GymSetting, Nutritionist, LoginAttempt)
 
 
 class TrainerSocialInline(admin.TabularInline):
@@ -41,18 +41,36 @@ class DeveloperSocialInline(admin.TabularInline):
 class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Informações Pessoais', {'fields': ('first_name', 'last_name', 'email', 'avatar')}),
-        ('Sistema: Cargo Simples', {'fields': ('role', 'birth_date')}),
-        ('Gestão de Acessos e Grupos (Cargos)', {
-            'fields': ('groups', 'user_permissions', 'is_active', 'is_staff', 'is_superuser'),
-            'description': 'Use GRUPOS para criar cargos (ex: Secretária) e definir as permissões em massa, ou escolha permissões individuais abaixo.'
+        ('Informações Pessoais', {'fields': ('first_name', 'last_name', 'email', 'cpf', 'phone', 'avatar', 'date_of_birth')}),
+        ('Segurança e Hierarquia', {
+            'fields': ('user_type', 'is_2fa_enabled', 'is_active', 'is_staff', 'is_superuser'),
+            'description': 'Define o nível de acesso e se o usuário possui autenticação em duas etapas.'
         }),
-        ('Extra: Biografia e Localização', {'fields': ('bio', 'location', 'website')}),
-        ('Datas Importantes', {'fields': ('last_login', 'date_joined')}),
+        ('Auditoria de Acesso', {
+            'fields': ('last_login_ip', 'last_login_user_agent', 'last_login', 'date_joined'),
+            'classes': ('collapse',),
+        }),
+        ('Grupos e Permissões', {'fields': ('groups', 'user_permissions')}),
     )
-    list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'is_staff')
-    list_editable = ('role',)
-    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active')
+    list_display = ('username', 'email', 'cpf', 'user_type', 'is_2fa_enabled', 'is_staff')
+    list_editable = ('is_2fa_enabled',)
+    list_filter = ('user_type', 'is_2fa_enabled', 'is_staff', 'is_superuser', 'is_active')
+    search_fields = ('username', 'email', 'cpf', 'first_name', 'last_name')
+    ordering = ('-date_joined',)
+
+@admin.register(LoginAttempt)
+class LoginAttemptAdmin(admin.ModelAdmin):
+    list_display = ('timestamp', 'user_identifier', 'ip_address', 'success', 'user_agent')
+    list_filter = ('success', 'timestamp')
+    search_fields = ('user_identifier', 'ip_address')
+    readonly_fields = ('timestamp', 'user_identifier', 'ip_address', 'success', 'user_agent')
+
+    def has_add_permission(self, request): return False
+
+@admin.register(Nutritionist)
+class NutritionistAdmin(admin.ModelAdmin):
+    list_display = ('name', 'crn', 'specialty', 'user')
+    search_fields = ('name', 'crn', 'user__email')
 
 @admin.register(SiteConfiguration)
 class SiteConfigurationAdmin(admin.ModelAdmin):

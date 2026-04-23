@@ -30,6 +30,7 @@ urlpatterns = [
     
     # CRM e Gestão Customizada
     path("crm/", views.crm_dashboard, name="crm_dashboard"),
+    path("crm/config/", views.crm_config, name="crm_config"),
     path("crm/gerencial/", views.crm_dash_gerencial, name="crm_dash_gerencial"),
     path('crm/alunos/', views.crm_alunos_list, name='crm_alunos_list'),
     path('crm/aluno/novo/', views.crm_aluno_create, name='crm_aluno_create'),
