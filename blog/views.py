@@ -472,8 +472,8 @@ def catraca_check_api(request, id_tag):
         plano = acesso.plano_pendente
         dias = 30
         if plano:
-            mapa = {'diaria': 1, 'mensal': 30, 'trimestral': 90}
-            dias = mapa.get(plano.plan_type, getattr(plano, 'duration_days', 30))
+            # Prioriza os dias configurados no banco de dados para flexibilidade total
+            dias = plano.duration_days if plano.duration_days else 30
         acesso.data_vencimento = hoje + datetime.timedelta(days=dias)
         acesso.status_catraca = 'liberado'
         acesso.plano_pendente = None

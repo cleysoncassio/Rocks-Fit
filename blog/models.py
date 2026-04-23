@@ -193,6 +193,10 @@ class Plan(OrderedModel):
         ('diaria', 'Diária'),
         ('mensal', 'Mensal'),
         ('trimestral', 'Trimestral'),
+        ('semestral', 'Semestral'),
+        ('anual', 'Anual'),
+        ('bienal', 'Bienal'),
+        ('personalizado', 'Personalizado (Ver campo Dias)'),
     ]
     name = models.CharField(max_length=100, verbose_name="Nome do Plano")
     plan_type = models.CharField(max_length=20, choices=PLAN_TYPE_CHOICES, default='mensal', verbose_name="Tipo de Vencimento")
