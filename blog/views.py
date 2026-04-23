@@ -39,27 +39,48 @@ def registrar_venda_no_caixa(valor, descricao, metodo='PIX', origem='SITE'):
 
 
 def crm_reparar_banco(request):
-    """NUCLEAR OPTION: Executa GRANT via Python para tentar destravar o banco na Hostman"""
+    """NUCLEAR OPTION: Executa GRANT e REPARO DE LOGS para destravar o banco na Hostman"""
     from django.db import connection
+    from django.db.migrations.recorder import MigrationRecorder
+    from django.core.management import call_command
+    from django.http import HttpResponse
+
     results = []
+    
+    # 1. Tenta corrigir permissões de esquema
     commands = [
-        "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO Rocksfit;",
-        "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO Rocksfit;",
-        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO Rocksfit;"
+        "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO CURRENT_USER;",
+        "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO CURRENT_USER;",
+        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO CURRENT_USER;"
     ]
     
+    with connection.cursor() as cursor:
+        for cmd in commands:
+            try:
+                cursor.execute(cmd)
+                results.append(f"✅ SUCESSO: {cmd}")
+            except Exception as e:
+                results.append(f"❌ FALHA: {cmd} | Erro: {e}")
+
+    # 2. Corrigir Erro de Log de Admin (ForeignKeyViolation auth_user)
+    # Isso acontece quando trocamos para Custom User Model e o bando mantém FKs para a tabela antiga.
     try:
         with connection.cursor() as cursor:
-            for cmd in commands:
-                try:
-                    cursor.execute(cmd)
-                    results.append(f"✅ SUCESSO: {cmd}")
-                except Exception as e:
-                    results.append(f"❌ FALHA: {cmd} | Erro: {e}")
-        
-        return HttpResponse("<h2>Resultado do Reparo:</h2>" + "<br>".join(results) + "<br><br><a href='/'>Voltar para Home</a>")
+            # Remove a tabela que está com chaves estrangeiras corrompidas
+            cursor.execute("DROP TABLE IF EXISTS django_admin_log CASCADE;")
+            results.append("✅ Tabela django_admin_log removida para reconstrução.")
+            
+            # Remove o registro da migração para que o Django a execute novamente com o novo User Model
+            MigrationRecorder.Migration.objects.filter(app='admin').delete()
+            results.append("✅ Registro de migração 'admin' resetado.")
+            
+        # Força a migração do admin para recriar a tabela apontando para blog_user
+        call_command('migrate', 'admin', interactive=False)
+        results.append("✅ Tabela de logs recriada com sucesso apontando para o Usuário correto.")
     except Exception as e:
-        return HttpResponse(f"ERRO CRÍTICO NO REPARADOR: {e}")
+        results.append(f"⚠️ Aviso ao reparar logs: {e}")
+
+    return HttpResponse("<h2>Resultado do Reparo Nuclear:</h2>" + "<br>".join(results) + "<br><br><a href='/'>Voltar para Home</a>")
 
 
 def home(request):

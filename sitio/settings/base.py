@@ -177,8 +177,6 @@ RATELIMIT_CACHE_PREFIX = 'ratelimit'
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = True  # Para desenvolvimento do App do Aluno
 
-# Custom User Model
-AUTH_USER_MODEL = 'blog.User'
 
 # Redirecionamento de Login/Logout
 LOGIN_URL = '/login/'
