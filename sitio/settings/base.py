@@ -162,4 +162,4 @@ AUTH_USER_MODEL = 'blog.User'
 
 # Redirecionamento de Login/Logout
 LOGIN_REDIRECT_URL = '/crm/'
-LOGOUT_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
