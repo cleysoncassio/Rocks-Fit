@@ -19,8 +19,20 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='ALUNO', verbose_name="Cargo")
 
-    # Removidos campos manuais de groups e permissions para evitar conflitos no DB
-    # O Django já os gerencia automaticamente via AbstractUser
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='custom_user_groups',
+        blank=True,
+        verbose_name='groups',
+        help_text='The groups this user belongs to.',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='custom_user_permissions',
+        blank=True,
+        verbose_name='user permissions',
+        help_text='Specific permissions for this user.',
+    )
 
     class Meta:
         permissions = [
@@ -31,31 +43,15 @@ class User(AbstractUser):
         ]
 
     def save(self, *args, **kwargs):
-        # Lógica de permissões automáticas baseada no Cargo (Role)
+        # Lógica simplificada para evitar erro 500
         if self.role == 'ADMIN':
             self.is_staff = True
             self.is_superuser = True
         elif self.role in ['SECRETARIA', 'PROFESSOR']:
             self.is_staff = True
             self.is_superuser = False
-        else: # ALUNO
-            self.is_staff = False
-            self.is_superuser = False
         
         super().save(*args, **kwargs)
-        
-        # Atribuir permissões específicas após o primeiro save (necessário ID)
-        try:
-            if self.role == 'SECRETARIA':
-                from django.contrib.auth.models import Permission
-                perms = Permission.objects.filter(codename__in=['can_access_financial', 'can_manage_students'])
-                self.user_permissions.add(*perms)
-            elif self.role == 'PROFESSOR':
-                from django.contrib.auth.models import Permission
-                perms = Permission.objects.filter(codename__in=['can_manage_workouts'])
-                self.user_permissions.add(*perms)
-        except Exception as e:
-            print(f"Erro ao atribuir permissões automáticas: {e}")
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
