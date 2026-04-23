@@ -670,32 +670,24 @@ def whatsapp_webhook(request):
 
 @login_required
 def crm_dashboard(request):
-    """Dashboard com Inteligência Artificial, Demografia e Plano de Ação (Super Defensivo)"""
-    from blog.models import GymSetting, Aluno, Plan, PagamentoHistorico, ControleAcesso
-    from datetime import date, timedelta
-    from django.contrib import messages
+    """Dashboard com Inteligência Artificial, Demografia e Plano de Ação Estratégico"""
+    from blog.models import Aluno, Plan, PagamentoHistorico, ControleAcesso
+    from django.db.models import Avg, Sum, Count
     from django.utils import timezone
-    
-    # Safely import the helper function if it exists. Sometimes it's inside views.py
-    try:
-        from blog.views import registrar_venda_no_caixa
-    except ImportError:
-        pass
+    from datetime import date, timedelta
+    import datetime
 
+    # 1. Aporte Rápido (Lógica de Recebimento Direto)
     if request.method == 'POST' and 'faturar_rapido' in request.POST:
         aluno_id = request.POST.get('aluno_id')
         valor_raw = request.POST.get('valor', '0.00').strip()
-        metodo = request.POST.get('metodo', 'DINHEIRO')
+        metodo = request.POST.get('metodo', 'PIX')
         plano_id = request.POST.get('plano', '')
         
-        if ',' in valor_raw:
-            valor = valor_raw.replace('.', '').replace(',', '.')
-        else:
-            valor = valor_raw
+        valor = valor_raw.replace('.', '').replace(',', '.') if ',' in valor_raw else valor_raw
             
         try:
             aluno = Aluno.objects.get(id=aluno_id)
-            # 1. Registro Histórico
             PagamentoHistorico.objects.create(
                 aluno=aluno,
                 plano_id=plano_id if plano_id else None,
@@ -705,65 +697,84 @@ def crm_dashboard(request):
                 metodo_pagamento=metodo
             )
             
-            # 2. Atualizar Acesso (se tiver plano)
-            plano_name = 'Taxa Adicional'
             if plano_id:
                 plano = Plan.objects.get(id=plano_id)
-                plano_name = plano.name
                 acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
                 hoje_local = timezone.localtime(timezone.now()).date()
                 base_data = hoje_local
                 if hoje_local.weekday() == 6: # Domingo
                     base_data = hoje_local + timedelta(days=1)
                     
-                if plano.plan_type == 'diaria':
-                    acesso.data_vencimento = base_data + timedelta(days=plano.duration_days)
-                else:
-                    start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > hoje_local) else base_data
-                    acesso.data_vencimento = start_date + timedelta(days=plano.duration_days)
-                
+                start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > hoje_local and plano.plan_type != 'diaria') else base_data
+                acesso.data_vencimento = start_date + timedelta(days=plano.duration_days)
                 acesso.status_catraca = 'liberado'
-                acesso.esta_dentro = False
                 acesso.save()
                 
-            # 3. Caixa
-            if 'registrar_venda_no_caixa' in globals() or 'registrar_venda_no_caixa' in locals():
-                registrar_venda_no_caixa(
-                    valor=float(valor),
-                    descricao=f"Recebimento Rápido: {aluno.nome_completo} ({plano_name})",
-                    metodo=metodo,
-                    origem='MANUAL'
-                )
-            messages.success(request, f"Recebimento Rápido: R$ {valor} computado para o membro '{aluno.nome_completo}'.")
+            registrar_venda_no_caixa(float(valor), f"Aporte Rápido: {aluno.nome_completo}", metodo, 'MANUAL')
+            messages.success(request, f"Aporte de R$ {valor} processado para {aluno.nome_completo}.")
         except Exception as e:
-            messages.error(request, f"Aconteceu um erro no aporte rápido: {str(e)}")
+            messages.error(request, f"Erro no faturamento: {str(e)}")
             
         return redirect('crm_dashboard')
 
-    context = {'ai_insights': 'Acesso limitado ao banco.'}
-    try:
-        hoje = date.today()
-        # Blocos isolados
-        try:
-            alunos = Aluno.objects.all()
-            context['alunos_lista'] = alunos.order_by('nome_completo')
-            context['planos'] = Plan.objects.all()
-            context['total_alunos'] = alunos.count()
-            context['perfil_mulheres'] = alunos.filter(sexo='F').count()
-            context['perfil_homens'] = alunos.filter(sexo='M').count()
-        except: pass
+    # 2. Métricas de Demografia e Base
+    hoje = date.today()
+    alunos = Aluno.objects.all()
+    total_alunos = alunos.count()
+    
+    # Cálculo de Idade Média (Defensivo)
+    idades = []
+    for a in alunos.filter(data_nascimento__isnull=False):
+        idades.append((hoje - a.data_nascimento).days // 365)
+    idade_media = round(sum(idades) / len(idades)) if idades else 0
 
-        try:
-            context['ativos'] = Aluno.objects.filter(acesso__data_vencimento__gte=hoje).count()
-        except: pass
+    # Churn Rate (Inativos / Total)
+    inativos = alunos.filter(status='INATIVO').count()
+    churn_rate = round((inativos / total_alunos * 100), 1) if total_alunos > 0 else 0
 
-        from blog.models import GymSetting
-        context['gym_settings'] = GymSetting.objects.first()
-        context['user_role'] = getattr(request.user, 'role', 'ALUNO')
+    # 3. Inteligência de Dados (Insights)
+    vencem_hoje = Aluno.objects.filter(acesso__data_vencimento=hoje).count()
+    novos_mes = alunos.filter(data_cadastro__month=hoje.month, data_cadastro__year=hoje.year).count()
+    
+    if vencem_hoje > 0:
+        ai_insights = f"Alerta: {vencem_hoje} matrículas expiram hoje. Recomenda-se abordagem ativa."
+    elif novos_mes > 5:
+        ai_insights = f"Crescimento positivo: {novos_mes} novos membros este mês. Continue a estratégia."
+    else:
+        ai_insights = "Base estabilizada. Otimize a retenção de membros antigos."
 
-        return render(request, 'crm/dashboard.html', context)
-    except Exception as e:
-        return HttpResponse(f"Erro Dashboard: {e}", status=500)
+    # 4. Dados do Gráfico de Faturamento (Últimos 6 meses)
+    chart_labels = []
+    chart_data = []
+    for i in range(5, -1, -1):
+        d = hoje - timedelta(days=i*30)
+        mes_nome = d.strftime('%b')
+        valor_mes = PagamentoHistorico.objects.filter(
+            data_pagamento__month=d.month, 
+            data_pagamento__year=d.year,
+            status='pago'
+        ).aggregate(Sum('valor'))['valor__sum'] or 0
+        chart_labels.append(mes_nome)
+        chart_data.append(float(valor_mes))
+
+    context = {
+        'alunos_lista': alunos.order_by('nome_completo'),
+        'planos': Plan.objects.all(),
+        'total_alunos': total_alunos,
+        'perfil_mulheres': alunos.filter(sexo='F').count(),
+        'perfil_homens': alunos.filter(sexo='M').count(),
+        'idade_media': idade_media,
+        'churn_rate': churn_rate,
+        'ai_insights': ai_insights,
+        'chart_labels': json.dumps(chart_labels),
+        'chart_data': json.dumps(chart_data),
+        'ativos': alunos.filter(acesso__data_vencimento__gte=hoje).count(),
+    }
+    
+    from blog.models import GymSetting
+    context['gym_settings'] = GymSetting.objects.first()
+
+    return render(request, 'crm/dashboard.html', context)
 
 @login_required
 def crm_config(request):

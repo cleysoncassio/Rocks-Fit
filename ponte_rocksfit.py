@@ -283,7 +283,8 @@ class AppRecepcao(ctk.CTk):
     def validar(self, tag):
         try:
             r = requests.get(f"{SITE_URL}/api/catraca-check/{tag}/?token={SYNC_TOKEN}").json()
-            if r.get('status') != 'vencido': 
+            # SEGURANÇA: Só libera se o status for explicitamente 'ativo' ou 'alerta'
+            if r.get('status') in ['ativo', 'alerta', 'liberado']: 
                 self.abrir_catraca("0")
                 if self.monitor and self.monitor.winfo_exists(): self.after(0, lambda: self.monitor.identificar_aluno(r))
         except: pass
