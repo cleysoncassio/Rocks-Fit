@@ -107,13 +107,10 @@
         </nav>
 
         <div class="px-6 mt-auto pt-8 border-t border-white/5 space-y-6">
-            <form action="{% url 'logout' %}" method="post" class="inline">
-                {% csrf_token %}
-                <button type="submit" class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors px-2">
-                    <span class="material-symbols-outlined text-lg">logout</span>
-                    <span class="nav-text">Sair</span>
-                </button>
-            </form>
+            <a class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors px-2" href="{% url 'logout' %}">
+                <span class="material-symbols-outlined text-lg">logout</span>
+                <span class="nav-text">Sair</span>
+            </a>
         </div>
     </aside>
 

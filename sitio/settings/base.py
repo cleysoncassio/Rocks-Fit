@@ -16,8 +16,6 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-placeholder")
-DEBUG = True
-ALLOWED_HOSTS = ["*"]
 STONE_SECRET_KEY = config("STONE_SECRET_KEY", default="sk_test_placeholder_sua_chave")
 
 # Application definition
@@ -164,4 +162,4 @@ AUTH_USER_MODEL = 'blog.User'
 
 # Redirecionamento de Login/Logout
 LOGIN_REDIRECT_URL = '/crm/'
-LOGOUT_REDIRECT_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/'
