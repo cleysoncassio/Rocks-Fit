@@ -24,15 +24,15 @@ class User(AbstractUser):
         "auth.Group",
         verbose_name="groups",
         blank=True,
-        related_name="blog_users",
-        related_query_name="blog_user",
+        related_name="blog_user_groups",
+        related_query_name="blog_users_g",
     )
     user_permissions = models.ManyToManyField(
         "auth.Permission",
         verbose_name="user permissions",
         blank=True,
         related_name="blog_user_permissions",
-        related_query_name="blog_user",
+        related_query_name="blog_users_p",
     )
 
     class Meta:
