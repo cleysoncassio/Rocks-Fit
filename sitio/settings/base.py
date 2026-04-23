@@ -16,6 +16,8 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-placeholder")
+DEBUG = True
+ALLOWED_HOSTS = ["*"]
 STONE_SECRET_KEY = config("STONE_SECRET_KEY", default="sk_test_placeholder_sua_chave")
 
 # Application definition
