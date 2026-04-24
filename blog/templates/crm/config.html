@@ -1,28 +1,51 @@
 {% load static %}
 <!DOCTYPE html>
-<html class="dark" lang="pt-br">
+<html lang="pt-br">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Configurações | ROCKS FIT</title>
+    <script>
+        // Critical: Apply theme before Tailwind and CSS load to prevent flashing
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#ff9159',
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
         :root { --primary: #ff9159; }
+        .dark { --bg-main: #0e0e0e; --bg-card: #131313; --text-main: #ffffff; --text-muted: #a3a3a3; }
+        html:not(.dark) { --bg-main: #f3f4f6; --bg-card: #ffffff; --text-main: #111827; --text-muted: #4b5563; }
+        
         .font-headline { font-family: 'Space Grotesk', sans-serif; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .rocks-checkbox:checked { background-color: var(--primary); border-color: var(--primary); }
     </style>
 </head>
-<body class="bg-[#0e0e0e] text-white font-body flex h-screen overflow-hidden">
+<body class="bg-slate-50 dark:bg-[#0e0e0e] text-slate-900 dark:text-white font-body flex h-screen overflow-hidden transition-colors duration-300">
 
     {% include "crm/sidebar.html" %}
 
-    <main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-y-auto bg-[#0e0e0e]">
+    <main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-y-auto bg-slate-50 dark:bg-[#0e0e0e]">
         <header class="p-8 md:p-12">
-            <h2 class="font-headline font-black text-3xl tracking-tighter uppercase italic">Configurações de <span class="text-[#ff9159]">Acesso</span></h2>
-            <p class="text-neutral-500 font-headline uppercase text-xs tracking-widest mt-2 italic">Defina as permissões por cargo do sistema</p>
+            <h2 class="font-headline font-black text-3xl tracking-tighter uppercase italic text-slate-900 dark:text-white">Configurações de <span class="text-[#ff9159]">Acesso</span></h2>
+            <p class="text-slate-500 dark:text-neutral-500 font-headline uppercase text-xs tracking-widest mt-2 italic">Defina as permissões por cargo do sistema</p>
         </header>
 
         <div class="p-8 md:p-12">
@@ -31,7 +54,7 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {% for config in role_configs %}
-                    <div class="bg-[#131313] p-8 rounded-3xl border border-white/5 shadow-2xl">
+                    <div class="bg-white dark:bg-[#131313] p-8 rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-2xl">
                         <div class="flex items-center gap-4 mb-8">
                             <div class="p-3 bg-[#ff9159]/10 rounded-2xl text-[#ff9159]">
                                 <span class="material-symbols-outlined">shield_person</span>
@@ -45,7 +68,7 @@
                                 <input type="checkbox" name="perms_{{ config.role }}" value="{{ perm.id }}" 
                                        {% if perm in config.permissions.all %}checked{% endif %}
                                        class="rocks-checkbox w-5 h-5 bg-black border-white/10 rounded focus:ring-0 transition-all">
-                                <span class="text-xs font-bold text-neutral-400 group-hover:text-white transition-all">{{ perm.friendly_name }}</span>
+                                <span class="text-xs font-bold text-slate-500 dark:text-neutral-400 group-hover:text-slate-800 dark:group-hover:text-white transition-all">{{ perm.friendly_name }}</span>
                             </label>
                             {% endfor %}
                         </div>
@@ -65,7 +88,8 @@
     <style>
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #333; }
         ::-webkit-scrollbar-thumb:hover { background: #ff9159; }
     </style>
 </body>

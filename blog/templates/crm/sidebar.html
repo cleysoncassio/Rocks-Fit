@@ -98,6 +98,12 @@
             </div>
         </div>
 
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-primary transition-colors px-2">
+            <span id="theme-icon" class="material-symbols-outlined text-lg">dark_mode</span>
+            <span class="nav-text" id="theme-text">Modo Noturno</span>
+        </button>
+
         <a class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors px-2" href="{% url 'logout' %}">
             <span class="material-symbols-outlined text-lg">logout</span>
             <span class="nav-text">Sair</span>
@@ -106,6 +112,31 @@
 </aside>
 
 <script>
+    function toggleTheme() {
+        const html = document.documentElement;
+        const isDark = html.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateThemeUI(isDark);
+    }
+
+    function updateThemeUI(isDark) {
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        if (icon) icon.innerText = isDark ? 'dark_mode' : 'light_mode';
+        if (text) text.innerText = isDark ? 'Modo Noturno' : 'Modo Diurno';
+    }
+
+    // Apply theme immediately
+    (function() {
+        const theme = localStorage.getItem('theme') || 'dark';
+        const isDark = theme === 'dark';
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        updateThemeUI(isDark);
+    })();
     function toggleSubmenu(id) {
         const menu = document.getElementById(id);
         const arrow = document.getElementById(id + '-arrow');
