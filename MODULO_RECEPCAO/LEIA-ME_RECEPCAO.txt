@@ -1,35 +1,45 @@
 🚀 MODULO DE RECEPÇÃO ROCKS FIT (PONTE LOCAL)
 ===========================================
 
-Este módulo foi organizado para facilitar a transferência para o computador da recepção da academia.
+Este módulo foi organizado para ser executado no computador da recepção da academia.
 
 ARQUIVOS INCLUÍDOS:
 ------------------
-1. ponte_rocksfit.py      -> Script principal (Interface do Gestor e Monitor).
-2. ponte_catraca.py       -> Script secundário de interface com hardware.
-3. rkslogo.png            -> Logo oficial para a interface.
-4. logocatraca.png        -> Assets visuais.
-5. abrir_catraca.bat      -> Script de emergência para liberar a catraca manualmente.
-6. ENCERRAR_SISTEMA.bat   -> Fecha todos os processos da Rocks Fit de uma vez.
-7. ROCKS_FIT_OCULTO.vbs   -> Executa o sistema em segundo plano (se necessário).
-8. diagnostico_rksfit.py  -> Use este arquivo se houver problemas de conexão.
-9. requirements_recepcao.txt -> Lista de dependências para instalar no Windows.
+1. ponte_rocksfit.py      -> Interface Principal (Monitor e Gestor).
+2. leitor_bio.py          -> Ponte para o Leitor de Digital (U.are.U 4500).
+3. ponte_catraca.py       -> Interface de rede com o hardware da catraca.
+4. rkslogo.png            -> Logo para a interface.
+5. abrir_catraca.bat      -> Atalho para liberação manual de emergência.
+6. ENCERRAR_SISTEMA.bat   -> Fecha todos os processos da Rocks Fit.
+7. requirements_recepcao.txt -> Lista de dependências.
 
-COMO INSTALAR NA ACADEMIA:
--------------------------
-1. Copie esta pasta inteira para o computador da recepção.
-2. Certifique-se de ter o Python 3.10 ou superior instalado.
-3. Abra o terminal (CMD) dentro da pasta e rode:
+COMO INSTALAR:
+-------------
+1. Instale o Python 3.10+ no computador.
+2. Com o leitor Digital Persona conectado, instale o "DigitalPersona OneTouch SDK" (Driver oficial).
+3. No terminal (CMD) dentro desta pasta, rode:
    pip install -r requirements_recepcao.txt
 
-COMO CONFIGURAR:
----------------
-Caso o IP da sua catraca mude, abra o arquivo 'ponte_rocksfit.py' com o Bloco de Notas e ajuste as linhas:
-CATRACA_IP = "169.254.37.150"  (Coloque o IP atual da sua catraca)
+COMO EXECUTAR (SISTEMA COMPLETO):
+-------------------------------
+Para o funcionamento total (Monitor + Digital), você deve abrir DOIS terminais:
 
-DICA DE OURO:
-------------
-Se a catraca não liberar, rode o 'diagnostico_rksfit.py' para ver se o computador consegue "enxergar" a catraca na rede.
+Terminal A (Interface):
+   python ponte_rocksfit.py
+
+Terminal B (Leitor de Digital):
+   python leitor_bio.py
+
+CONFIGURAÇÃO DE IP:
+-----------------
+Se o IP da sua catraca mudar, edite o arquivo 'ponte_rocksfit.py' e ajuste:
+CATRACA_IP = "169.254.37.150"
+
+RESOLUÇÃO DE PROBLEMAS:
+---------------------
+- Leitor não acende: Verifique se o Driver DigitalPersona está instalado.
+- Catraca não abre: Use o 'diagnostico_rksfit.py' para testar a comunicação de rede.
+- Erro no PIP: Rode o CMD como Administrador.
 
 ---
-Rocks Fit CRM - Sistema Blindado 2024
+Rocks Fit CRM - Sistema de Gestão Blindado
