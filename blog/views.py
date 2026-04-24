@@ -717,12 +717,17 @@ def crm_dashboard(request):
             
         return redirect('crm_dashboard')
 
-    # 2. Métricas de Demografia e Base
-    hoje = date.today()
+    # 2. Métricas de Base (Situação Atual)
     alunos = Aluno.objects.all()
     total_alunos = alunos.count()
     
+    # Contadores Específicos para os Cards
+    count_ativos = alunos.filter(status='ATIVO').count()
+    count_inadimplentes = alunos.filter(status='INADIMPLENTE').count()
+    count_aguardando = alunos.filter(status='AGUARDANDO').count()
+
     # Cálculo de Idade Média (Defensivo)
+    hoje = date.today()
     idades = []
     for a in alunos.filter(data_nascimento__isnull=False):
         idades.append((hoje - a.data_nascimento).days // 365)
@@ -743,32 +748,53 @@ def crm_dashboard(request):
     else:
         ai_insights = "Base estabilizada. Otimize a retenção de membros antigos."
 
-    # 4. Dados do Gráfico de Faturamento (Últimos 6 meses)
+    # 4. Dados do Gráfico de Evolução Operacional (Últimos 6 meses)
+    # Mostrando Ativos (pago), Em Processamento (pendente) e Inadimplentes (recusado/atrasado)
     chart_labels = []
-    chart_data = []
+    data_ativos = []
+    data_pendentes = []
+    data_inadimplentes = []
+    
     for i in range(5, -1, -1):
         d = hoje - timedelta(days=i*30)
         mes_nome = d.strftime('%b')
-        valor_mes = PagamentoHistorico.objects.filter(
-            data_pagamento__month=d.month, 
-            data_pagamento__year=d.year,
-            status='pago'
-        ).aggregate(Sum('valor'))['valor__sum'] or 0
         chart_labels.append(mes_nome)
-        chart_data.append(float(valor_mes))
+        
+        # Ativos: Pagamentos Confirmados
+        ativos_mes = PagamentoHistorico.objects.filter(
+            data_pagamento__month=d.month, data_pagamento__year=d.year, status='pago'
+        ).count()
+        data_ativos.append(ativos_mes)
+        
+        # Em Processamento: Pagamentos Pendentes
+        pendentes_mes = PagamentoHistorico.objects.filter(
+            data_pagamento__month=d.month, data_pagamento__year=d.year, status='pendente'
+        ).count()
+        data_pendentes.append(pendentes_mes)
+        
+        # Inadimplentes: Pagamentos Recusados ou alunos que entraram em inadimplência (baseado na data de cadastro como proxy ou histórico)
+        # Aqui usaremos 'recusado' para mostrar falhas/inadimplência financeira no gráfico
+        inad_mes = PagamentoHistorico.objects.filter(
+            data_pagamento__month=d.month, data_pagamento__year=d.year, status='recusado'
+        ).count()
+        data_inadimplentes.append(inad_mes)
 
     context = {
         'alunos_lista': alunos.order_by('nome_completo'),
         'planos': Plan.objects.all(),
         'total_alunos': total_alunos,
+        'count_ativos': count_ativos,
+        'count_inadimplentes': count_inadimplentes,
+        'count_aguardando': count_aguardando,
         'perfil_mulheres': alunos.filter(sexo='F').count(),
         'perfil_homens': alunos.filter(sexo='M').count(),
         'idade_media': idade_media,
         'churn_rate': churn_rate,
         'ai_insights': ai_insights,
         'chart_labels': json.dumps(chart_labels),
-        'chart_data': json.dumps(chart_data),
-        'ativos': alunos.filter(acesso__data_vencimento__gte=hoje).count(),
+        'chart_data_ativos': json.dumps(data_ativos),
+        'chart_data_pendentes': json.dumps(data_pendentes),
+        'chart_data_inadimplentes': json.dumps(data_inadimplentes),
     }
     
     from blog.models import GymSetting
