@@ -7,12 +7,12 @@
         /* Light Mode Tokens */
         --surface: #f8fafc;
         --on-surface: #0f172a;
-        --on-surface-variant: #64748b;
+        --on-surface-variant: #334155; /* Darkened for better contrast: Slate 700 */
         --surface-container-low: #ffffff;
         --surface-container-high: #f1f5f9;
         --surface-container-highest: #e2e8f0;
         --error: #ef4444;
-        --border-color: rgba(0, 0, 0, 0.05);
+        --border-color: rgba(0, 0, 0, 0.08);
     }
 
     .dark {
@@ -30,6 +30,39 @@
 
     /* Base body background sync - help prevents flashes */
     body { background-color: var(--surface); color: var(--on-surface); }
+
+    /* Day Mode Enhancements: Shadows & Legibility */
+    html:not(.dark) .bg-surface-container-low,
+    html:not(.dark) .bg-surface-container-high,
+    html:not(.dark) .bg-surface-container-highest {
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.01) !important;
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+    }
+
+    html:not(.dark) button, 
+    html:not(.dark) .shadow-sm,
+    html:not(.dark) .shadow-md,
+    html:not(.dark) .shadow-lg,
+    html:not(.dark) .shadow-xl, 
+    html:not(.dark) .shadow-2xl {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    html:not(.dark) .bg-primary {
+        box-shadow: 0 10px 20px -5px rgba(255, 145, 89, 0.45) !important;
+    }
+
+    html:not(.dark) .bg-success {
+        box-shadow: 0 10px 20px -5px rgba(34, 197, 94, 0.35) !important;
+    }
+
+    /* Contrast enhancement for small labels (neutral colors) in Day Mode */
+    html:not(.dark) .text-neutral-200 { color: #8a8a8a !important; }
+    html:not(.dark) .text-neutral-300 { color: #737373 !important; } /* Up to neutral-500 */
+    html:not(.dark) .text-neutral-400 { color: #525252 !important; } /* Up to neutral-600 */
+    html:not(.dark) .text-neutral-500 { color: #404040 !important; } /* Up to neutral-700 */
+    html:not(.dark) .text-slate-400 { color: #475569 !important; }
+    html:not(.dark) .text-slate-500 { color: #334155 !important; }
 
     /* Standardized sidebar styles using variables */
     #main-sidebar {
