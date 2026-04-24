@@ -5,14 +5,14 @@
         --primary-container: #ff7a2f;
         --tertiary: #ffc562;
         /* Light Mode Tokens */
-        --surface: #f8fafc;
+        --surface: #e2e8f0; /* Medium gray background: Slate 200 */
         --on-surface: #0f172a;
         --on-surface-variant: #334155; /* Darkened for better contrast: Slate 700 */
         --surface-container-low: #ffffff;
         --surface-container-high: #f1f5f9;
-        --surface-container-highest: #e2e8f0;
+        --surface-container-highest: #cbd5e1;
         --error: #ef4444;
-        --border-color: rgba(0, 0, 0, 0.08);
+        --border-color: rgba(0, 0, 0, 0.1);
     }
 
     .dark {
@@ -35,8 +35,8 @@
     html:not(.dark) .bg-surface-container-low,
     html:not(.dark) .bg-surface-container-high,
     html:not(.dark) .bg-surface-container-highest {
-        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.01) !important;
-        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 10px 15px -5px rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
     }
 
     html:not(.dark) button, 
