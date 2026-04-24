@@ -73,6 +73,12 @@
     html:not(.dark) .text-slate-400 { color: #475569 !important; }
     html:not(.dark) .text-slate-500 { color: #334155 !important; }
 
+    /* Legibility: Upscale smallest technical fonts globally */
+    .text-\[8px\], [class*="text-[8px]"] { font-size: 11px !important; line-height: 1.25 !important; }
+    .text-\[9px\], [class*="text-[9px]"] { font-size: 12px !important; line-height: 1.25 !important; }
+    .text-\[10px\], [class*="text-[10px]"] { font-size: 13px !important; line-height: 1.3 !important; }
+    .text-xs { font-size: 13.5px !important; }
+
     /* Standardized sidebar styles using variables */
     #main-sidebar {
         background-color: var(--sidebar-bg);
