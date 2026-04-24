@@ -13,6 +13,40 @@ from django.utils import timezone
 from .services import processar_vencimento_catraca
 from .forms import ContactForm
 
+def sincronizar_estados_alunos():
+    """
+    Roda automações de status:
+    - Vencido (< hoje) -> SUSPENSO (Mensalidade Atrasada)
+    - Vencido há mais de 30 dias -> INATIVO
+    - Sem freqüência há mais de 30 dias -> INATIVO
+    """
+    from blog.models import Aluno
+    from django.utils import timezone
+    from datetime import date, timedelta
+    
+    hoje = date.today()
+    limite_inativo = hoje - timedelta(days=30)
+    
+    # 1. SUSPENSO: Plano Vencido até 30 dias (Atraso)
+    # Alunos que eram ATIVOS mas o plano venceu agora.
+    Aluno.objects.filter(
+        status='ATIVO',
+        acesso__data_vencimento__lt=hoje,
+        acesso__data_vencimento__gte=limite_inativo
+    ).update(status='SUSPENSO')
+    
+    # 2. INATIVO: Plano Vencido há mais de 30 dias
+    # Alunos que desistiram ou não renovaram por muito tempo.
+    Aluno.objects.filter(
+        acesso__data_vencimento__lt=limite_inativo
+    ).exclude(status='INATIVO').update(status='INATIVO')
+    
+    # 3. INATIVO: Sem freqüência há mais de 30 dias
+    # Alunos que têm plano mas sumiram da academia (Check-in ausente).
+    Aluno.objects.filter(
+        acesso__ultimo_acesso__lt=timezone.now() - timedelta(days=30)
+    ).exclude(status='INATIVO').update(status='INATIVO')
+
 def registrar_venda_no_caixa(valor, descricao, metodo='PIX', origem='SITE'):
     """Helper para registrar vendas automáticas vindas do Site ou App no caixa aberto."""
     from blog.models import CaixaTurno, TransacaoCaixa
@@ -467,6 +501,28 @@ def catraca_check_api(request, id_tag):
     hoje = datetime.date.today()
     foto_url = request.build_absolute_uri(aluno.foto.url) if aluno.foto else ""
 
+    # 3. VERIFICAÇÃO DE ANIVERSÁRIO
+    eh_aniversario = False
+    if aluno.data_nascimento:
+        if aluno.data_nascimento.month == hoje.month and aluno.data_nascimento.day == hoje.day:
+            eh_aniversario = True
+
+    # 4. MONITORAMENTO DE STATUS CRM (Administrativo)
+    gym_settings = GymSetting.objects.first()
+    whatsapp_link = f"https://wa.me/{gym_settings.whatsapp_notificacao}" if gym_settings and gym_settings.whatsapp_notificacao else "#"
+    
+    if aluno.status != 'ATIVO':
+        msg_custom = gym_settings.msg_bloqueio_crm if gym_settings else "Cadastro Suspenso/Inativo."
+        if aluno.is_convenio:
+            msg_custom = gym_settings.msg_erro_wellhub if gym_settings else "Erro no convênio corporativo."
+            
+        return JsonResponse({
+            'status': 'bloqueado', 'nome': aluno.nome_completo,
+            'foto_url': foto_url, 'status_borda': 'vermelho',
+            'mensagem': msg_custom,
+            'whatsapp_action': whatsapp_link
+        }, status=403)
+
     # 1. AGUARDANDO BIOMETRIA: 1a entrada apos pagamento
     if acesso and acesso.status_catraca == 'aguardando_biometria':
         plano = acesso.plano_pendente
@@ -478,15 +534,20 @@ def catraca_check_api(request, id_tag):
         acesso.status_catraca = 'liberado'
         acesso.plano_pendente = None
         acesso.save()
+        
+        msg_boas_vindas = f'Bem-vindo! Acesso ativado por {dias} dias.'
+        if eh_aniversario:
+            msg_boas_vindas = gym_settings.msg_aniversario if gym_settings else "Parabéns! Feliz Aniversário! 🎉"
+
         return JsonResponse({
-            'nome': aluno.nome_completo, 'matricula': aluno.matricula,
+            'status': 'ativo', 'nome': aluno.nome_completo, 'matricula': aluno.matricula,
             'vencimento': acesso.data_vencimento.strftime('%d/%m/%Y'),
             'dias_restantes': dias, 'foto_url': foto_url,
-            'status': 'ativo', 'status_borda': 'verde',
-            'mensagem': f'Bem-vindo! Acesso ativado por {dias} dias.'
+            'status_borda': 'verde',
+            'mensagem': msg_boas_vindas
         })
 
-    # 2. SEM ACESSO
+    # 5. SEM ACESSO FINANCEIRO
     if not acesso or not acesso.data_vencimento:
         return JsonResponse({
             'status': 'bloqueado', 'nome': aluno.nome_completo,
@@ -527,13 +588,17 @@ def catraca_check_api(request, id_tag):
             
     acesso.save()
 
+    msg_final = f'{msg_complemento}'
+    if eh_aniversario:
+        msg_final = gym_settings.msg_aniversario if gym_settings else "Parabéns pelo seu dia! 🎉"
+
     return JsonResponse({
         'nome': aluno.nome_completo, 'matricula': aluno.matricula,
         'vencimento': acesso.data_vencimento.strftime('%d/%m/%Y'),
         'dias_restantes': dias_restantes, 'foto_url': foto_url,
         'status': 'alerta' if dias_restantes <= 5 else 'ativo',
         'status_borda': 'verde',
-        'mensagem': f'{msg_complemento}'
+        'mensagem': msg_final
     })
 
 def catraca_polling_api(request):
@@ -677,6 +742,9 @@ def crm_dashboard(request):
     from datetime import date, timedelta
     import datetime
 
+    # 0. Sincronização Automática de Status
+    sincronizar_estados_alunos()
+
     # 1. Aporte Rápido (Lógica de Recebimento Direto)
     if request.method == 'POST' and 'faturar_rapido' in request.POST:
         aluno_id = request.POST.get('aluno_id')
@@ -711,7 +779,12 @@ def crm_dashboard(request):
                 acesso.save()
                 
             registrar_venda_no_caixa(float(valor), f"Aporte Rápido: {aluno.nome_completo}", metodo, 'MANUAL')
-            messages.success(request, f"Aporte de R$ {valor} processado para {aluno.nome_completo}.")
+            
+            # Ativa o aluno automaticamente
+            aluno.status = 'ATIVO'
+            aluno.save()
+            
+            messages.success(request, f"Aporte de R$ {valor} processado para {aluno.nome_completo}. Aluno Ativado!")
         except Exception as e:
             messages.error(request, f"Erro no faturamento: {str(e)}")
             
@@ -838,13 +911,30 @@ def crm_config(request):
         'avaliacao': 'Avaliações Fis.',
     }
 
-    target_roles = [User.TYPE_SECRETARY, User.TYPE_TRAINER, User.TYPE_NUTRITIONIST, User.TYPE_STUDENT]
-    
+    role_configs = [RolePermission.objects.get_or_create(role=r)[0] for r in target_roles]
+    gym_settings = GymSetting.objects.first()
+
     if request.method == 'POST':
+        # Salva Permissões
         for r_type in target_roles:
             role_perm, _ = RolePermission.objects.get_or_create(role=r_type)
             perm_ids = request.POST.getlist(f'perms_{r_type}')
             role_perm.permissions.set(Permission.objects.filter(id__in=perm_ids))
+        
+        # Salva Configurações Financeiras (Multas/Juros) e Mensagens
+        if gym_settings:
+            gym_settings.multa_atraso = request.POST.get('multa_atraso', 2.00)
+            gym_settings.juros_mensal = request.POST.get('juros_mensal', 1.00)
+            gym_settings.whatsapp_notificacao = request.POST.get('whatsapp_notificacao', '')
+            
+            # Mensagens Catraca
+            gym_settings.msg_aniversario = request.POST.get('msg_aniversario', '')
+            gym_settings.msg_bloqueio_crm = request.POST.get('msg_bloqueio_crm', '')
+            gym_settings.msg_erro_wellhub = request.POST.get('msg_erro_wellhub', '')
+            
+            gym_settings.save()
+            
+        messages.success(request, "Configurações atualizadas com sucesso.")
         return redirect('crm_config')
 
     # Busca apenas permissões dos modelos autorizados
@@ -1077,7 +1167,11 @@ def crm_aluno_detail(request, aluno_id):
             origem='MANUAL'
         )
         
-        messages.success(request, f"Pagamento de R$ {valor} processado e enviado ao caixa.")
+        # Ativa o aluno automaticamente
+        aluno.status = 'ATIVO'
+        aluno.save()
+        
+        messages.success(request, f"Pagamento de R$ {valor} processado. Aluno Ativado!")
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
     if request.method == 'POST' and 'cadastro_digital' in request.POST:
