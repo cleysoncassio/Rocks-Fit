@@ -247,7 +247,7 @@ class Aluno(models.Model):
         ('INATIVO', 'Inativo'),
     )
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES, blank=True, null=True, verbose_name="Sexo")
-    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='ATIVO', verbose_name="Status de Gestão")
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='INATIVO', verbose_name="Status de Gestão")
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Último Valor Pago")
     is_convenio = models.BooleanField(default=False, verbose_name="É Convênio? (Wellhub/TotalPass)")
     foto = models.ImageField(upload_to="alunos/fotos/", blank=True, null=True, verbose_name="Foto (Reconhecimento Facial)")
@@ -564,6 +564,17 @@ def sync_role_permissions_to_groups(sender, instance, action, **kwargs):
 class GymSetting(models.Model):
     name = models.CharField(max_length=100, default="Rocks-Fit")
     logo = models.ImageField(upload_to='gym_logos/', blank=True, null=True)
+    
+    # Configurações de Multas e Juros
+    multa_atraso = models.DecimalField(max_digits=5, decimal_places=2, default=2.00, verbose_name="Multa por Atraso (%)", help_text="Percentual fixo aplicado sobre o valor da mensalidade atrasada.")
+    juros_mensal = models.DecimalField(max_digits=5, decimal_places=2, default=1.00, verbose_name="Juros Mensais (%)", help_text="Percentual de juros aplicado por mês de atraso.")
+    
+    whatsapp_notificacao = models.CharField(max_length=20, blank=True, null=True, verbose_name="WhatsApp para Suporte", help_text="Número que o aluno deve chamar ao ser barrado.")
+
+    # Mensagens Customizadas da Catraca
+    msg_aniversario = models.CharField(max_length=255, default="Parabéns! A Rocks Fit deseja um feliz aniversário! 🎉", verbose_name="Mensagem de Aniversário")
+    msg_bloqueio_crm = models.CharField(max_length=255, default="Cadastro Suspenso/Inativo. Procure a recepção.", verbose_name="Mensagem de Bloqueio (Administrativo)")
+    msg_erro_wellhub = models.CharField(max_length=255, default="Erro no plano Wellhub/Gympass. Valide no app.", verbose_name="Mensagem Erro Corporativo")
     
     def __str__(self):
         return f"Configurações de {self.name}"

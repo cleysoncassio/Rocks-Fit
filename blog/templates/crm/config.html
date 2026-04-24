@@ -55,6 +55,61 @@
             <form method="post" class="space-y-12">
                 {% csrf_token %}
                 
+                <!-- Regras de Cobrança e Notificação -->
+                <div class="bg-white dark:bg-[#131313] p-10 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-2xl mb-12">
+                    <div class="flex items-center gap-4 mb-10">
+                        <div class="p-4 bg-primary/10 rounded-2xl text-primary">
+                            <span class="material-symbols-outlined text-3xl">payments</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline font-black uppercase tracking-widest text-primary text-xl">Regras de Cobrança e Notificação</h3>
+                            <p class="text-[10px] font-black text-neutral-500 uppercase tracking-widest mt-1">Defina taxas automáticas e suporte</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Multa por Atraso (%)</label>
+                            <div class="relative">
+                                <span class="absolute right-6 top-1/2 -translate-y-1/2 font-black text-primary">%</span>
+                                <input type="number" step="0.01" name="multa_atraso" value="{{ gym_settings.multa_atraso|stringformat:'.2f' }}" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-2xl py-4 px-6 font-black font-headline text-on-surface focus:ring-1 focus:ring-primary outline-none transition-all" required>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Juros Mensais (%)</label>
+                            <div class="relative">
+                                <span class="absolute right-6 top-1/2 -translate-y-1/2 font-black text-primary">%</span>
+                                <input type="number" step="0.01" name="juros_mensal" value="{{ gym_settings.juros_mensal|stringformat:'.2f' }}" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-2xl py-4 px-6 font-black font-headline text-on-surface focus:ring-1 focus:ring-primary outline-none transition-all" required>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">WhatsApp de Suporte (Notificação)</label>
+                            <div class="relative">
+                                <span class="absolute left-6 top-1/2 -translate-y-1/2 material-symbols-outlined text-green-500">add_call</span>
+                                <input type="text" name="whatsapp_notificacao" value="{{ gym_settings.whatsapp_notificacao|default:'' }}" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-2xl py-4 pl-14 pr-6 font-black font-headline text-on-surface focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="5511999999999">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mensagens Personalizadas -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mt-10 pt-10 border-t border-slate-100 dark:border-white/5">
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Mensagem de Aniversário</label>
+                            <textarea name="msg_aniversario" rows="2" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-2xl py-4 px-6 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none transition-all resize-none">{{ gym_settings.msg_aniversario }}</textarea>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Mensagem Bloqueio (Suspenso/Inativo)</label>
+                            <textarea name="msg_bloqueio_crm" rows="2" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-2xl py-4 px-6 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none transition-all resize-none">{{ gym_settings.msg_bloqueio_crm }}</textarea>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Mensagem Erro Wellhub/Gympass</label>
+                            <textarea name="msg_erro_wellhub" rows="2" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-2xl py-4 px-6 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none transition-all resize-none">{{ gym_settings.msg_erro_wellhub }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {% for config in role_configs %}
                     <div class="bg-white dark:bg-[#131313] p-8 rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-2xl">
