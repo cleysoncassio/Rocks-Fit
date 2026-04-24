@@ -882,7 +882,9 @@ def crm_config(request):
         return HttpResponse("Acesso Negado", status=403)
 
     from django.contrib.auth.models import Permission
-    from .models import RolePermission, User
+    from .models import RolePermission, User, GymSetting
+    
+    target_roles = [User.TYPE_SECRETARY, User.TYPE_TRAINER, User.TYPE_NUTRITIONIST, User.TYPE_STUDENT]
     
     # 1. WHITELIST: Apenas estes modelos aparecem no CRM
     modelos_autorizados = [
@@ -963,6 +965,7 @@ def crm_config(request):
     context = {
         'role_configs': role_configs,
         'all_perms': all_perms_friendly,
+        'gym_settings': gym_settings,
         'ai_insights': 'Módulo CRM Blindado - Apenas Operação.',
     }
     return render(request, 'crm/config.html', context)
