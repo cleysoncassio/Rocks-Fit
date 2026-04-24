@@ -1,0 +1,35 @@
+🚀 MODULO DE RECEPÇÃO ROCKS FIT (PONTE LOCAL)
+===========================================
+
+Este módulo foi organizado para facilitar a transferência para o computador da recepção da academia.
+
+ARQUIVOS INCLUÍDOS:
+------------------
+1. ponte_rocksfit.py      -> Script principal (Interface do Gestor e Monitor).
+2. ponte_catraca.py       -> Script secundário de interface com hardware.
+3. rkslogo.png            -> Logo oficial para a interface.
+4. logocatraca.png        -> Assets visuais.
+5. abrir_catraca.bat      -> Script de emergência para liberar a catraca manualmente.
+6. ENCERRAR_SISTEMA.bat   -> Fecha todos os processos da Rocks Fit de uma vez.
+7. ROCKS_FIT_OCULTO.vbs   -> Executa o sistema em segundo plano (se necessário).
+8. diagnostico_rksfit.py  -> Use este arquivo se houver problemas de conexão.
+9. requirements_recepcao.txt -> Lista de dependências para instalar no Windows.
+
+COMO INSTALAR NA ACADEMIA:
+-------------------------
+1. Copie esta pasta inteira para o computador da recepção.
+2. Certifique-se de ter o Python 3.10 ou superior instalado.
+3. Abra o terminal (CMD) dentro da pasta e rode:
+   pip install -r requirements_recepcao.txt
+
+COMO CONFIGURAR:
+---------------
+Caso o IP da sua catraca mude, abra o arquivo 'ponte_rocksfit.py' com o Bloco de Notas e ajuste as linhas:
+CATRACA_IP = "169.254.37.150"  (Coloque o IP atual da sua catraca)
+
+DICA DE OURO:
+------------
+Se a catraca não liberar, rode o 'diagnostico_rksfit.py' para ver se o computador consegue "enxergar" a catraca na rede.
+
+---
+Rocks Fit CRM - Sistema Blindado 2024
