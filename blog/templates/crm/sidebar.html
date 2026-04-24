@@ -7,12 +7,17 @@
         /* Light Mode Tokens */
         --surface: #e2e8f0; /* Medium gray background: Slate 200 */
         --on-surface: #0f172a;
-        --on-surface-variant: #334155; /* Darkened for better contrast: Slate 700 */
+        --on-surface-variant: #334155; 
         --surface-container-low: #ffffff;
         --surface-container-high: #f1f5f9;
         --surface-container-highest: #cbd5e1;
         --error: #ef4444;
         --border-color: rgba(0, 0, 0, 0.1);
+        
+        /* High Contrast Sidebar for Day Mode */
+        --sidebar-bg: #1a1c1e; /* Dark gray for sidebar */
+        --on-sidebar: #ffffff;
+        --on-sidebar-variant: rgba(255, 255, 255, 0.5);
     }
 
     .dark {
@@ -26,6 +31,10 @@
         --error: #ff7351;
         --border-color: rgba(255, 255, 255, 0.05);
         --tertiary: #ffc562;
+        
+        --sidebar-bg: #131313;
+        --on-sidebar: #ffffff;
+        --on-sidebar-variant: #adaaaa;
     }
 
     /* Base body background sync - help prevents flashes */
@@ -66,19 +75,19 @@
 
     /* Standardized sidebar styles using variables */
     #main-sidebar {
-        background-color: var(--surface-container-low);
+        background-color: var(--sidebar-bg);
         border-right: 1px solid var(--border-color);
     }
     
-    .nav-link { color: var(--on-surface-variant); }
-    .nav-link:hover { color: var(--on-surface); background-color: var(--surface-container-high); }
+    .nav-link { color: var(--on-sidebar-variant); }
+    .nav-link:hover { color: var(--on-sidebar); background-color: rgba(255, 255, 255, 0.05); }
     .nav-link.text-primary { color: var(--primary) !important; }
     
     .sidebar-logo { filter: none; }
     .dark .sidebar-logo { filter: brightness(1.1); }
 </style>
 
-<aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.05)] dark:shadow-[20px_0_40px_rgba(0,0,0,0.4)] transition-all duration-300 ease-in-out">
+<aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.05)] dark:shadow-[20px_0_40_rgba(0,0,0,0.4)] transition-all duration-300 ease-in-out">
     <!-- Toggle Button -->
     <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-[#ff9159] text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
         <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
