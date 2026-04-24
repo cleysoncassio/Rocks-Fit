@@ -3,3 +3,4 @@ requests
 opencv-python
 pillow
 numpy
+pywin32
