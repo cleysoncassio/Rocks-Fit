@@ -14,13 +14,20 @@
         }
     </script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
+    <script id="tailwind-config">
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        primary: '#ff9159',
+                        "surface": "var(--surface)",
+                        "primary": "var(--primary)",
+                        "primary-container": "var(--primary-container)",
+                        "surface-container-low": "var(--surface-container-low)",
+                        "surface-container-high": "var(--surface-container-high)",
+                        "surface-container-highest": "var(--surface-container-highest)",
+                        "on-surface": "var(--on-surface)",
+                        "on-surface-variant": "var(--on-surface-variant)",
                     }
                 }
             }
@@ -29,16 +36,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
-        :root { --primary: #ff9159; }
-        .dark { --bg-main: #0e0e0e; --bg-card: #131313; --text-main: #ffffff; --text-muted: #a3a3a3; }
-        html:not(.dark) { --bg-main: #f3f4f6; --bg-card: #ffffff; --text-main: #111827; --text-muted: #4b5563; }
-        
         .font-headline { font-family: 'Space Grotesk', sans-serif; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .rocks-checkbox:checked { background-color: var(--primary); border-color: var(--primary); }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-[#0e0e0e] text-slate-900 dark:text-white font-body flex h-screen overflow-hidden transition-colors duration-300">
+<body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden transition-colors duration-300">
 
     {% include "crm/sidebar.html" %}
 

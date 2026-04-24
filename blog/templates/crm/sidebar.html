@@ -1,7 +1,53 @@
 <!-- Sidebar Industrial Collapsible -->
-<aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-[#131313] backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)] border-r border-white/5 transition-all duration-300 ease-in-out">
+<style>
+    :root {
+        --primary: #ff9159;
+        --primary-container: #ff7a2f;
+        --tertiary: #ffc562;
+        /* Light Mode Tokens */
+        --surface: #f8fafc;
+        --on-surface: #0f172a;
+        --on-surface-variant: #64748b;
+        --surface-container-low: #ffffff;
+        --surface-container-high: #f1f5f9;
+        --surface-container-highest: #e2e8f0;
+        --error: #ef4444;
+        --border-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .dark {
+        /* Dark Mode Tokens */
+        --surface: #0e0e0e;
+        --on-surface: #ffffff;
+        --on-surface-variant: #adaaaa;
+        --surface-container-low: #131313;
+        --surface-container-high: #201f1f;
+        --surface-container-highest: #262626;
+        --error: #ff7351;
+        --border-color: rgba(255, 255, 255, 0.05);
+        --tertiary: #ffc562;
+    }
+
+    /* Base body background sync - help prevents flashes */
+    body { background-color: var(--surface); color: var(--on-surface); }
+
+    /* Standardized sidebar styles using variables */
+    #main-sidebar {
+        background-color: var(--surface-container-low);
+        border-right: 1px solid var(--border-color);
+    }
+    
+    .nav-link { color: var(--on-surface-variant); }
+    .nav-link:hover { color: var(--on-surface); background-color: var(--surface-container-high); }
+    .nav-link.text-primary { color: var(--primary) !important; }
+    
+    .sidebar-logo { filter: none; }
+    .dark .sidebar-logo { filter: brightness(1.1); }
+</style>
+
+<aside id="main-sidebar" class="hidden md:flex fixed left-0 top-0 h-screen w-64 backdrop-blur-xl flex flex-col py-8 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.05)] dark:shadow-[20px_0_40px_rgba(0,0,0,0.4)] transition-all duration-300 ease-in-out">
     <!-- Toggle Button -->
-    <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-[#ff9159] text-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
+    <button onclick="toggleSidebar()" class="absolute -right-3 top-20 bg-[#ff9159] text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all z-50">
         <span id="toggle-icon" class="material-symbols-outlined text-[14px] font-black">chevron_left</span>
     </button>
 
@@ -13,29 +59,29 @@
                 <h1 class="text-3xl font-black text-[#ff9159] font-headline italic tracking-tighter uppercase leading-none sidebar-text">{{ gym_settings.name|default:"ROCKS FIT" }}</h1>
             {% endif %}
         </a>
-        <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-400 mt-2 sidebar-label">Industrial RKS</p>
+        <p class="font-headline uppercase text-[9px] font-bold tracking-[0.3em] text-neutral-500 mt-2 sidebar-label">Industrial RKS</p>
     </div>
 
     <nav class="flex-grow">
         <ul class="space-y-1">
             <!-- Menu Dashboards com Submenu -->
             <li>
-                <button onclick="toggleSubmenu('dashboards-submenu')" class="nav-link w-full py-4 px-8 flex items-center justify-between font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all text-neutral-500 hover:bg-neutral-800/40 hover:text-neutral-200">
+                <button onclick="toggleSubmenu('dashboards-submenu')" class="nav-link w-full py-4 px-8 flex items-center justify-between font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all hover:bg-neutral-800/10 dark:hover:bg-neutral-800/40">
                     <div class="flex items-center gap-4">
                         <span class="material-symbols-outlined text-lg">grid_view</span>
                         <span class="nav-text">Dashboards</span>
                     </div>
                     <span id="dashboards-submenu-arrow" class="material-symbols-outlined text-sm transition-transform duration-200">expand_more</span>
                 </button>
-                <ul id="dashboards-submenu" class="hidden bg-black/20 space-y-1 py-1">
+                <ul id="dashboards-submenu" class="hidden bg-black/5 dark:bg-black/20 space-y-1 py-1">
                     <li>
-                        <a class="nav-link py-3 px-12 flex items-center gap-3 font-headline uppercase text-[9px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_dashboard' %}text-primary{% else %}text-neutral-500 hover:text-white{% endif %}" href="{% url 'crm_dashboard' %}">
+                        <a class="nav-link py-3 px-12 flex items-center gap-3 font-headline uppercase text-[9px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_dashboard' %}text-primary{% else %}hover:text-primary{% endif %}" href="{% url 'crm_dashboard' %}">
                             <span class="material-symbols-outlined text-base">dashboard</span>
                             <span class="nav-text">Visão Geral</span>
                         </a>
                     </li>
                     <li>
-                        <a class="nav-link py-3 px-12 flex items-center gap-3 font-headline uppercase text-[9px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_dash_gerencial' %}text-primary{% else %}text-neutral-500 hover:text-white{% endif %}" href="{% url 'crm_dash_gerencial' %}">
+                        <a class="nav-link py-3 px-12 flex items-center gap-3 font-headline uppercase text-[9px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_dash_gerencial' %}text-primary{% else %}hover:text-primary{% endif %}" href="{% url 'crm_dash_gerencial' %}">
                             <span class="material-symbols-outlined text-base">analytics</span>
                             <span class="nav-text">Gerencial</span>
                         </a>
@@ -45,7 +91,7 @@
             
             {% if perms.blog.can_manage_students or user.is_superuser %}
             <li>
-                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_alunos_list' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}text-neutral-500 hover:bg-neutral-800/40 hover:text-neutral-200{% endif %}" href="{% url 'crm_alunos_list' %}">
+                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_alunos_list' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}hover:bg-neutral-800/10 dark:hover:bg-neutral-800/40{% endif %}" href="{% url 'crm_alunos_list' %}">
                     <span class="material-symbols-outlined text-lg">group</span>
                     <span class="nav-text">Membros</span>
                 </a>
@@ -54,7 +100,7 @@
 
             {% if perms.blog.can_access_financial or user.is_superuser %}
             <li>
-                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_caixa' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}text-neutral-500 hover:bg-neutral-800/40 hover:text-neutral-200{% endif %}" href="{% url 'crm_caixa' %}">
+                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_caixa' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}hover:bg-neutral-800/10 dark:hover:bg-neutral-800/40{% endif %}" href="{% url 'crm_caixa' %}">
                     <span class="material-symbols-outlined text-lg">payments</span>
                     <span class="nav-text">Financeiro</span>
                 </a>
@@ -64,7 +110,7 @@
             <!-- NOVO MÓDULO: CONFIGURAÇÕES -->
             {% if user.is_superuser %}
             <li>
-                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_config' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}text-neutral-500 hover:bg-neutral-800/40 hover:text-neutral-200{% endif %}" href="{% url 'crm_config' %}">
+                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_config' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}hover:bg-neutral-800/10 dark:hover:bg-neutral-800/40{% endif %}" href="{% url 'crm_config' %}">
                     <span class="material-symbols-outlined text-lg">settings</span>
                     <span class="nav-text">Configurações</span>
                 </a>
@@ -73,11 +119,11 @@
         </ul>
     </nav>
 
-    <div class="px-6 mt-auto pt-8 border-t border-white/5 flex flex-col gap-6">
+    <div class="px-6 mt-auto pt-8 border-t border-black/5 dark:border-white/5 flex flex-col gap-6">
         
         <!-- User Avatar Component -->
         <div class="flex flex-col items-center justify-center px-2 group cursor-pointer text-center" title="{{ request.user.username }}">
-            <div class="w-10 h-10 rounded-full bg-surface-container-highest border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-primary/50 transition-all text-white shadow-lg mb-2">
+            <div class="w-10 h-10 rounded-full bg-surface-container-highest border border-black/5 dark:border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-primary/50 transition-all text-on-surface shadow-lg mb-2">
                 {% if request.user.avatar %}
                     <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="w-full h-full object-cover">
                 {% else %}
@@ -85,7 +131,7 @@
                 {% endif %}
             </div>
             <div class="nav-text overflow-hidden transition-opacity w-full">
-                <p class="font-headline font-black text-white text-[11px] uppercase tracking-[0.15em] truncate w-full">{{ request.user.get_full_name|default:request.user.username }}</p>
+                <p class="font-headline font-black text-on-surface text-[11px] uppercase tracking-[0.15em] truncate w-full">{{ request.user.get_full_name|default:request.user.username }}</p>
                 <p class="text-[9px] font-bold text-[#ff9159] uppercase tracking-[0.2em] truncate w-full mt-1">
                     {% if request.user.is_superuser %}
                         Super Admin
@@ -99,12 +145,12 @@
         </div>
 
         <!-- Theme Toggle -->
-        <button onclick="toggleTheme()" class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-primary transition-colors px-2">
+        <button onclick="toggleTheme()" class="nav-link flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-primary transition-colors px-2">
             <span id="theme-icon" class="material-symbols-outlined text-lg">dark_mode</span>
             <span class="nav-text" id="theme-text">Modo Noturno</span>
         </button>
 
-        <a class="text-neutral-500 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors px-2" href="{% url 'logout' %}">
+        <a class="nav-link flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] hover:text-red-500 transition-colors px-2" href="{% url 'logout' %}">
             <span class="material-symbols-outlined text-lg">logout</span>
             <span class="nav-text">Sair</span>
         </a>
@@ -117,6 +163,8 @@
         const isDark = html.classList.toggle('dark');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         updateThemeUI(isDark);
+        // Dispatch event for other components that might need to react
+        window.dispatchEvent(new Event('themeChanged'));
     }
 
     function updateThemeUI(isDark) {
@@ -137,6 +185,7 @@
         }
         updateThemeUI(isDark);
     })();
+
     function toggleSubmenu(id) {
         const menu = document.getElementById(id);
         const arrow = document.getElementById(id + '-arrow');
