@@ -41,11 +41,11 @@ echo "Executando migrações..."
 python3 manage.py makemigrations --noinput || true
 python3 manage.py migrate --noinput
 
-# Carrega dados iniciais (se existir)
-if [ -f "dados_blog.json" ]; then
-    echo "Carregando dados iniciais..."
-    python3 manage.py loaddata dados_blog.json || true
-fi
+# Carrega dados iniciais (REMOVIDO EM PRODUÇÃO PARA NÃO SOBRESCREVER DADOS REAIS)
+# if [ -f "dados_blog.json" ]; then
+#     echo "Carregando dados iniciais..."
+#     python3 manage.py loaddata dados_blog.json || true
+# fi
 
 # Coleta arquivos estáticos
 echo "Coletando arquivos estáticos..."
