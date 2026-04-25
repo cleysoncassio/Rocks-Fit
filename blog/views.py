@@ -622,25 +622,38 @@ def catraca_face_check_api(request):
     import os
 
     try:
+        # 0. Carregar Detector de Faces no Servidor
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
         # 1. Decodificar o frame recebido
         format, imgstr = foto_b64.split(';base64,')
         ext = format.split('/')[-1]
         frame_bytes = base64.b64decode(imgstr)
         nparr = np.frombuffer(frame_bytes, np.uint8)
         img_check = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        # Redimensiona para padronizar busca (ajuda ORB)
-        img_check = cv2.resize(img_check, (480, 480))
-        img_check_gray = cv2.cvtColor(img_check, cv2.COLOR_BGR2GRAY)
         
-        # 2. Buscar todos os alunos que tenham foto cadastrada e estejam ativos
+        # 2. Tentar isolar APENAS o rosto no frame recebido (Calibração de Foco)
+        gray_frame = cv2.cvtColor(img_check, cv2.COLOR_BGR2GRAY)
+        faces_frame = face_cascade.detectMultiScale(gray_frame, 1.1, 4)
+        
+        if len(faces_frame) > 0:
+            (x, y, w, h) = faces_frame[0]
+            img_check_crop = gray_frame[y:y+h, x:x+w]
+            img_check_crop = cv2.resize(img_check_crop, (300, 300))
+        else:
+            # Fallback se não detectar rosto no frame (talvez ângulo ruim), usa a imagem toda redimensionada
+            img_check_crop = cv2.resize(gray_frame, (300, 300))
+        
+        # 3. Buscar alunos ativos com foto
         alunos_com_foto = Aluno.objects.filter(foto__isnull=False, status='ATIVO').select_related('acesso')
         
         melhor_aluno = None
         melhor_score = 0
         melhor_dist = float('inf')
 
-        orb = cv2.ORB_create(nfeatures=1000) # Aumentado para mais detalhes
-        kp1, des1 = orb.detectAndCompute(img_check_gray, None)
+        # Configuração Ultra-Sensível do ORB
+        orb = cv2.ORB_create(nfeatures=2000, scaleFactor=1.2, nlevels=8)
+        kp1, des1 = orb.detectAndCompute(img_check_crop, None)
 
         if des1 is not None:
             for aluno in alunos_com_foto:
@@ -648,33 +661,42 @@ def catraca_face_check_api(request):
                     ref_path = aluno.foto.path
                     if not os.path.exists(ref_path): continue
                     
-                    img_ref = cv2.imread(ref_path, cv2.IMREAD_GRAYSCALE)
+                    img_ref = cv2.imread(ref_path)
                     if img_ref is None: continue
-                    img_ref = cv2.resize(img_ref, (480, 480))
+                    img_ref_gray = cv2.cvtColor(img_ref, cv2.COLOR_BGR2GRAY)
                     
-                    kp2, des2 = orb.detectAndCompute(img_ref, None)
+                    # Tentar isolar o rosto na foto de cadastro (Garante comparação Rosto-a-Rosto)
+                    faces_ref = face_cascade.detectMultiScale(img_ref_gray, 1.1, 4)
+                    if len(faces_ref) > 0:
+                        (rx, ry, rw, rh) = faces_ref[0]
+                        img_ref_crop = img_ref_gray[ry:ry+rh, rx:rx+rw]
+                    else:
+                        img_ref_crop = img_ref_gray
+
+                    img_ref_crop = cv2.resize(img_ref_crop, (300, 300))
+                    
+                    kp2, des2 = orb.detectAndCompute(img_ref_crop, None)
                     if des2 is None: continue
                     
                     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
                     matches = bf.match(des1, des2)
                     
-                    # Score baseado na distância média dos matches (mais preciso que apenas quantidade)
-                    if len(matches) > 15:
+                    if len(matches) > 20: # Mínimo de pontos de interesse
                         avg_dist = sum(m.distance for m in matches) / len(matches)
-                        # Quanto menor a distância e mais matches, melhor
-                        # Algoritmo de decisão: Prioriza quem tem mais de 25 matches bons
-                        if len(matches) > melhor_score or (len(matches) > 20 and avg_dist < melhor_dist):
+                        
+                        # Lógica de Ranqueamento: Prioriza similaridade geométrica
+                        if len(matches) > melhor_score or (len(matches) > 30 and avg_dist < melhor_dist):
                            melhor_score = len(matches)
                            melhor_dist = avg_dist
                            melhor_aluno = aluno
                 except: continue
 
-        # 3. Limiar de Confiança Ajustado
-        # Se 40 matches ou 25 com boa distância
-        if melhor_aluno and (melhor_score > 40 or (melhor_score > 25 and melhor_dist < 60)):
+        # 4. Limiar de Confiança Calibrado para Rosto-a-Rosto
+        # 60 matches com recorte facial é uma confiança altíssima
+        if melhor_aluno and (melhor_score > 60 or (melhor_score > 35 and melhor_dist < 55)):
             return catraca_check_api(request, melhor_aluno.matricula)
         
-        return JsonResponse({'status': 'nao_reconhecido', 'mensagem': 'Rosto não identificado.'}, status=404)
+        return JsonResponse({'status': 'nao_reconhecido', 'mensagem': 'Rosto não identificado ou baixa confiança.'}, status=404)
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
