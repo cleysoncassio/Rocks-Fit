@@ -186,7 +186,7 @@ class JanelaMonitor(ctk.CTkToplevel):
                             if self.face_lock_time == 5:
                                 self.after(0, lambda: self.lbl_status.configure(text="🔍 IDENTIFICANDO...", text_color="#FFF"))
                             if self.face_lock_time > 15:
-                                self.reconhecer_facial(frame_ui)
+                                self.reconhecer_facial(frame) # Envia o frame LIMPO (sem os retângulos da UI)
                                 self.face_cooldown = 100
                                 self.face_lock_time = 0
                         else:
