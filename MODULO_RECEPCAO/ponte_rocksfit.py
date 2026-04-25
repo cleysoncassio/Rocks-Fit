@@ -225,7 +225,7 @@ class JanelaMonitor(ctk.CTkToplevel):
             try:
                 _, b = cv2.imencode('.jpg', frame)
                 b64 = f"data:image/jpeg;base64,{base64.b64encode(b).decode('utf-8')}"
-                r = requests.post(f"{SITE_URL}/api/face-check/", data={'frame': b64, 'token': SYNC_TOKEN}, timeout=5)
+                r = requests.post(f"{SITE_URL}/api/face-check/", data={'frame': b64, 'token': SYNC_TOKEN}, timeout=15)
                 if r.status_code == 200:
                     d = r.json()
                     self.after(0, lambda: self.identificar_aluno(d))
@@ -339,14 +339,20 @@ class AppRecepcao(ctk.CTk):
         else: self.monitor.lift()
 
     def carregar_alunos(self):
-        u = f"{SITE_URL}/api/aluno-list-full/?token={SYNC_TOKEN}"
+        # Endereço otimizado com filtro de Ativos e Dias Restantes
+        u = f"{SITE_URL}/api/catraca-sync/?token={SYNC_TOKEN}"
         def f():
             try:
+                print(f"📡 Sincronizando com o servidor: {SITE_URL}...")
                 r = requests.get(u, timeout=12)
                 if r.status_code == 200:
                     self.alunos_data = r.json().get('alunos', [])
+                    print(f"✅ Sincronização Ok! {len(self.alunos_data)} alunos ativos recebidos.")
                     self.after(0, self.mostrar_todos)
-            except: pass
+                else:
+                    print(f"⚠️ Erro no Servidor: Status {r.status_code}")
+            except Exception as e:
+                print(f"❌ Falha de conexão: {e}")
         threading.Thread(target=f, daemon=True).start()
 
     def mostrar_todos(self): self.render_list("")
