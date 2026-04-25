@@ -26,9 +26,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def _encontrar_arquivo(nome_relativo):
     possibilidades = [
         os.path.join(BASE_DIR, nome_relativo),
-        os.path.join(BASE_DIR, os.path.basename(nome_relativo)),
+        os.path.join(BASE_DIR, "media", "imagens", os.path.basename(nome_relativo)),
         os.path.join(BASE_DIR, "media", "images", os.path.basename(nome_relativo)),
-        os.path.join(BASE_DIR, "media", "rks01.png"), 
+        os.path.join(BASE_DIR, "media", os.path.basename(nome_relativo)),
         os.path.join(BASE_DIR, "rks01.png")
     ]
     for p in possibilidades:
@@ -164,13 +164,21 @@ class JanelaMonitor(ctk.CTkToplevel):
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         except: face_cascade = None
         
+        # Tenta encontrar hardware (Câmera 0 primeiro no Linux)
+        for idx in [0, 1, 2]:
+            print(f"Buscando hardware no index {idx}...")
+            self.cap = cv2.VideoCapture(idx)
+            if self.cap.isOpened():
+                print(f"✅ Hardware encontrado no index {idx}!")
+                break
+        
         while self.rodando:
             if hasattr(self, 'cap') and self.cap.isOpened():
                 ret, frame = self.cap.read()
                 if ret:
                     try:
                         frame_ui = frame.copy()
-                        frame_ui = cv2.flip(frame_ui, 1)
+                        frame_ui = cv2.flip(frame_ui, 1) # Espelhar para ficar natural
                         gray = cv2.cvtColor(frame_ui, cv2.COLOR_BGR2GRAY)
                         
                         faces = []
@@ -178,30 +186,38 @@ class JanelaMonitor(ctk.CTkToplevel):
                             faces = face_cascade.detectMultiScale(gray, 1.3, 5)
                             for (x, y, w, h) in faces:
                                 cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 2)
-                                cv2.putText(frame_ui, "SISTEMA ROCKS SCAN", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (242, 113, 33), 2)
                         
+                        # Converte para o monitor garantindo que a janela ainda existe
+                        if not self.winfo_exists(): break
+                        
+                        img = Image.fromarray(cv2.cvtColor(frame_ui, cv2.COLOR_BGR2RGB))
+                        img = img.resize((640, 480), Image.Resampling.LANCZOS)
+                        
+                        self.photo = ctk.CTkImage(light_image=img, dark_image=img, size=(640, 480))
+                        
+                        # Atualiza UI com segurança
+                        if self.lbl_cam.winfo_exists():
+                            self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text="") if self.lbl_cam.winfo_exists() else None)
+
                         # Lógica de Gatilho Facial
                         if len(faces) > 0 and self.face_cooldown <= 0:
                             self.face_lock_time += 1
                             if self.face_lock_time == 5:
-                                self.after(0, lambda: self.lbl_status.configure(text="🔍 IDENTIFICANDO...", text_color="#FFF"))
+                                if self.lbl_status.winfo_exists():
+                                    self.after(0, lambda: self.lbl_status.configure(text="🔍 IDENTIFICANDO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
                             if self.face_lock_time > 15:
-                                self.reconhecer_facial(frame) # Envia o frame LIMPO (sem os retângulos da UI)
+                                self.reconhecer_facial(frame)
                                 self.face_cooldown = 100
                                 self.face_lock_time = 0
                         else:
                             if self.face_cooldown > 0: self.face_cooldown -= 1
                             self.face_lock_time = 0
-
-                        img = Image.fromarray(cv2.cvtColor(frame_ui, cv2.COLOR_BGR2RGB))
-                        img = img.resize((640, 480), Image.Resampling.LANCZOS)
-                        
-                        # Correção CTkImage para evitar Warning e garantir escala correta
-                        self.photo = ctk.CTkImage(light_image=img, dark_image=img, size=(640, 480))
-                        self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text=""))
+                            
                     except Exception as e:
                         print(f"Erro no processamento da imagem: {e}")
-            time.sleep(0.03)
+            else:
+                time.sleep(1) # Espera hardware
+            time.sleep(0.01)
 
     def reconhecer_facial(self, frame):
         """ Envia o frame atual para o servidor tentar identificar o aluno """
@@ -346,7 +362,11 @@ class AppRecepcao(ctk.CTk):
             f_status = ctk.CTkFrame(c, width=12, height=12, corner_radius=6, fg_color=st_c)
             f_status.pack(side="left", padx=25)
             
-            lbl = ctk.CTkLabel(c, text=f"{a.get('nome','').upper()[:35]}\nMAT: {a.get('matricula','---')} - {a.get('status','').upper()}", font=("Inter", 13, "bold"), justify="left", text_color=COR_TEXTO)
+            dias = a.get('dias_restantes', 0)
+            cor_dias = COR_SUCCESS if dias > 0 else COR_ERROR
+            txt_dias = f"{dias} DIAS RESTANTES" if dias > 0 else "PLANO VENCIDO"
+            
+            lbl = ctk.CTkLabel(c, text=f"{a.get('nome','').upper()[:35]}\n{txt_dias}", font=("Inter", 13, "bold"), justify="left", text_color=cor_dias)
             lbl.pack(side="left", padx=5)
             
             af = ctk.CTkFrame(c, fg_color="transparent"); af.pack(side="right", padx=20)
