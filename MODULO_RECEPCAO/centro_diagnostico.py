@@ -108,9 +108,15 @@ class CentroDiagnostico(ctk.CTk):
 
     def toggle_camera(self):
         if not self.camera_rodando:
-            self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-            if not self.cap.isOpened():
-                self.status_facial.configure(text="❌ NÃO FOI POSSÍVEL ABRIR A CÂMERA", text_color=COR_ERROR)
+            # Tenta encontrar a câmera disponível (0, 1 ou 2)
+            for index in [0, 1, 2]:
+                self.cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+                if self.cap.isOpened():
+                    print(f"Câmera de diagnóstico OK no índice {index}")
+                    break
+            
+            if not self.cap or not self.cap.isOpened():
+                self.status_facial.configure(text="❌ NÃO FOI POSSÍVEL ENCONTRAR NENHUMA CÂMERA", text_color=COR_ERROR)
                 return
             self.camera_rodando = True
             self.btn_cam.configure(text="DESLIGAR CÂMERA", fg_color="#333", text_color="#FFF")
