@@ -194,7 +194,7 @@ class AppRecepcao(ctk.CTk):
         self.sr = ctk.CTkScrollableFrame(self.main, fg_color="transparent"); self.sr.pack(fill="both", expand=True)
 
     def rodar_diagnostico(self):
-        script = os.path.join(BASE_DIR, "diagnostico_rksfit.py")
+        script = os.path.join(BASE_DIR, "centro_diagnostico.py")
         if os.path.exists(script):
             import subprocess
             threading.Thread(target=lambda: subprocess.run([sys.executable, script], creationflags=0x00000010 if os.name == 'nt' else 0), daemon=True).start()
