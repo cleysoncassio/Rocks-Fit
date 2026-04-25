@@ -9,6 +9,10 @@ export DJANGO_SETTINGS_MODULE=sitio.settings.production
 
 echo "=== INICIANDO BUILD DE PRODUÇÃO ==="
 
+# (OPCIONAL) RESET DE SEGURANÇA: Coloca todos os alunos como INATIVO para iniciar o novo fluxo.
+# Descomente a linha abaixo apenas no próximo deploy para limpar o status de produção uma única vez.
+# python3 manage.py shell -c "from blog.models import Aluno; Aluno.objects.all().update(status='INATIVO')"
+
 # Instala dependências
 echo "Instalando dependências..."
 pip install --upgrade pip
