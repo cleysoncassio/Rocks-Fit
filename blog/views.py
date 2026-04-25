@@ -457,7 +457,7 @@ def catraca_sync_api(request):
     Endpoint para o script local baixar a lista de todos os alunos ativos e suas validades.
     """
     from django.conf import settings
-    token = request.GET.get('token')
+    token = request.GET.get('token') or request.POST.get('token')
     if token != getattr(settings, 'CATRACA_SYNC_TOKEN', None):
         return JsonResponse({'status': 'error', 'message': 'Não autorizado'}, status=401)
 
@@ -484,7 +484,7 @@ def catraca_check_api(request, id_tag):
     Retorna foto, nome e dias restantes para o monitor.
     """
     from django.conf import settings
-    token = request.GET.get('token')
+    token = request.GET.get('token') or request.POST.get('token')
     if token != getattr(settings, 'CATRACA_SYNC_TOKEN', None):
         return JsonResponse({'status': 'error', 'message': 'Não autorizado'}, status=401)
 
@@ -608,7 +608,7 @@ def catraca_face_check_api(request):
     Usa um método de comparação visual resiliente.
     """
     from django.conf import settings
-    token = request.POST.get('token')
+    token = request.POST.get('token') or request.GET.get('token')
     if token != getattr(settings, 'CATRACA_SYNC_TOKEN', None):
         return JsonResponse({'status': 'error', 'message': 'Não autorizado'}, status=401)
 
@@ -619,8 +619,7 @@ def catraca_face_check_api(request):
     import cv2
     import numpy as np
     import base64
-    from io import BytesIO
-    from PIL import Image
+    import os
 
     try:
         # 1. Decodificar o frame recebido
@@ -629,6 +628,8 @@ def catraca_face_check_api(request):
         frame_bytes = base64.b64decode(imgstr)
         nparr = np.frombuffer(frame_bytes, np.uint8)
         img_check = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # Redimensiona para padronizar busca (ajuda ORB)
+        img_check = cv2.resize(img_check, (480, 480))
         img_check_gray = cv2.cvtColor(img_check, cv2.COLOR_BGR2GRAY)
         
         # 2. Buscar todos os alunos que tenham foto cadastrada e estejam ativos
@@ -636,37 +637,41 @@ def catraca_face_check_api(request):
         
         melhor_aluno = None
         melhor_score = 0
+        melhor_dist = float('inf')
 
-        # Algoritmo de comparação simplificado (Histograma ou ORB)
-        # Para um "WOW" imediato sem dlib, usamos ORB (muito rápido e já no OpenCV)
-        orb = cv2.ORB_create()
+        orb = cv2.ORB_create(nfeatures=1000) # Aumentado para mais detalhes
         kp1, des1 = orb.detectAndCompute(img_check_gray, None)
 
         if des1 is not None:
             for aluno in alunos_com_foto:
                 try:
-                    # Carrega a foto de referência do aluno
                     ref_path = aluno.foto.path
+                    if not os.path.exists(ref_path): continue
+                    
                     img_ref = cv2.imread(ref_path, cv2.IMREAD_GRAYSCALE)
                     if img_ref is None: continue
+                    img_ref = cv2.resize(img_ref, (480, 480))
                     
                     kp2, des2 = orb.detectAndCompute(img_ref, None)
                     if des2 is None: continue
                     
-                    # Comapração via BFMatcher
                     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
                     matches = bf.match(des1, des2)
                     
-                    # Score baseado na quantidade de matches bons
-                    score = len(matches)
-                    if score > melhor_score:
-                        melhor_score = score
-                        melhor_aluno = aluno
+                    # Score baseado na distância média dos matches (mais preciso que apenas quantidade)
+                    if len(matches) > 15:
+                        avg_dist = sum(m.distance for m in matches) / len(matches)
+                        # Quanto menor a distância e mais matches, melhor
+                        # Algoritmo de decisão: Prioriza quem tem mais de 25 matches bons
+                        if len(matches) > melhor_score or (len(matches) > 20 and avg_dist < melhor_dist):
+                           melhor_score = len(matches)
+                           melhor_dist = avg_dist
+                           melhor_aluno = aluno
                 except: continue
 
-        # 3. Limiar de Confiança (Threshold)
-        if melhor_aluno and melhor_score > 30: # 30 matches é um bom começo para ORB
-            # Se encontrou, chamamos a lógica de check-in normal para o ID dele
+        # 3. Limiar de Confiança Ajustado
+        # Se 40 matches ou 25 com boa distância
+        if melhor_aluno and (melhor_score > 40 or (melhor_score > 25 and melhor_dist < 60)):
             return catraca_check_api(request, melhor_aluno.matricula)
         
         return JsonResponse({'status': 'nao_reconhecido', 'mensagem': 'Rosto não identificado.'}, status=404)
