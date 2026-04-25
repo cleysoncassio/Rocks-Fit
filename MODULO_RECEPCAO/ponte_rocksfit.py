@@ -52,14 +52,67 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.geometry("1024x768"); self.configure(fg_color=COR_BG)
         self.parent = parent; self.rodando = True
         self.setup_ui()
-        if OPENCV_OK:
-            # Tenta encontrar a câmera em diferentes índices (0, 1 ou 2)
-            for index in [0, 1, 2, 0]: # Tenta o 0 duas vezes (uma com DSHOW e outra sem se precisar)
-                self.cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-                if self.cap.isOpened():
-                    print(f"[OK] Câmera encontrada no índice {index}")
-                    break
-            threading.Thread(target=self.loop_camera, daemon=True).start()
+        self.camera_index = 1 # Começa tentando a externa
+        self.face_cooldown = 0
+        self.face_lock_time = 0
+        self.tentar_proxima_camera()
+        threading.Thread(target=self.loop_camera, daemon=True).start()
+
+    def tentar_proxima_camera(self):
+        # Tenta os índices 1, 0, 2
+        indices = [1, 0, 2]
+        for idx in indices:
+            print(f"Buscando hardware no index {idx}...")
+            # Tenta com e sem CAP_DSHOW para compatibilidade máxima
+            for backend in [cv2.CAP_ANY, cv2.CAP_DSHOW]:
+                temp_cap = cv2.VideoCapture(idx, backend)
+                if temp_cap.isOpened():
+                    if hasattr(self, 'cap') and self.cap:
+                        try: self.cap.release()
+                        except: pass
+                    
+                    self.cap = temp_cap
+                    # Tenta configurar, mas ignora se falhar (alguns drivers não aceitam)
+                    try:
+                        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                    except: pass
+                    
+                    self.camera_index = idx
+                    self.after(0, lambda: self.lbl_cam_info.configure(text=f"CÂMERA ATIVA: ID {idx} {'(USB)' if idx > 0 else '(PC)'}"))
+                    return True
+                else:
+                    temp_cap.release()
+        return False
+
+    def alternar_camera(self):
+        proximo = (self.camera_index + 1) % 3
+        print(f"Alternando para hardware {proximo}...")
+        
+        # Tenta os backends no novo índice
+        sucesso = False
+        for backend in [cv2.CAP_ANY, cv2.CAP_DSHOW]:
+            temp_cap = cv2.VideoCapture(proximo, backend)
+            if temp_cap.isOpened():
+                if hasattr(self, 'cap') and self.cap:
+                    try: self.cap.release()
+                    except: pass
+                
+                self.cap = temp_cap
+                try:
+                    self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                    self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                except: pass
+                
+                self.camera_index = proximo
+                self.after(0, lambda: self.lbl_cam_info.configure(text=f"CÂMERA ATIVA: ID {proximo} {'(USB)' if proximo > 0 else '(PC)'}"))
+                sucesso = True
+                break
+            else:
+                temp_cap.release()
+        
+        if not sucesso:
+            self.tentar_proxima_camera()
 
     def setup_ui(self):
         # Header Laranja com Logomarca
@@ -78,10 +131,18 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.container = ctk.CTkFrame(self, fg_color="transparent")
         self.container.pack(fill="both", expand=True, padx=40, pady=40)
         
-        # Câmera com Borda Laranja
         self.cam_f = ctk.CTkFrame(self.container, width=640, height=480, fg_color=COR_CARD, corner_radius=15, border_width=2, border_color=COR_PRIMARY)
         self.cam_f.pack(side="left", fill="both", expand=True); self.cam_f.pack_propagate(False)
+        
         self.lbl_cam = ctk.CTkLabel(self.cam_f, text="SENSORES ATIVOS", text_color=COR_PRIMARY, font=("Inter", 14, "bold")); self.lbl_cam.pack(expand=True)
+        
+        # Overlay de informação da câmera
+        self.lbl_cam_info = ctk.CTkLabel(self.cam_f, text="CÂMERA: ID --", font=("Inter", 10), text_color=COR_TEXT_SEC)
+        self.lbl_cam_info.place(relx=0.05, rely=0.05)
+
+        # Botão discreto para alternar câmera
+        self.btn_switch = ctk.CTkButton(self.cam_f, text="🔄 ALTERNAR CÂMERA", width=140, height=35, fg_color=COR_CARD_HIGH, text_color=COR_TEXTO, font=("Inter", 11, "bold"), command=self.alternar_camera)
+        self.btn_switch.place(relx=0.5, rely=0.92, anchor="center")
 
         # Painel Lateral
         self.info_f = ctk.CTkFrame(self.container, width=320, fg_color="transparent")
@@ -98,14 +159,58 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.bar_fill = ctk.CTkFrame(fb, width=0, height=2, fg_color=COR_PRIMARY); self.bar_fill.place(x=0, y=0)
 
     def loop_camera(self):
+        # Carrega o cascade para facial
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        
         while self.rodando:
-            ret, frame = self.cap.read()
-            if ret:
-                frame = cv2.flip(frame, 1)
-                img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((640, 480))
-                self.photo = ImageTk.PhotoImage(img)
-                self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text=""))
-            time.sleep(0.01)
+            if hasattr(self, 'cap') and self.cap.isOpened():
+                ret, frame = self.cap.read()
+                if ret:
+                    try:
+                        frame = cv2.flip(frame, 1)
+                        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+                        
+                        # Desenha UI Facial se houver rostos
+                        for (x, y, w, h) in faces:
+                            # Borda Laranja Rocks
+                            cv2.rectangle(frame, (x, y), (x+w, y+h), (242, 113, 33), 2)
+                            cv2.putText(frame, "ROCKS SCAN...", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (242, 113, 33), 2)
+                        
+                        # Lógica de Gatilho Facial
+                        if len(faces) > 0 and self.face_cooldown <= 0:
+                            self.face_lock_time += 1
+                            if self.face_lock_time > 15: # ~0.5s de rosto parado
+                                self.reconhecer_facial(frame)
+                                self.face_cooldown = 100 # Espera uns 3s para o próximo scan
+                                self.face_lock_time = 0
+                        else:
+                            if self.face_cooldown > 0: self.face_cooldown -= 1
+                            self.face_lock_time = 0
+
+                        img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                        # Redimensiona apenas o necessário para exibição
+                        img = img.resize((640, 480), Image.Resampling.LANCZOS)
+                        self.photo = ImageTk.PhotoImage(img)
+                        self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text=""))
+                    except Exception as e:
+                        print(f"Erro no processamento da imagem: {e}")
+            time.sleep(0.03) # ~30 FPS para maior estabilidade
+
+    def reconhecer_facial(self, frame):
+        """ Envia o frame atual para o servidor tentar identificar o aluno """
+        def f():
+            try:
+                _, b = cv2.imencode('.jpg', frame)
+                b64 = f"data:image/jpeg;base64,{base64.b64encode(b).decode('utf-8')}"
+                r = requests.post(f"{SITE_URL}/api/face-check/", data={'frame': b64, 'token': SYNC_TOKEN}, timeout=5)
+                if r.status_code == 200:
+                    d = r.json()
+                    self.parent.after(0, lambda: self.identificar_aluno(d))
+                    self.parent.after(0, lambda: self.parent.abrir_catraca("0"))
+            except Exception as e:
+                print(f"Falha no reconhecimento facial: {e}")
+        threading.Thread(target=f, daemon=True).start()
 
     def flash_effect(self):
         self.cam_f.configure(border_color="#ffffff")
