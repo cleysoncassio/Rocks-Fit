@@ -57,9 +57,16 @@ class JanelaMonitor(ctk.CTkToplevel):
             threading.Thread(target=self.loop_camera, daemon=True).start()
 
     def setup_ui(self):
-        # Header Laranja
+        # Header Laranja com Logomarca
         self.header = ctk.CTkFrame(self, fg_color="transparent", height=100)
         self.header.pack(fill="x", padx=40, pady=(40, 0))
+        
+        try:
+            logo_img = Image.open(CAMINHO_LOGO)
+            logo_ctk = ctk.CTkImage(light_image=logo_img, dark_image=logo_img, size=(80, 80))
+            ctk.CTkLabel(self.header, image=logo_ctk, text="").pack(side="left", padx=(0, 20))
+        except: pass
+
         ctk.CTkLabel(self.header, text="ROCKS", font=("Space Grotesk", 52, "bold"), text_color=COR_TEXTO).pack(side="left")
         ctk.CTkLabel(self.header, text="FIT", font=("Space Grotesk", 52, "bold"), text_color=COR_PRIMARY).pack(side="left", padx=5)
         
@@ -148,11 +155,22 @@ class AppRecepcao(ctk.CTk):
     def setup_ui(self):
         self.sidebar = ctk.CTkFrame(self, width=260, fg_color="#050505", corner_radius=0); self.sidebar.pack(side="left", fill="y")
         
-        # Logo Rocks Fit
+        # Logo Rocks Fit (Image + Text)
         self.logo_f = ctk.CTkFrame(self.sidebar, fg_color="transparent")
-        self.logo_f.pack(pady=50)
-        ctk.CTkLabel(self.logo_f, text="ROCKS", font=("Space Grotesk", 32, "bold"), text_color=COR_TEXTO).pack(side="left")
-        ctk.CTkLabel(self.logo_f, text="FIT", font=("Space Grotesk", 32, "bold"), text_color=COR_PRIMARY).pack(side="left", padx=2)
+        self.logo_f.pack(pady=40)
+        
+        # Tenta carregar a imagem da logomarca
+        try:
+            logo_img = Image.open(CAMINHO_LOGO)
+            # Redimensiona mantendo proporção ou força um tamanho fixo
+            logo_ctk = ctk.CTkImage(light_image=logo_img, dark_image=logo_img, size=(60, 60))
+            self.lbl_logo_img = ctk.CTkLabel(self.logo_f, image=logo_ctk, text="")
+            self.lbl_logo_img.pack(pady=(0, 10))
+        except Exception as e:
+            print(f"Erro ao carregar logomarca: {e}")
+
+        ctk.CTkLabel(self.logo_f, text="ROCKS", font=("Space Grotesk", 28, "bold"), text_color=COR_TEXTO).pack(side="left")
+        ctk.CTkLabel(self.logo_f, text="FIT", font=("Space Grotesk", 28, "bold"), text_color=COR_PRIMARY).pack(side="left", padx=2)
         
         btn_st = {"height": 55, "corner_radius": 10, "font": ("Inter", 13, "bold")}
         ctk.CTkButton(self.sidebar, text="🖥️ MONITORAR", fg_color=COR_PRIMARY, text_color="#000", hover_color="#ff8533", command=self.saltar_monitor, **btn_st).pack(pady=10, padx=25, fill="x")
@@ -161,6 +179,9 @@ class AppRecepcao(ctk.CTk):
         ctk.CTkFrame(self.sidebar, height=1, fg_color=COR_CARD_HIGH).pack(fill="x", pady=25, padx=40)
         ctk.CTkButton(self.sidebar, text="🔓 LIBERAR ENTRADA", fg_color="#1a1a1a", text_color=COR_PRIMARY, border_width=1, border_color=COR_PRIMARY, command=lambda: self.abrir_catraca("0"), **btn_st).pack(pady=10, padx=25, fill="x")
         ctk.CTkButton(self.sidebar, text="🔒 LIBERAR SAÍDA", fg_color="#1a1a1a", text_color=COR_TEXT_SEC, border_width=1, border_color=COR_CARD_HIGH, command=lambda: self.abrir_catraca("1"), **btn_st).pack(pady=10, padx=25, fill="x")
+
+        ctk.CTkFrame(self.sidebar, height=1, fg_color=COR_CARD_HIGH).pack(fill="x", pady=15, padx=40)
+        ctk.CTkButton(self.sidebar, text="⚙️ DIAGNÓSTICO", fg_color="transparent", text_color=COR_TEXT_SEC, hover_color=COR_CARD, command=self.rodar_diagnostico, **btn_st).pack(pady=0, padx=25, fill="x")
 
         self.main = ctk.CTkFrame(self, fg_color="transparent"); self.main.pack(side="right", fill="both", expand=True, padx=40, pady=40)
         
@@ -171,6 +192,12 @@ class AppRecepcao(ctk.CTk):
         self.e_search.pack(fill="both", expand=True, padx=25); self.e_search.bind("<KeyRelease>", lambda e: self.render_list(self.e_search.get()))
 
         self.sr = ctk.CTkScrollableFrame(self.main, fg_color="transparent"); self.sr.pack(fill="both", expand=True)
+
+    def rodar_diagnostico(self):
+        script = os.path.join(BASE_DIR, "diagnostico_rksfit.py")
+        if os.path.exists(script):
+            import subprocess
+            threading.Thread(target=lambda: subprocess.run([sys.executable, script], creationflags=0x00000010 if os.name == 'nt' else 0), daemon=True).start()
 
     def saltar_monitor(self):
         if not self.monitor or not self.monitor.winfo_exists(): self.monitor = JanelaMonitor(self)

@@ -41,9 +41,19 @@ def iniciar_leitor():
     print("="*50)
     print("  ROCKS FIT - INTERFACE U.ARE.U 4500")
     print("="*50)
-    print("Aguardando leitura de digital...")
     
     try:
+        # Verifica se há leitores antes de iniciar
+        readers = win32com.client.Dispatch("DPFP.OneTouch.ReadersCollection.1")
+        if readers.Count == 0:
+            print("❌ ERRO: Nenhum leitor biométrico USB detectado.")
+            print("Verifique o cabo e o driver OneTouch SDK.")
+            input("Pressione Enter para sair...")
+            sys.exit()
+
+        print(f"✅ Hardware detectado: {readers.Item(1).Description}")
+        print("Aguardando leitura de digital...")
+
         # Inicializa o Objeto do SDK Digital Persona
         capture = win32com.client.DispatchWithEvents("DPFP.OneTouch.Capture.1", EventHandler)
         capture.StartCapture()
@@ -52,8 +62,9 @@ def iniciar_leitor():
             pythoncom.PumpWaitingMessages()
             time.sleep(0.05)
     except Exception as e:
-        print(f"Erro ao iniciar hardware: {e}")
+        print(f"❌ Erro ao iniciar hardware: {e}")
         print("Verifique se o OneTouch SDK está instalado corretamente.")
+        input("Pressione Enter para sair...")
 
 if __name__ == "__main__":
     iniciar_leitor()
