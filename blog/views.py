@@ -464,16 +464,25 @@ def catraca_sync_api(request):
     import datetime
     hoje = datetime.date.today()
     
-    # Pegar todos os acessos que não estão vencidos
-    acessos = ControleAcesso.objects.filter(data_vencimento__gte=hoje).select_related('aluno')
+    # Pegar todos os alunos ATIVOS
+    alunos = Aluno.objects.filter(status='ATIVO').select_related('acesso')
     
     lista = []
-    for acc in acessos:
+    for aluno in alunos:
+        acc = getattr(aluno, 'acesso', None)
+        dias = 0
+        if acc and acc.data_vencimento:
+            dias = (acc.data_vencimento - hoje).days
+            if dias < 0: dias = 0
+            
         lista.append({
-            'nome': acc.aluno.nome_completo,
-            'cpf': ''.join(filter(str.isdigit, acc.aluno.cpf)),
-            'vencimento': acc.data_vencimento.strftime('%Y-%m-%d'),
-            'matricula': acc.aluno.matricula
+            'nome': aluno.nome_completo,
+            'id': aluno.id,
+            'cpf': ''.join(filter(str.isdigit, aluno.cpf)) if aluno.cpf else "",
+            'vencimento': acc.data_vencimento.strftime('%Y-%m-%d') if acc and acc.data_vencimento else "N/A",
+            'matricula': aluno.matricula,
+            'dias_restantes': dias,
+            'status': aluno.status
         })
     
     return JsonResponse({'alunos': lista})
@@ -691,10 +700,14 @@ def catraca_face_check_api(request):
                            melhor_aluno = aluno
                 except: continue
 
-        # 4. Limiar de Confiança Calibrado para Rosto-a-Rosto
-        # 60 matches com recorte facial é uma confiança altíssima
-        if melhor_aluno and (melhor_score > 60 or (melhor_score > 35 and melhor_dist < 55)):
+        # 4. Limiar de Confiança Calibrado para Rosto-a-Rosto (MAIS SENSÍVEL)
+        # Score > 35 ou Distância < 60
+        if melhor_aluno and (melhor_score > 35 or (melhor_score > 20 and melhor_dist < 65)):
+            print(f"✅ FACIAL MATCH: {melhor_aluno.nome_completo} (Score={melhor_score}, Dist={melhor_dist:.2f})")
             return catraca_check_api(request, melhor_aluno.matricula)
+        
+        if melhor_aluno:
+            print(f"⚠️ FACIAL BORDERLINE: {melhor_aluno.nome_completo} (Score={melhor_score}, Dist={melhor_dist:.2f}) - Abaixo do Limiar")
         
         return JsonResponse({'status': 'nao_reconhecido', 'mensagem': 'Rosto não identificado ou baixa confiança.'}, status=404)
 
