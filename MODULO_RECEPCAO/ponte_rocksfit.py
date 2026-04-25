@@ -53,7 +53,12 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.parent = parent; self.rodando = True
         self.setup_ui()
         if OPENCV_OK:
-            self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+            # Tenta encontrar a câmera em diferentes índices (0, 1 ou 2)
+            for index in [0, 1, 2, 0]: # Tenta o 0 duas vezes (uma com DSHOW e outra sem se precisar)
+                self.cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+                if self.cap.isOpened():
+                    print(f"[OK] Câmera encontrada no índice {index}")
+                    break
             threading.Thread(target=self.loop_camera, daemon=True).start()
 
     def setup_ui(self):
