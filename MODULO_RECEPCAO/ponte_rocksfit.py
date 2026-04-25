@@ -160,42 +160,48 @@ class JanelaMonitor(ctk.CTkToplevel):
 
     def loop_camera(self):
         # Carrega o cascade para facial
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        try:
+            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        except: face_cascade = None
         
         while self.rodando:
             if hasattr(self, 'cap') and self.cap.isOpened():
                 ret, frame = self.cap.read()
                 if ret:
                     try:
-                        frame = cv2.flip(frame, 1)
-                        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+                        frame_ui = frame.copy()
+                        frame_ui = cv2.flip(frame_ui, 1)
+                        gray = cv2.cvtColor(frame_ui, cv2.COLOR_BGR2GRAY)
                         
-                        # Desenha UI Facial se houver rostos
-                        for (x, y, w, h) in faces:
-                            # Borda Laranja Rocks
-                            cv2.rectangle(frame, (x, y), (x+w, y+h), (242, 113, 33), 2)
-                            cv2.putText(frame, "ROCKS SCAN...", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (242, 113, 33), 2)
+                        faces = []
+                        if face_cascade:
+                            faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+                            for (x, y, w, h) in faces:
+                                cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 2)
+                                cv2.putText(frame_ui, "SISTEMA ROCKS SCAN", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (242, 113, 33), 2)
                         
                         # Lógica de Gatilho Facial
                         if len(faces) > 0 and self.face_cooldown <= 0:
                             self.face_lock_time += 1
-                            if self.face_lock_time > 15: # ~0.5s de rosto parado
-                                self.reconhecer_facial(frame)
-                                self.face_cooldown = 100 # Espera uns 3s para o próximo scan
+                            if self.face_lock_time == 5:
+                                self.after(0, lambda: self.lbl_status.configure(text="🔍 IDENTIFICANDO...", text_color="#FFF"))
+                            if self.face_lock_time > 15:
+                                self.reconhecer_facial(frame_ui)
+                                self.face_cooldown = 100
                                 self.face_lock_time = 0
                         else:
                             if self.face_cooldown > 0: self.face_cooldown -= 1
                             self.face_lock_time = 0
 
-                        img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                        # Redimensiona apenas o necessário para exibição
+                        img = Image.fromarray(cv2.cvtColor(frame_ui, cv2.COLOR_BGR2RGB))
                         img = img.resize((640, 480), Image.Resampling.LANCZOS)
-                        self.photo = ImageTk.PhotoImage(img)
+                        
+                        # Correção CTkImage para evitar Warning e garantir escala correta
+                        self.photo = ctk.CTkImage(light_image=img, dark_image=img, size=(640, 480))
                         self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text=""))
                     except Exception as e:
                         print(f"Erro no processamento da imagem: {e}")
-            time.sleep(0.03) # ~30 FPS para maior estabilidade
+            time.sleep(0.03)
 
     def reconhecer_facial(self, frame):
         """ Envia o frame atual para o servidor tentar identificar o aluno """
@@ -206,8 +212,11 @@ class JanelaMonitor(ctk.CTkToplevel):
                 r = requests.post(f"{SITE_URL}/api/face-check/", data={'frame': b64, 'token': SYNC_TOKEN}, timeout=5)
                 if r.status_code == 200:
                     d = r.json()
-                    self.parent.after(0, lambda: self.identificar_aluno(d))
-                    self.parent.after(0, lambda: self.parent.abrir_catraca("0"))
+                    self.after(0, lambda: self.identificar_aluno(d))
+                    self.after(0, lambda: self.parent.abrir_catraca("0"))
+                else:
+                    self.after(0, lambda: self.lbl_status.configure(text="❌ NÃO RECONHECIDO", text_color=COR_ERROR))
+                    self.after(3000, self.reset)
             except Exception as e:
                 print(f"Falha no reconhecimento facial: {e}")
         threading.Thread(target=f, daemon=True).start()
