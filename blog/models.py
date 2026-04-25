@@ -51,13 +51,18 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         # Sincroniza flags do Django com o tipo de usuário Rocks Fit
-        if self.user_type == self.TYPE_SUPERADMIN:
+        # Se for superusuário (via CLI ou Admin), garante que o tipo seja SUPERADMIN
+        if self.is_superuser:
+            self.user_type = self.TYPE_SUPERADMIN
+            self.is_staff = True
+        
+        elif self.user_type == self.TYPE_SUPERADMIN:
             self.is_superuser = True
             self.is_staff = True
         elif self.user_type in [self.TYPE_ADMIN, self.TYPE_SECRETARY]:
             self.is_staff = True
             if self.user_type == self.TYPE_ADMIN:
-                self.is_superuser = False # Admin não é SuperAdmin por padrão
+                self.is_superuser = False
         
         super().save(*args, **kwargs)
 
@@ -596,15 +601,24 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         def create_profile():
             try:
+                # SE JÁ EXISTE PERFIL PARA ESTE USUÁRIO, NÃO FAZ NADA
+                if hasattr(instance, 'aluno_perfil') or hasattr(instance, 'trainer_profile') or hasattr(instance, 'nutritionist_profile'):
+                    return
+
                 if instance.user_type == User.TYPE_STUDENT:
-                    Aluno.objects.get_or_create(
-                        user=instance,
+                    # Tenta vincular se o CPF já existir mas sem usuário, ou cria novo
+                    aluno, created = Aluno.objects.get_or_create(
+                        cpf=instance.cpf,
                         defaults={
+                            'user': instance,
                             'nome_completo': f"{instance.first_name} {instance.last_name}",
-                            'cpf': instance.cpf,
                             'email': instance.email
                         }
                     )
+                    if not created and not aluno.user:
+                        aluno.user = instance
+                        aluno.save()
+                
                 elif instance.user_type == User.TYPE_TRAINER:
                     Trainer.objects.get_or_create(
                         user=instance,
