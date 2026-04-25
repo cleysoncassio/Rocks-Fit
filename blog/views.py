@@ -601,6 +601,79 @@ def catraca_check_api(request, id_tag):
         'mensagem': msg_final
     })
 
+@csrf_exempt
+def catraca_face_check_api(request):
+    """
+    Recebe um frame via POST e tenta encontrar o aluno correspondente.
+    Usa um método de comparação visual resiliente.
+    """
+    from django.conf import settings
+    token = request.POST.get('token')
+    if token != getattr(settings, 'CATRACA_SYNC_TOKEN', None):
+        return JsonResponse({'status': 'error', 'message': 'Não autorizado'}, status=401)
+
+    foto_b64 = request.POST.get('frame')
+    if not foto_b64:
+        return JsonResponse({'status': 'error', 'message': 'Imagem não enviada'}, status=400)
+
+    import cv2
+    import numpy as np
+    import base64
+    from io import BytesIO
+    from PIL import Image
+
+    try:
+        # 1. Decodificar o frame recebido
+        format, imgstr = foto_b64.split(';base64,')
+        ext = format.split('/')[-1]
+        frame_bytes = base64.b64decode(imgstr)
+        nparr = np.frombuffer(frame_bytes, np.uint8)
+        img_check = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        img_check_gray = cv2.cvtColor(img_check, cv2.COLOR_BGR2GRAY)
+        
+        # 2. Buscar todos os alunos que tenham foto cadastrada e estejam ativos
+        alunos_com_foto = Aluno.objects.filter(foto__isnull=False, status='ATIVO').select_related('acesso')
+        
+        melhor_aluno = None
+        melhor_score = 0
+
+        # Algoritmo de comparação simplificado (Histograma ou ORB)
+        # Para um "WOW" imediato sem dlib, usamos ORB (muito rápido e já no OpenCV)
+        orb = cv2.ORB_create()
+        kp1, des1 = orb.detectAndCompute(img_check_gray, None)
+
+        if des1 is not None:
+            for aluno in alunos_com_foto:
+                try:
+                    # Carrega a foto de referência do aluno
+                    ref_path = aluno.foto.path
+                    img_ref = cv2.imread(ref_path, cv2.IMREAD_GRAYSCALE)
+                    if img_ref is None: continue
+                    
+                    kp2, des2 = orb.detectAndCompute(img_ref, None)
+                    if des2 is None: continue
+                    
+                    # Comapração via BFMatcher
+                    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                    matches = bf.match(des1, des2)
+                    
+                    # Score baseado na quantidade de matches bons
+                    score = len(matches)
+                    if score > melhor_score:
+                        melhor_score = score
+                        melhor_aluno = aluno
+                except: continue
+
+        # 3. Limiar de Confiança (Threshold)
+        if melhor_aluno and melhor_score > 30: # 30 matches é um bom começo para ORB
+            # Se encontrou, chamamos a lógica de check-in normal para o ID dele
+            return catraca_check_api(request, melhor_aluno.matricula)
+        
+        return JsonResponse({'status': 'nao_reconhecido', 'mensagem': 'Rosto não identificado.'}, status=404)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 def catraca_polling_api(request):
     """
     Mantido para abertura manual via Admin se necessário.

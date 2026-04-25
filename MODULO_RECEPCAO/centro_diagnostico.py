@@ -108,12 +108,18 @@ class CentroDiagnostico(ctk.CTk):
 
     def toggle_camera(self):
         if not self.camera_rodando:
-            # Tenta encontrar a câmera disponível (0, 1 ou 2)
-            for index in [0, 1, 2]:
-                self.cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-                if self.cap.isOpened():
+            # Prioritiza webcam externa (índice 1 ou 2) antes da embutida (0)
+            for index in [1, 2, 0, 3]:
+                temp_cap = cv2.VideoCapture(index)
+                if temp_cap.isOpened():
+                    if self.cap: self.cap.release()
+                    self.cap = temp_cap
+                    self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                    self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
                     print(f"Câmera de diagnóstico OK no índice {index}")
                     break
+                else:
+                    temp_cap.release()
             
             if not self.cap or not self.cap.isOpened():
                 self.status_facial.configure(text="❌ NÃO FOI POSSÍVEL ENCONTRAR NENHUMA CÂMERA", text_color=COR_ERROR)
