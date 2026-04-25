@@ -7,11 +7,13 @@ ARQUIVOS INCLUÍDOS:
 ------------------
 1. ponte_rocksfit.py      -> Interface Principal (Monitor e Gestor).
 2. leitor_bio.py          -> Ponte para o Leitor de Digital (U.are.U 4500).
-3. ponte_catraca.py       -> Interface de rede com o hardware da catraca.
-4. rkslogo.png            -> Logo para a interface.
-5. abrir_catraca.bat      -> Atalho para liberação manual de emergência.
-6. ENCERRAR_SISTEMA.bat   -> Fecha todos os processos da Rocks Fit.
-7. requirements_recepcao.txt -> Lista de dependências.
+3. teste_biometria.py     -> NOVO! Script dedicado para testar o hardware digital.
+4. ponte_catraca.py       -> Interface de rede com o hardware da catraca.
+5. diagnostico_rksfit.py  -> Ferramenta de diagnóstico completo (Caminhos, Redes, Bio).
+6. rkslogo.png            -> Logo para a interface.
+7. abrir_catraca.bat      -> Atalho para liberação manual de emergência.
+8. ENCERRAR_SISTEMA.bat   -> Fecha todos os processos da Rocks Fit.
+9. requirements_recepcao.txt -> Lista de dependências.
 
 COMO INSTALAR:
 -------------

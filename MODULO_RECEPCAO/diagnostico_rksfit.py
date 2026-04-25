@@ -84,7 +84,7 @@ except Exception as e:
     print(f"  ❌ API FALHOU: {e}")
 
 # --- 5. CATRACA ---
-print("\n[5/5] TESTE DE CONEXÃO COM A CATRACA")
+print("\n[5/6] TESTE DE CONEXÃO COM A CATRACA")
 CATRACA_IP   = "169.254.37.150"
 CATRACA_PORT = 3000
 try:
@@ -98,6 +98,22 @@ try:
         print(f"  ⚠️  CATRACA OFFLINE (código: {resultado})")
 except Exception as e:
     print(f"  ❌ CATRACA ERRO: {e}")
+
+# --- 6. BIOMETRIA ---
+print("\n[6/6] TESTE DE BIOMETRIA DIGITAL")
+try:
+    import win32com.client
+    readers = win32com.client.Dispatch("DPFP.OneTouch.ReadersCollection.1")
+    count = readers.Count
+    if count > 0:
+        print(f"  ✅ HARDWARE DETECTADO: {count} leitor(es) encontrado(s).")
+        for i in range(count):
+            print(f"     -> {readers.Item(i+1).Description}")
+    else:
+        print("  ⚠️  HARDWARE NÃO DETECTADO: Verifique se o leitor USB está conectado.")
+except Exception as e:
+    print(f"  ❌ SDK BIOMÉTRICO (OneTouch) NÃO CONFIGURADO: {e}")
+    print("     DICA: Certifique-se de estar usando Windows e ter o pywin32 instalado.")
 
 print("\n" + "=" * 55)
 print("  FIM DO DIAGNÓSTICO - Cole o resultado acima!")
