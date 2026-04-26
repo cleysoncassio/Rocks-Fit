@@ -679,22 +679,24 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Protocolo Oficial TOLETUS (Capturado do log do Gerenciador) """
+        """ Protocolo TOLETUS LiteNet V2.0 - Direcionado ao ID 3 """
         def c():
             try:
-                # O comando Toletus exige: lgu + byte binario (0 ou 1) + Texto de exibicao
+                # Segundo o log e a tela de config: ID = 3
+                # O pacote e: lgu (prefixo) + ID (3) + Modo (0 ou 1) + Texto
                 prefixo = b"lgu"
+                id_catraca = bytes([3]) # ID identificado na foto
                 modo = b"\x00" if s == "0" else b"\x01"
                 texto = "Liberou Entrada" if s == "0" else "Liberou Saida"
-                pacote = prefixo + modo + texto.encode('utf-8')
+                pacote = prefixo + id_catraca + modo + texto.encode('utf-8')
                 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
-                    k.settimeout(2)
-                    k.connect((CATRACA_IP, CATRACA_PORTA))
-                    k.sendall(pacote)
-                    print(f"📡 [HARDWARE TOLETUS] Comando enviado para {CATRACA_IP}")
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.settimeout(2)
+                sock.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
+                sock.close()
+                print(f"📡 [HARDWARE ID3] Comando enviado para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [HARDWARE TOLETUS] Erro: {e}")
+                print(f"❌ [HARDWARE ID3] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
