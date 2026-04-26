@@ -12,7 +12,7 @@ SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
 CATRACA_IP = "169.254.37.150"
 CATRACA_PORTA = 3000
-SERVIDOR_PORTA = 5000
+SERVIDOR_PORTA = 5001 
 POLLING_INTERVAL = 3
 
 # Design System Oficial Rocks Fit (High Contrast)
@@ -679,35 +679,17 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Protocolo TOLETUS MESTRE (STX + lgu + ID 0 + ETX) """
+        """ Restaurado para o modo original que funcionava no inicio das configuracoes """
         def c():
             try:
-                # O Gerenciador Toletus muitas vezes usa ID 0 (Universal) nos comandos rapidos
-                prefixo = b"\x02lgu"
-                id_universal = b"\x00" 
-                sentido = b"\x00" if s == "0" else b"\x01"
-                texto = ("Liberou Entrada" if s == "0" else "Liberou Saida").encode('utf-8')
-                pacote = prefixo + id_universal + sentido + texto + b"\x03"
-                
-                # 1. DISPARA VIA UDP (IP 150)
-                try:
-                    sock_u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    sock_u.settimeout(1)
-                    sock_u.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
-                    sock_u.close()
-                except: pass
-
-                # 2. DISPARA VIA TCP (IP 150)
-                try:
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_t:
-                        sock_t.settimeout(1)
-                        sock_t.connect((CATRACA_IP, CATRACA_PORTA))
-                        sock_t.sendall(pacote)
-                except: pass
-
-                print(f"📡 [TOLETUS MESTRE] Comando enviado para {CATRACA_IP}")
+                p = s.encode('utf-8') # Apenas "0" ou "1"
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
+                    k.settimeout(2)
+                    k.connect((CATRACA_IP, CATRACA_PORTA))
+                    k.sendall(p)
+                    print(f"📡 [RESTAURADO] Comando '{s}' enviado para porta {CATRACA_PORTA}")
             except Exception as e:
-                print(f"❌ [TOLETUS MESTRE] Erro: {e}")
+                print(f"❌ [RESTAURADO] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
