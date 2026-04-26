@@ -679,42 +679,38 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Protocolo de Precisao: lgu + Byte Nulo + Texto (Via Placa Ethernet 169.254.37.1) """
+        """ Versao Final de Producao: Protocolo Toletus LiteNet via Interface Ethernet """
         def c():
             LOCAL_IP = "169.254.37.1"
             try:
-                # O comando Toletus real usa o Byte Nulo (0x00 / 0x01)
+                # O comando Toletus LiteNet exige [ID] + [MODO] + [TEXTO]
+                # ID identificado na tela de config: 3
+                # Modo: 0 para entrada, 1 para saida
                 prefixo = b"lgu"
-                modo = b"\x00" if s == "0" else b"\x01"
+                id_byte = bytes([3]) 
+                modo_byte = b"\x00" if s == "0" else b"\x01"
                 texto = ("Liberou Entrada" if s == "0" else "Liberou Saida").encode('utf-8')
-                pacote = prefixo + modo + texto
                 
-                # Portas para testar
-                portas = [3000, 5000]
-
-                for pta in portas:
-                    # 1. UDP
-                    try:
-                        sock_u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        sock_u.bind((LOCAL_IP, 0))
-                        sock_u.settimeout(0.5)
-                        sock_u.sendto(pacote, (CATRACA_IP, pta))
-                        sock_u.close()
-                    except: pass
-
-                    # 2. TCP
-                    try:
-                        sock_t = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        sock_t.bind((LOCAL_IP, 0))
-                        sock_t.settimeout(0.5)
-                        sock_t.connect((CATRACA_IP, pta))
-                        sock_t.sendall(pacote)
-                        sock_t.close()
-                    except: pass
-
-                print(f"📡 [PRECISAO] Pacote Toletus enviado via {LOCAL_IP} para {CATRACA_IP}")
+                # Pacote Completo (Bytes Puros)
+                pacote = prefixo + id_byte + modo_byte + texto
+                
+                # Criamos o socket forçado na placa de rede da catraca
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                try: 
+                    sock.bind((LOCAL_IP, 0)) 
+                except: pass # Se ja estiver preso, continua
+                
+                sock.settimeout(0.5)
+                # Enviamos tanto para o IP 150 quanto para o Broadcast
+                sock.sendto(pacote, (CATRACA_IP, 3000))
+                time.sleep(0.05)
+                sock.sendto(pacote, ("169.254.255.255", 3000))
+                
+                sock.close()
+                print(f"📡 [PRODUCAO] Comando enviado via {LOCAL_IP} -> {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [PRECISAO] Erro: {e}")
+                print(f"❌ [PRODUCAO] Erro de hardware: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
