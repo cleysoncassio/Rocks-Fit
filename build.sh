@@ -14,9 +14,10 @@ echo "Instalando dependências..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 2. Resets de Segurança e Configurações
+# 2. Configurações de Banco de Dados
 echo "Executando tarefas de banco de dados..."
-python3 manage.py shell -c "from blog.models import Aluno; Aluno.objects.all().update(status='INATIVO')"
+# (REMOVIDO: O Reset inicial já foi feito. Desativado para não apagar seus testes no deploy)
+# python3 manage.py shell -c "from blog.models import Aluno; Aluno.objects.all().update(status='INATIVO')"
 
 # ============================================
 # CONCEDER PERMISSÕES DO BANCO (CRÍTICO!)
