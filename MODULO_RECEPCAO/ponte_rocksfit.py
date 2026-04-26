@@ -196,7 +196,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                         # --- LÓGICA DE FOCO SUAVE (SMOOTH ZOOM) ---
                         if len(faces) > 0:
                             (x, y, w, h) = faces[0]
-                            pad_w, pad_h = int(w*0.6), int(h*0.6)
+                            # Aumentado o padding para 1.2 para diminuir o zoom excessivo
+                            pad_w, pad_h = int(w*1.2), int(h*1.2)
                             x1, y1 = max(0, x-pad_w), max(0, y-pad_h)
                             x2, y2 = min(frame_ui.shape[1], x+w+pad_w), min(frame_ui.shape[0], y+h+pad_h)
                             self.last_crop_rect = (x1, y1, x2, y2)
@@ -209,7 +210,7 @@ class JanelaMonitor(ctk.CTkToplevel):
                             self.zoom_persistence -= 1
                         else:
                             frame_display = frame_ui
-                            self.last_crop_rect = None
+                            last_crop_rect = None
 
                         if not self.winfo_exists(): break
                         
@@ -221,10 +222,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                         img = Image.fromarray(cv2.cvtColor(frame_display, cv2.COLOR_BGR2RGB))
                         
                         # --- PROPORÇÃO PRESERVADA ---
-                        # Calcula o redimensionamento mantendo o aspect ratio
                         img.thumbnail((cw, ch), Image.Resampling.LANCZOS)
                         
-                        # Cria fundo preto para centralizar se houver sobra (Letterboxing)
                         canvas = Image.new("RGB", (cw, ch), (0, 0, 0))
                         offset = ((cw - img.width) // 2, (ch - img.height) // 2)
                         canvas.paste(img, offset)
@@ -234,14 +233,14 @@ class JanelaMonitor(ctk.CTkToplevel):
                         if self.lbl_cam.winfo_exists():
                             self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text="") if self.lbl_cam.winfo_exists() else None)
 
-                        # Gatilho de Reconhecimento
+                        # Gatilho de Reconhecimento (Cronômetro reduzido para ser mais rápido)
                         if len(faces) > 0 and self.face_cooldown <= 0:
                             self.face_lock_time += 1
-                            if self.face_lock_time == 5:
-                                self.after(0, lambda: self.lbl_status.configure(text="🔍 ANALISANDO ROSTO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
-                            if self.face_lock_time > 12:
+                            if self.face_lock_time == 3:
+                                self.after(0, lambda: self.lbl_status.configure(text="🔍 SCANNEANDO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
+                            if self.face_lock_time > 8:
                                 self.reconhecer_facial(frame)
-                                self.face_cooldown = 100
+                                self.face_cooldown = 80
                                 self.face_lock_time = 0
                         else:
                             if self.face_cooldown > 0: self.face_cooldown -= 1
@@ -276,7 +275,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                     gray_webcam = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     gray_webcam = cv2.equalizeHist(gray_webcam)
                     
-                    orb = cv2.ORB_create(1000)
+                    # Dourado: 2000 pontos para reconhecimento ultra-preciso e rápido
+                    orb = cv2.ORB_create(2000)
                     kp_webcam, des_webcam = orb.detectAndCompute(gray_webcam, None)
                     
                     if des_webcam is None: return
@@ -456,8 +456,8 @@ class AppRecepcao(ctk.CTk):
         try:
             requests.get("https://google.com", timeout=3)
             l_net.configure(text="✅ INTERNET: OK", text_color=COR_SUCCESS)
-        except: 
-            l_net.configure(text="❌ INTERNET: FALHA", text_color=COR_ERROR)
+        except Exception as e: 
+            l_net.configure(text=f"❌ INTERNET: {str(e)[:40]}...", text_color=COR_ERROR)
 
         l_api = add_line("CONEXÃO COM CRM"); diag.update()
         try:
@@ -466,8 +466,8 @@ class AppRecepcao(ctk.CTk):
                 l_api.configure(text=f"✅ CRM ({SITE_URL}): OK", text_color=COR_SUCCESS)
             else:
                 l_api.configure(text=f"❌ CRM: ERRO {r.status_code}", text_color=COR_ERROR)
-        except:
-            l_api.configure(text="❌ CRM: OFFLINE", text_color=COR_ERROR)
+        except Exception as e:
+            l_api.configure(text=f"❌ CRM: {str(e)[:40]}...", text_color=COR_ERROR)
 
         l_board = add_line("PLACA DA CATRACA"); diag.update()
         try:
@@ -476,9 +476,9 @@ class AppRecepcao(ctk.CTk):
                 if s.connect_ex((CATRACA_IP, CATRACA_PORTA)) == 0:
                     l_board.configure(text=f"✅ PLACA ({CATRACA_IP}): ONLINE", text_color=COR_SUCCESS)
                 else:
-                    l_board.configure(text="❌ PLACA: NÃO ENCONTRADA", text_color=COR_ERROR)
-        except:
-            l_board.configure(text="❌ PLACA: ERRO DE REDE", text_color=COR_ERROR)
+                    l_board.configure(text="❌ PLACA: SEM RESPOSTA (IP ERRADO?)", text_color=COR_ERROR)
+        except Exception as e:
+            l_board.configure(text=f"❌ PLACA: {str(e)[:40]}...", text_color=COR_ERROR)
 
         ctk.CTkButton(diag, text="FECHAR", font=("Inter", 14, "bold"), fg_color=COR_CARD_HIGH, command=diag.destroy).pack(pady=20)
 
@@ -646,12 +646,18 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
+        """ Envia o pulso de abertura para a placa controladora física """
         def c():
             try:
-                p = b"lgu" + (b"\x00" if s == "0" else b"\x01") + ("ACESSO ROCKS FIT" if s == "0" else "SAIDA ROCKS FIT").encode('utf-8')
+                # Modificado para incluir \r\n que algumas placas Windows/TCP exigem
+                p = (s + "\r\n").encode('utf-8') 
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
-                    k.settimeout(3); k.connect((CATRACA_IP, CATRACA_PORTA)); k.sendall(p)
-            except: pass
+                    k.settimeout(3)
+                    k.connect((CATRACA_IP, CATRACA_PORTA))
+                    k.sendall(p)
+                    print(f"📡 [HARDWARE] Pulso enviado para {CATRACA_IP}")
+            except Exception as e:
+                print(f"❌ [HARDWARE] Erro de acionamento: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
