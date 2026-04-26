@@ -472,13 +472,37 @@ class AppRecepcao(ctk.CTk):
         l_board = add_line("PLACA DA CATRACA"); diag.update()
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(2)
+                s.settimeout(1)
                 if s.connect_ex((CATRACA_IP, CATRACA_PORTA)) == 0:
                     l_board.configure(text=f"✅ PLACA ({CATRACA_IP}): ONLINE", text_color=COR_SUCCESS)
                 else:
                     l_board.configure(text="❌ PLACA: SEM RESPOSTA (IP ERRADO?)", text_color=COR_ERROR)
         except Exception as e:
             l_board.configure(text=f"❌ PLACA: {str(e)[:40]}...", text_color=COR_ERROR)
+
+        l_cam = add_line("CÂMERA E HARDWARE"); diag.update()
+        try:
+            if hasattr(self, 'monitor') and self.monitor and self.monitor.cap:
+                ret, _ = self.monitor.cap.read()
+                if ret:
+                    l_cam.configure(text="✅ CÂMERA: OK (IMAGEM CAPTURADA)", text_color=COR_SUCCESS)
+                else:
+                    l_cam.configure(text="❌ CÂMERA: NO SIGNAL", text_color=COR_ERROR)
+            else:
+                l_cam.configure(text="❌ CÂMERA: OFFLINE", text_color=COR_ERROR)
+        except Exception as e:
+            l_cam.configure(text=f"❌ CÂMERA: {str(e)[:40]}...", text_color=COR_ERROR)
+
+        l_bio = add_line("SENSOR BIOMÉTRICO"); diag.update()
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1)
+                if s.connect_ex(('127.0.0.1', SERVIDOR_PORTA)) == 0:
+                    l_bio.configure(text="✅ BIOMETRIA: MONITOR ATIVO", text_color=COR_SUCCESS)
+                else:
+                    l_bio.configure(text="❌ BIOMETRIA: SERVIDOR OFFLINE", text_color=COR_ERROR)
+        except Exception as e:
+            l_bio.configure(text=f"❌ BIOMETRIA: {str(e)[:40]}...", text_color=COR_ERROR)
 
         ctk.CTkButton(diag, text="FECHAR", font=("Inter", 14, "bold"), fg_color=COR_CARD_HIGH, command=diag.destroy).pack(pady=20)
 
@@ -646,18 +670,30 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Envia o pulso de abertura para a placa controladora física """
+        """ Protocolo Multi-Comando: Tenta abrir a placa usando diferentes 'dialetos' técnicos """
         def c():
-            try:
-                # Modificado para incluir \r\n que algumas placas Windows/TCP exigem
-                p = (s + "\r\n").encode('utf-8') 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
-                    k.settimeout(3)
-                    k.connect((CATRACA_IP, CATRACA_PORTA))
-                    k.sendall(p)
-                    print(f"📡 [HARDWARE] Pulso enviado para {CATRACA_IP}")
-            except Exception as e:
-                print(f"❌ [HARDWARE] Erro de acionamento: {e}")
+            comandos = [
+                s.encode('utf-8'),               # Padrão simples
+                (s + "\n").encode('utf-8'),      # Com pulo de linha
+                (s + "\r\n").encode('utf-8'),    # Com retorno (Padrão Windows)
+                f"\x02{s}\x03".encode('utf-8')   # Protocolo STX/ETX (Henry/TopData)
+            ]
+            
+            sucesso = False
+            for p in comandos:
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
+                        k.settimeout(1)
+                        k.connect((CATRACA_IP, CATRACA_PORTA))
+                        k.sendall(p)
+                        print(f"📡 [HARDWARE] Enviado formato: {repr(p)} para {CATRACA_IP}")
+                        sucesso = True
+                except:
+                    continue
+            
+            if not sucesso:
+                print(f"❌ [HARDWARE] Falha total ao falar com a placa {CATRACA_IP}")
+                
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
