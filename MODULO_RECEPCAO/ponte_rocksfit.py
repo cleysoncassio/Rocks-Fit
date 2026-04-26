@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import os, sys, requests, socket, threading, time, base64, json, cv2
+import numpy as np
 from PIL import Image, ImageTk
 from io import BytesIO
 
