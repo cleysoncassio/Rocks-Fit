@@ -679,17 +679,30 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Restaurado para o modo original que funcionava no inicio das configuracoes """
+        """ Teste Mestre: Tenta todos os formatos comuns para Placas Universais """
         def c():
             try:
-                p = s.encode('utf-8') # Apenas "0" ou "1"
+                # Formatos de comando para placas universais
+                modo_txt = "0" if s == "0" else "1"
+                msg_txt = "Liberou Entrada" if s == "0" else "Liberou Saida"
+                
+                # Lista de tentativas
+                pacotes = [
+                    s.encode('utf-8'),                              # 1. Simples (0 ou 1)
+                    f"lgu{modo_txt}{msg_txt}".encode('utf-8'),      # 2. Toletus ASCII
+                    f"RELAY{int(s)+1}=ON".encode('utf-8'),          # 3. Formato Relay
+                    b"\x01\x01\x01\x01"                             # 4. Formato Binario Puro
+                ]
+                
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
                     k.settimeout(2)
                     k.connect((CATRACA_IP, CATRACA_PORTA))
-                    k.sendall(p)
-                    print(f"📡 [RESTAURADO] Comando '{s}' enviado para porta {CATRACA_PORTA}")
+                    for p in pacotes:
+                        k.sendall(p)
+                        time.sleep(0.1) # Pequena pausa entre formatos
+                    print(f"📡 [TESTE MESTRE] Comandos enviados para {CATRACA_IP}:{CATRACA_PORTA}")
             except Exception as e:
-                print(f"❌ [RESTAURADO] Erro: {e}")
+                print(f"❌ [TESTE MESTRE] Erro: {e} (VERIFIQUE SE O GERENCIADOR TOLETUS ESTA FECHADO)")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
