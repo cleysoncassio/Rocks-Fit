@@ -10,7 +10,7 @@ from io import BytesIO
 # --- CONFIGURAÇÕES IDENTITY ROCKS FIT ---
 SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
-CATRACA_IP = "169.254.37.150"
+CATRACA_IP = "169.254.255.255"
 CATRACA_PORTA = 3000
 SERVIDOR_PORTA = 5000
 POLLING_INTERVAL = 3
@@ -679,34 +679,24 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Protocolo TOLETUS FINAL - Brute Force (TCP + UDP) """
+        """ Protocolo TOLETUS BROADCAST (UDP Global) """
         def c():
             try:
-                # Segundo o log: lgu\0Liberou Entrada 
-                # Vamos testar o formato com o caractere '0' ou '1' (em vez de binario)
+                # lgu + direcao + texto 
                 modo_txt = "0" if s == "0" else "1"
                 msg_txt = "Liberou Entrada" if s == "0" else "Liberou Saida"
                 pacote = f"lgu{modo_txt}{msg_txt}".encode('utf-8')
                 
-                # 1. TENTA VIA UDP (Sempre rápido)
-                try:
-                    sock_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    sock_udp.settimeout(1)
-                    sock_udp.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
-                    sock_udp.close()
-                except: pass
+                # Para usar o IP 169.254.255.255, PRECISAMOS do modo BROADCAST ativo
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Permissao especial
+                sock.settimeout(1)
+                sock.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
+                sock.close()
 
-                # 2. TENTA VIA TCP (Garante entrega)
-                try:
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
-                        sock_tcp.settimeout(1)
-                        sock_tcp.connect((CATRACA_IP, CATRACA_PORTA))
-                        sock_tcp.sendall(pacote)
-                except: pass
-
-                print(f"📡 [HARDWARE FINAL] Comandos disparados para {CATRACA_IP}")
+                print(f"📡 [BROADCAST] Comando enviado para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [HARDWARE FINAL] Erro: {e}")
+                print(f"❌ [BROADCAST] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
