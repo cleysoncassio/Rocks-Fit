@@ -483,7 +483,16 @@ def catraca_sync_api(request):
             'foto_url': aluno.foto.url if aluno.foto else None
         })
     
-    return JsonResponse({'alunos': lista})
+    # Configurações da Academia
+    from blog.models import GymSetting
+    gs = GymSetting.objects.first()
+    settings_data = {
+        'fluxo': gs.catraca_fluxo if gs else 'BIDIRECIONAL',
+        'msg_entrada': gs.msg_entrada if gs else 'Bom treino!',
+        'msg_saida': gs.msg_saida if gs else 'Bom descanso!',
+    }
+    
+    return JsonResponse({'alunos': lista, 'settings': settings_data})
 
 def catraca_check_api(request, id_tag):
     """
@@ -515,9 +524,14 @@ def catraca_check_api(request, id_tag):
             eh_aniversario = True
 
     # 4. MONITORAMENTO DE STATUS CRM (Administrativo)
+    from .models import GymSetting
     gym_settings = GymSetting.objects.first()
     whatsapp_link = f"https://wa.me/{gym_settings.whatsapp_notificacao}" if gym_settings and gym_settings.whatsapp_notificacao else "#"
     
+    msg_entrada = gym_settings.msg_entrada if gym_settings else "Bom treino!"
+    msg_saida = gym_settings.msg_saida if gym_settings else "Bom descanso!"
+    msg_aniversario = gym_settings.msg_aniversario if gym_settings else "Parabéns! Feliz Aniversário! 🎉"
+
     if aluno.status != 'ATIVO':
         msg_custom = gym_settings.msg_bloqueio_crm if gym_settings else "Cadastro Suspenso/Inativo."
         if aluno.is_convenio:
@@ -535,23 +549,24 @@ def catraca_check_api(request, id_tag):
         plano = acesso.plano_pendente
         dias = 30
         if plano:
-            # Prioriza os dias configurados no banco de dados para flexibilidade total
             dias = plano.duration_days if plano.duration_days else 30
-        acesso.data_vencimento = hoje + datetime.timedelta(days=dias)
+        acesso.data_vencimento = hoje + timedelta(days=dias)
         acesso.status_catraca = 'liberado'
         acesso.plano_pendente = None
+        acesso.esta_dentro = True
+        acesso.ultimo_acesso = timezone.now()
         acesso.save()
         
-        msg_boas_vindas = f'Bem-vindo! Acesso ativado por {dias} dias.'
-        if eh_aniversario:
-            msg_boas_vindas = gym_settings.msg_aniversario if gym_settings else "Parabéns! Feliz Aniversário! 🎉"
+        msg_final = f'{msg_entrada} (Plano Ativado)'
+        if eh_aniversario: msg_final = msg_aniversario
 
         return JsonResponse({
             'status': 'ativo', 'nome': aluno.nome_completo, 'matricula': aluno.matricula,
             'vencimento': acesso.data_vencimento.strftime('%d/%m/%Y'),
             'dias_restantes': dias, 'foto_url': foto_url,
             'status_borda': 'verde',
-            'mensagem': msg_boas_vindas
+            'mensagem': msg_final,
+            's': '0' # Sempre entrada na ativação
         })
 
     # 5. SEM ACESSO FINANCEIRO
@@ -574,28 +589,36 @@ def catraca_check_api(request, id_tag):
             'dias_restantes': dias_restantes, 'foto_url': foto_url,
             'status': 'vencido', 'status_borda': 'vermelho',
             'mensagem': 'Plano vencido. Procure a recepção.'
-        })
+        }, status=403)
 
-    # 4. LÓGICA DE ENTRADA/SAÍDA (ESGOTAMENTO POR USO)
-    # Alternar estado (Se estava fora, entra. Se estava dentro, sai).
-    esta_saindo = acesso.esta_dentro
+    # 4. LÓGICA DE ENTRADA/SAÍDA E FLUXO
+    fluxo = gym_settings.catraca_fluxo if gym_settings else 'BIDIRECIONAL'
+    
+    # Determina o sentido: 0 = Entrada, 1 = Saída
+    if fluxo == 'ENTRADA':
+        esta_saindo = False
+        cmd_catraca = "0"
+    elif fluxo == 'SAIDA':
+        esta_saindo = True
+        cmd_catraca = "1"
+    else: # BIDIRECIONAL
+        esta_saindo = acesso.esta_dentro
+        cmd_catraca = "1" if esta_saindo else "0"
+
     acesso.esta_dentro = not acesso.esta_dentro
     acesso.ultimo_acesso = timezone.now()
     
-    msg_complemento = "Entrada confirmada."
+    msg_final = gym_settings.msg_entrada if not esta_saindo else gym_settings.msg_saida
     if esta_saindo:
-        msg_complemento = "Saída confirmada. Bom descanso!"
         # Se for DIÁRIA, esgota o acesso após a saída
-        # Verificamos pelo nome do plano ou tipo
         ultimo_pago = aluno.pagamentos.filter(status='pago', plano__isnull=False).order_by('-data_pagamento').first()
         if ultimo_pago and ultimo_pago.plano.plan_type == 'diaria':
-            acesso.data_vencimento = hoje - datetime.timedelta(days=1)
+            acesso.data_vencimento = hoje - timedelta(days=1)
             acesso.status_catraca = 'bloqueado'
-            msg_complemento = "Diária esgotada (Ciclo concluído). Até a próxima!"
+            msg_final = "Diária esgotada. Até a próxima!"
             
     acesso.save()
 
-    msg_final = f'{msg_complemento}'
     if eh_aniversario:
         msg_final = gym_settings.msg_aniversario if gym_settings else "Parabéns pelo seu dia! 🎉"
 
@@ -605,7 +628,8 @@ def catraca_check_api(request, id_tag):
         'dias_restantes': dias_restantes, 'foto_url': foto_url,
         'status': 'alerta' if dias_restantes <= 5 else 'ativo',
         'status_borda': 'verde',
-        'mensagem': msg_final
+        'mensagem': msg_final,
+        's': cmd_catraca
     })
 
 @csrf_exempt

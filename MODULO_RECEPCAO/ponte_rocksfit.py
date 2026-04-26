@@ -1,5 +1,8 @@
+import os
+os.environ["OPENCV_LOG_LEVEL"] = "ERROR"
+os.environ["OPENCV_VIDEOIO_DEBUG"] = "0"
 import customtkinter as ctk
-import os, sys, requests, socket, threading, time, base64, json, cv2
+import sys, requests, socket, threading, time, base64, json, cv2
 import numpy as np
 from PIL import Image, ImageTk
 from io import BytesIO
@@ -56,6 +59,15 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.camera_index = 1 # Começa tentando a externa
         self.face_cooldown = 0
         self.face_lock_time = 0
+        self.last_crop_rect = None # [x1, y1, x2, y2]
+        self.zoom_persistence = 0
+        self.facial_lock = threading.Lock()
+        
+        # Inicia em modo Tela Cheia
+        self.attributes('-fullscreen', True)
+        self.bind("<Escape>", lambda e: self.attributes("-fullscreen", False))
+        self.bind("<F11>", lambda e: self.attributes("-fullscreen", not self.attributes("-fullscreen")))
+
         self.tentar_proxima_camera()
         threading.Thread(target=self.loop_camera, daemon=True).start()
 
@@ -117,61 +129,56 @@ class JanelaMonitor(ctk.CTkToplevel):
 
     def setup_ui(self):
         # Header Laranja com Logomarca
-        self.header = ctk.CTkFrame(self, fg_color="transparent", height=100)
-        self.header.pack(fill="x", padx=40, pady=(40, 0))
+        self.header = ctk.CTkFrame(self, fg_color="transparent", height=80)
+        self.header.pack(fill="x", padx=40, pady=(20, 0))
         
         try:
             logo_img = Image.open(CAMINHO_LOGO)
-            logo_ctk = ctk.CTkImage(light_image=logo_img, dark_image=logo_img, size=(80, 80))
+            logo_ctk = ctk.CTkImage(light_image=logo_img, dark_image=logo_img, size=(100, 100))
             ctk.CTkLabel(self.header, image=logo_ctk, text="").pack(side="left", padx=(0, 20))
         except: pass
 
-        ctk.CTkLabel(self.header, text="ROCKS", font=("Space Grotesk", 52, "bold"), text_color=COR_TEXTO).pack(side="left")
-        ctk.CTkLabel(self.header, text="FIT", font=("Space Grotesk", 52, "bold"), text_color=COR_PRIMARY).pack(side="left", padx=5)
-        
+        ctk.CTkLabel(self.header, text="ROCKS", font=("Space Grotesk", 48, "bold"), text_color=COR_TEXTO).pack(side="left")
+        ctk.CTkLabel(self.header, text="FIT", font=("Space Grotesk", 48, "bold"), text_color=COR_PRIMARY).pack(side="left", padx=5)
         self.container = ctk.CTkFrame(self, fg_color="transparent")
-        self.container.pack(fill="both", expand=True, padx=40, pady=40)
+        self.container.pack(fill="both", expand=True, padx=40, pady=(20, 40))
+        self.container.grid_columnconfigure(0, weight=1)
+        self.container.grid_columnconfigure(1, weight=0, minsize=450)
+        self.container.grid_rowconfigure(0, weight=1)
         
-        self.cam_f = ctk.CTkFrame(self.container, width=640, height=480, fg_color=COR_CARD, corner_radius=15, border_width=2, border_color=COR_PRIMARY)
-        self.cam_f.pack(side="left", fill="both", expand=True); self.cam_f.pack_propagate(False)
+        # Área da Câmera
+        self.cam_f = ctk.CTkFrame(self.container, fg_color=COR_CARD, corner_radius=20, border_width=2, border_color=COR_PRIMARY)
+        self.cam_f.grid(row=0, column=0, sticky="nsew", padx=(0, 20))
         
-        self.lbl_cam = ctk.CTkLabel(self.cam_f, text="SENSORES ATIVOS", text_color=COR_PRIMARY, font=("Inter", 14, "bold")); self.lbl_cam.pack(expand=True)
+        self.lbl_cam = ctk.CTkLabel(self.cam_f, text="", text_color=COR_PRIMARY); self.lbl_cam.pack(expand=True, fill="both")
         
-        # Overlay de informação da câmera
-        self.lbl_cam_info = ctk.CTkLabel(self.cam_f, text="CÂMERA: ID --", font=("Inter", 10), text_color=COR_TEXT_SEC)
-        self.lbl_cam_info.place(relx=0.05, rely=0.05)
+        # Overlay ID
+        self.lbl_cam_info = ctk.CTkLabel(self.cam_f, text="CÂMERA: ID --", font=("Inter", 14), text_color=COR_TEXT_SEC)
+        self.lbl_cam_info.place(relx=0.03, rely=0.03)
 
-        # Botão discreto para alternar câmera
-        self.btn_switch = ctk.CTkButton(self.cam_f, text="🔄 ALTERNAR CÂMERA", width=140, height=35, fg_color=COR_CARD_HIGH, text_color=COR_TEXTO, font=("Inter", 11, "bold"), command=self.alternar_camera)
+        # Botão Alternar
+        self.btn_switch = ctk.CTkButton(self.cam_f, text="🔄 ALTERNAR CÂMERA", width=220, height=55, fg_color=COR_CARD_HIGH, text_color=COR_TEXTO, font=("Inter", 14, "bold"), corner_radius=15, command=self.alternar_camera)
         self.btn_switch.place(relx=0.5, rely=0.92, anchor="center")
 
         # Painel Lateral
-        self.info_f = ctk.CTkFrame(self.container, width=320, fg_color="transparent")
-        self.info_f.pack(side="right", fill="both", padx=(40, 0))
+        self.info_f = ctk.CTkFrame(self.container, width=450, fg_color="transparent")
+        self.info_f.grid(row=0, column=1, sticky="nsew")
+        self.info_f.grid_propagate(False)
         
-        self.avatar_f = ctk.CTkFrame(self.info_f, width=280, height=280, corner_radius=20, fg_color=COR_CARD, border_width=1, border_color=COR_CARD_HIGH)
+        ctk.CTkLabel(self.info_f, text="FOTO DO ALUNO", font=("Inter", 18, "bold"), text_color=COR_TEXT_SEC).pack(anchor="w", pady=(0, 10))
+        self.avatar_f = ctk.CTkFrame(self.info_f, width=410, height=410, corner_radius=25, fg_color=COR_CARD, border_width=1, border_color=COR_CARD_HIGH)
         self.avatar_f.pack(pady=(0, 30)); self.avatar_f.pack_propagate(False)
-        self.lbl_aluno_foto = ctk.CTkLabel(self.avatar_f, text="AGUARDANDO", font=("Inter", 14, "bold"), text_color=COR_TEXT_SEC); self.lbl_aluno_foto.pack(expand=True)
+        self.lbl_aluno_foto = ctk.CTkLabel(self.avatar_f, text="AGUARDANDO", font=("Inter", 24, "bold"), text_color=COR_TEXT_SEC); self.lbl_aluno_foto.pack(expand=True)
         
-        self.lbl_nome = ctk.CTkLabel(self.info_f, text="SISTEMA PRONTO", font=("Space Grotesk", 36, "bold"), text_color=COR_TEXTO, wraplength=300, justify="left"); self.lbl_nome.pack(anchor="w")
-        self.lbl_status = ctk.CTkLabel(self.info_f, text="POSICIONE-SE PARA SCAN", font=("Inter", 12, "bold"), text_color=COR_PRIMARY); self.lbl_status.pack(anchor="w", pady=10)
+        self.lbl_nome = ctk.CTkLabel(self.info_f, text="SISTEMA PRONTO", font=("Space Grotesk", 56, "bold"), text_color=COR_TEXTO, wraplength=430, justify="left"); self.lbl_nome.pack(anchor="w")
+        self.lbl_status = ctk.CTkLabel(self.info_f, text="POSICIONE-SE PARA SCAN", font=("Inter", 32, "bold"), text_color=COR_PRIMARY, wraplength=430, justify="left"); self.lbl_status.pack(anchor="w", pady=20)
         
-        fb = ctk.CTkFrame(self.info_f, height=2, fg_color=COR_CARD_HIGH); fb.pack(fill="x", pady=20)
-        self.bar_fill = ctk.CTkFrame(fb, width=0, height=2, fg_color=COR_PRIMARY); self.bar_fill.place(x=0, y=0)
+        fb = ctk.CTkFrame(self.info_f, height=10, fg_color=COR_CARD_HIGH, corner_radius=5); fb.pack(fill="x", pady=20)
+        self.bar_fill = ctk.CTkFrame(fb, width=0, height=10, fg_color=COR_PRIMARY, corner_radius=5); self.bar_fill.place(x=0, y=0)
 
     def loop_camera(self):
-        # Carrega o cascade para facial
-        try:
-            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        except: face_cascade = None
-        
-        # Tenta encontrar hardware (Câmera 0 primeiro no Linux)
-        for idx in [0, 1, 2]:
-            print(f"Buscando hardware no index {idx}...")
-            self.cap = cv2.VideoCapture(idx)
-            if self.cap.isOpened():
-                print(f"✅ Hardware encontrado no index {idx}!")
-                break
+        # O hardware ja foi capturado em tentar_proxima_camera() na inicializacao.
+        # Caso a capturade pare, este loop tentara recuperar.
         
         while self.rodando:
             if hasattr(self, 'cap') and self.cap.isOpened():
@@ -181,32 +188,58 @@ class JanelaMonitor(ctk.CTkToplevel):
                         frame_ui = frame.copy()
                         frame_ui = cv2.flip(frame_ui, 1) # Espelhar para ficar natural
                         gray = cv2.cvtColor(frame_ui, cv2.COLOR_BGR2GRAY)
-                        
                         faces = []
-                        if face_cascade:
-                            faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-                            for (x, y, w, h) in faces:
-                                cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 2)
+                        if OPENCV_OK:
+                            # Ajuste de escala e vizinhos para ambiente de academia (luz variada)
+                            faces = FACE_CASCADE.detectMultiScale(gray, 1.1, 4)
+                            
+                        # --- LÓGICA DE FOCO SUAVE (SMOOTH ZOOM) ---
+                        if len(faces) > 0:
+                            (x, y, w, h) = faces[0]
+                            pad_w, pad_h = int(w*0.6), int(h*0.6)
+                            x1, y1 = max(0, x-pad_w), max(0, y-pad_h)
+                            x2, y2 = min(frame_ui.shape[1], x+w+pad_w), min(frame_ui.shape[0], y+h+pad_h)
+                            self.last_crop_rect = (x1, y1, x2, y2)
+                            self.zoom_persistence = 20
+                            cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 2)
                         
-                        # Converte para o monitor garantindo que a janela ainda existe
+                        if self.zoom_persistence > 0 and self.last_crop_rect:
+                            x1, y1, x2, y2 = self.last_crop_rect
+                            frame_display = frame_ui[y1:y2, x1:x2]
+                            self.zoom_persistence -= 1
+                        else:
+                            frame_display = frame_ui
+                            self.last_crop_rect = None
+
                         if not self.winfo_exists(): break
                         
-                        img = Image.fromarray(cv2.cvtColor(frame_ui, cv2.COLOR_BGR2RGB))
-                        img = img.resize((640, 480), Image.Resampling.LANCZOS)
+                        # Obtém tamanho real do container para preencher a tela
+                        cw = self.cam_f.winfo_width()
+                        ch = self.cam_f.winfo_height()
+                        if cw < 300: cw, ch = 800, 600
+
+                        img = Image.fromarray(cv2.cvtColor(frame_display, cv2.COLOR_BGR2RGB))
                         
-                        self.photo = ctk.CTkImage(light_image=img, dark_image=img, size=(640, 480))
+                        # --- PROPORÇÃO PRESERVADA ---
+                        # Calcula o redimensionamento mantendo o aspect ratio
+                        img.thumbnail((cw, ch), Image.Resampling.LANCZOS)
                         
-                        # Atualiza UI com segurança
+                        # Cria fundo preto para centralizar se houver sobra (Letterboxing)
+                        canvas = Image.new("RGB", (cw, ch), (0, 0, 0))
+                        offset = ((cw - img.width) // 2, (ch - img.height) // 2)
+                        canvas.paste(img, offset)
+                        
+                        self.photo = ctk.CTkImage(light_image=canvas, dark_image=canvas, size=(cw, ch))
+                        
                         if self.lbl_cam.winfo_exists():
                             self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text="") if self.lbl_cam.winfo_exists() else None)
 
-                        # Lógica de Gatilho Facial
+                        # Gatilho de Reconhecimento
                         if len(faces) > 0 and self.face_cooldown <= 0:
                             self.face_lock_time += 1
                             if self.face_lock_time == 5:
-                                if self.lbl_status.winfo_exists():
-                                    self.after(0, lambda: self.lbl_status.configure(text="🔍 IDENTIFICANDO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
-                            if self.face_lock_time > 15:
+                                self.after(0, lambda: self.lbl_status.configure(text="🔍 ANALISANDO ROSTO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
+                            if self.face_lock_time > 12:
                                 self.reconhecer_facial(frame)
                                 self.face_cooldown = 100
                                 self.face_lock_time = 0
@@ -215,10 +248,13 @@ class JanelaMonitor(ctk.CTkToplevel):
                             self.face_lock_time = 0
                             
                     except Exception as e:
-                        print(f"Erro no processamento da imagem: {e}")
+                        print(f"⚠️ Erro no processamento de frame: {e}")
+                else:
+                    # Falha na leitura: tenta recuperar hardware se persistir
+                    time.sleep(0.1)
             else:
-                time.sleep(1) # Espera hardware
-            time.sleep(0.01)
+                time.sleep(1) # Câmera desconectada ou erro crítico
+            time.sleep(0.033) # Estabiliza em ~30 FPS
 
     def reconhecer_facial(self, frame):
         """ Executa o reconhecimento LOCAL para velocidade máxima (< 1s) """
@@ -227,54 +263,73 @@ class JanelaMonitor(ctk.CTkToplevel):
         if not perfis:
             return
 
+        if hasattr(self, 'facial_lock') and self.facial_lock.locked():
+            return
+
         def f():
-            try:
-                print("🔍 [FACIAL LOCAL] Analisando...")
-                start_time = time.time()
-                
-                # 1. Preparar Frame da Webcam
-                gray_webcam = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                gray_webcam = cv2.equalizeHist(gray_webcam)
-                
-                orb = cv2.ORB_create(1000)
-                kp_webcam, des_webcam = orb.detectAndCompute(gray_webcam, None)
-                
-                if des_webcam is None: return
+            with self.facial_lock:
+                try:
+                    print("🔍 [FACIAL LOCAL] Analisando...")
+                    start_time = time.time()
+                    
+                    # 1. Preparar Frame da Webcam
+                    gray_webcam = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    gray_webcam = cv2.equalizeHist(gray_webcam)
+                    
+                    orb = cv2.ORB_create(1000)
+                    kp_webcam, des_webcam = orb.detectAndCompute(gray_webcam, None)
+                    
+                    if des_webcam is None: return
 
-                melhor_aluno = None
-                melhor_score = 0
-                
-                # 2. Comparar com perfis em cache
-                bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-                
-                for matricula, perfil in perfis.items():
-                    if perfil['des'] is None: continue
-                    try:
-                        matches = bf.match(des_webcam, perfil['des'])
-                        score = len([m for m in matches if m.distance < 75])
-                        
-                        if score > melhor_score:
-                            melhor_score = score
-                            melhor_aluno = perfil['data']
-                    except: continue
+                    melhor_aluno = None
+                    melhor_score = 0
+                    
+                    # 2. Comparar com perfis em cache
+                    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                    
+                    for matricula, perfil in perfis.items():
+                        if perfil['des'] is None: continue
+                        try:
+                            matches = bf.match(des_webcam, perfil['des'])
+                            score = len([m for m in matches if m.distance < 75])
+                            
+                            if score > melhor_score:
+                                melhor_score = score
+                                melhor_aluno = perfil['data']
+                        except: continue
 
-                duration = time.time() - start_time
+                    duration = time.time() - start_time
+                    
+                    # 3. Limiar de Decisão Local
+                    if melhor_aluno and melhor_score > 18:
+                        print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score}) em {duration:.2f}s")
+                        try:
+                            r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=5)
+                            data = r.json() if r.status_code in [200, 403] else {}
+                            
+                            if r.status_code == 200:
+                                sentido = data.get('s', '0')
+                                self.after(0, lambda: self.identificar_aluno(data))
+                                self.after(0, lambda: self.parent.abrir_catraca(sentido))
+                            elif r.status_code == 403:
+                                # Aluno bloqueado ou erro administrativo - ainda assim mostramos no painel
+                                self.after(0, lambda: self.identificar_aluno(data))
+                            else:
+                                print(f"⚠️ Servidor retornou {r.status_code}")
+                                self.after(0, lambda: self.lbl_status.configure(text="❌ ERRO NO SERVIDOR", text_color=COR_ERROR))
+                        except Exception as e:
+                            print(f"❌ Erro de rede ao validar: {e}")
+                    else:
+                        msg = "ROSTO NÃO RECONHECIDO"
+                        if melhor_score < 10: msg = "APROXIME-SE DA CÂMERA"
+                        print(f"❌ [FALHA] Match local insuficiente (Score: {melhor_score:.1f})")
+                        self.after(0, lambda: self.lbl_status.configure(text=f"❌ {msg}", text_color=COR_ERROR))
+                        self.after(2000, self.reset)
+                except Exception as e:
+                    print(f"⚠️ Erro no reconhecimento local: {e}")
                 
-                # 3. Limiar de Decisão Local
-                if melhor_aluno and melhor_score > 18:
-                    print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score}) em {duration:.2f}s")
-                    try:
-                        r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=5)
-                        if r.status_code == 200:
-                            self.after(0, lambda: self.identificar_aluno(r.json()))
-                            self.after(0, lambda: self.parent.abrir_catraca("0"))
-                    except: pass
-                else:
-                    print(f"❌ [FALHA] Sem match local (Score max: {melhor_score}) em {duration:.2f}s")
-                    self.after(0, lambda: self.lbl_status.configure(text="❌ NÃO RECONHECIDO", text_color=COR_ERROR))
-                    self.after(2000, self.reset)
-            except Exception as e:
-                print(f"⚠️ Erro no reconhecimento local: {e}")
+                # Garantir pausa após cada tentativa para não floodar
+                time.sleep(1)
         threading.Thread(target=f, daemon=True).start()
 
     def flash_effect(self):
@@ -325,7 +380,7 @@ class AppRecepcao(ctk.CTk):
         threading.Thread(target=self.servidor_bio, daemon=True).start()
         threading.Thread(target=self.remote_polling, daemon=True).start()
         self.carregar_alunos()
-        self.after(30000, self.auto_sync)
+        self.after(300000, self.auto_sync)
 
     def setup_ui(self):
         self.sidebar = ctk.CTkFrame(self, width=260, fg_color="#050505", corner_radius=0); self.sidebar.pack(side="left", fill="y")
@@ -356,6 +411,14 @@ class AppRecepcao(ctk.CTk):
         ctk.CTkButton(self.sidebar, text="🔒 LIBERAR SAÍDA", fg_color="#1a1a1a", text_color=COR_TEXT_SEC, border_width=1, border_color=COR_CARD_HIGH, command=lambda: self.abrir_catraca("1"), **btn_st).pack(pady=10, padx=25, fill="x")
 
         ctk.CTkFrame(self.sidebar, height=1, fg_color=COR_CARD_HIGH).pack(fill="x", pady=15, padx=40)
+        
+        # Indicador de Fluxo
+        self.flow_f = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        self.flow_f.pack(pady=10, padx=25, fill="x")
+        ctk.CTkLabel(self.flow_f, text="FLUXO ATUAL:", font=("Inter", 11, "bold"), text_color=COR_TEXT_SEC).pack(side="left")
+        self.lbl_flow_status = ctk.CTkLabel(self.flow_f, text="CARREGANDO...", font=("Inter", 11, "bold"), text_color=COR_PRIMARY)
+        self.lbl_flow_status.pack(side="right")
+
         ctk.CTkButton(self.sidebar, text="⚙️ DIAGNÓSTICO", fg_color="transparent", text_color=COR_TEXT_SEC, hover_color=COR_CARD, command=self.rodar_diagnostico, **btn_st).pack(pady=0, padx=25, fill="x")
 
         self.main = ctk.CTkFrame(self, fg_color="transparent"); self.main.pack(side="right", fill="both", expand=True, padx=40, pady=40)
@@ -386,6 +449,17 @@ class AppRecepcao(ctk.CTk):
                 r = requests.get(u, timeout=15)
                 if r.status_code == 200:
                     self.alunos_data = r.json().get('alunos', [])
+                    self.settings = r.json().get('settings', {})
+                    
+                    # Atualiza o indicador de fluxo na UI
+                    fluxo_traducao = {
+                        'ENTRADA': 'APENAS ENTRADA',
+                        'SAIDA': 'APENAS SAÍDA',
+                        'BIDIRECIONAL': 'AUTO (ENTRADA/SAÍDA)'
+                    }
+                    fluxo_txt = fluxo_traducao.get(self.settings.get('fluxo'), 'DESCONHECIDO')
+                    self.after(0, lambda: self.lbl_flow_status.configure(text=fluxo_txt))
+
                     self.alunos_perfis = {} # Cache centralizado aqui na JanelaPrincipal
                     orb = cv2.ORB_create(1000)
                     
@@ -418,8 +492,12 @@ class AppRecepcao(ctk.CTk):
 
     def render_list(self, filter_text=""):
         for w in self.sr.winfo_children(): w.destroy()
-        data = [a for a in self.alunos_data if filter_text.lower() in str(a.get('nome','')).lower()] if filter_text else self.alunos_data
-        for a in data[:10]:
+        # Filtra apenas alunos ATIVOS para visualização no monitor principal
+        data = [a for a in self.alunos_data if "ATIVO" in str(a.get('status','')).upper()]
+        if filter_text:
+            data = [a for a in data if filter_text.lower() in str(a.get('nome','')).lower()]
+        
+        for a in data[:20]:
             st_c = COR_PRIMARY if "ATIVO" in str(a.get('status','')).upper() else COR_CARD_HIGH
             c = ctk.CTkFrame(self.sr, fg_color=COR_CARD, height=90, corner_radius=15); c.pack(fill="x", pady=6, padx=10); c.pack_propagate(False)
             
@@ -541,7 +619,7 @@ class AppRecepcao(ctk.CTk):
             except: pass
             time.sleep(POLLING_INTERVAL)
 
-    def auto_sync(self): self.carregar_alunos(); self.after(30000, self.auto_sync)
+    def auto_sync(self): self.carregar_alunos(); self.after(300000, self.auto_sync)
 
 if __name__ == "__main__":
     try:
