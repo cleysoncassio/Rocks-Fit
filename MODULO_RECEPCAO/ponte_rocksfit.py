@@ -12,7 +12,7 @@ SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
 CATRACA_IP = "169.254.37.150"
 CATRACA_PORTA = 3000
-SERVIDOR_PORTA = 5001 
+SERVIDOR_PORTA = 5000 
 POLLING_INTERVAL = 3
 
 # Design System Oficial Rocks Fit (High Contrast)
@@ -679,38 +679,20 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Versao Final de Producao: Protocolo Toletus LiteNet via Interface Ethernet """
+        """ Restaurado para a versao 'Ouro' (O que funcionava anteriormente) """
         def c():
-            LOCAL_IP = "169.254.37.1"
             try:
-                # O comando Toletus LiteNet exige [ID] + [MODO] + [TEXTO]
-                # ID identificado na tela de config: 3
-                # Modo: 0 para entrada, 1 para saida
-                prefixo = b"lgu"
-                id_byte = bytes([3]) 
-                modo_byte = b"\x00" if s == "0" else b"\x01"
-                texto = ("Liberou Entrada" if s == "0" else "Liberou Saida").encode('utf-8')
-                
-                # Pacote Completo (Bytes Puros)
-                pacote = prefixo + id_byte + modo_byte + texto
-                
-                # Criamos o socket forçado na placa de rede da catraca
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                try: 
-                    sock.bind((LOCAL_IP, 0)) 
-                except: pass # Se ja estiver preso, continua
-                
-                sock.settimeout(0.5)
-                # Enviamos tanto para o IP 150 quanto para o Broadcast
-                sock.sendto(pacote, (CATRACA_IP, 3000))
-                time.sleep(0.05)
-                sock.sendto(pacote, ("169.254.255.255", 3000))
-                
-                sock.close()
-                print(f"📡 [PRODUCAO] Comando enviado via {LOCAL_IP} -> {CATRACA_IP}")
+                # O comando exato do seu arquivo antigo
+                comando = b"lgu\x00Liberou Entrada" if s == "0" else b"lgu\x01Liberou Saida"
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(5)
+                    sock.connect((CATRACA_IP, CATRACA_PORTA))
+                    sock.sendall(comando)
+                    # Espera a resposta (Crucial para a placa Toletus processar)
+                    resposta = sock.recv(1024)
+                    print(f"📡 [OURO] Catraca respondeu: {resposta.decode('utf-8', errors='ignore')}")
             except Exception as e:
-                print(f"❌ [PRODUCAO] Erro de hardware: {e}")
+                print(f"❌ [OURO] Erro ao falar com a catraca: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
