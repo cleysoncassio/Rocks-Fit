@@ -221,8 +221,9 @@ class JanelaMonitor(ctk.CTkToplevel):
 
     def reconhecer_facial(self, frame):
         """ Executa o reconhecimento LOCAL para velocidade máxima (< 1s) """
-        if not hasattr(self, 'alunos_perfis') or not self.alunos_perfis:
-            print("⚠️ [FACIAL] Cache de fotos vazio. Sincronize primeiro.")
+        # Busca o cache na JanelaPrincipal (parent)
+        perfis = getattr(self.parent, 'alunos_perfis', {})
+        if not perfis:
             return
 
         def f():
@@ -230,28 +231,25 @@ class JanelaMonitor(ctk.CTkToplevel):
                 print("🔍 [FACIAL LOCAL] Analisando...")
                 start_time = time.time()
                 
-                # 1. Preparar Frame da Webcam com nitidez
+                # 1. Preparar Frame da Webcam
                 gray_webcam = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                gray_webcam = cv2.equalizeHist(gray_webcam) # Melhora contraste
+                gray_webcam = cv2.equalizeHist(gray_webcam)
                 
                 orb = cv2.ORB_create(1000)
                 kp_webcam, des_webcam = orb.detectAndCompute(gray_webcam, None)
                 
-                if des_webcam is None: 
-                    print("❌ [FACIAL] Não detectou traços no frame.")
-                    return
+                if des_webcam is None: return
 
                 melhor_aluno = None
                 melhor_score = 0
                 
-                # 2. Comparar com perfis em cache (Hamming para ORB)
+                # 2. Comparar com perfis em cache
                 bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
                 
-                for matricula, perfil in self.alunos_perfis.items():
+                for matricula, perfil in perfis.items():
                     if perfil['des'] is None: continue
                     try:
                         matches = bf.match(des_webcam, perfil['des'])
-                        # Score: quantidade de matches de alta qualidade
                         score = len([m for m in matches if m.distance < 75])
                         
                         if score > melhor_score:
@@ -262,9 +260,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                 duration = time.time() - start_time
                 
                 # 3. Limiar de Decisão Local
-                if melhor_aluno and melhor_score > 18: # Sensibilidade calibrada para local
+                if melhor_aluno and melhor_score > 18:
                     print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score}) em {duration:.2f}s")
-                    # Sincroniza com servidor apenas para abrir a catraca
                     try:
                         r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=5)
                         if r.status_code == 200:
@@ -275,10 +272,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                     print(f"❌ [FALHA] Sem match local (Score max: {melhor_score}) em {duration:.2f}s")
                     self.after(0, lambda: self.lbl_status.configure(text="❌ NÃO RECONHECIDO", text_color=COR_ERROR))
                     self.after(2000, self.reset)
-                    
             except Exception as e:
                 print(f"⚠️ Erro no reconhecimento local: {e}")
-                
         threading.Thread(target=f, daemon=True).start()
 
     def flash_effect(self):
@@ -390,24 +385,29 @@ class AppRecepcao(ctk.CTk):
                 r = requests.get(u, timeout=15)
                 if r.status_code == 200:
                     self.alunos_data = r.json().get('alunos', [])
-                    self.monitor.alunos_perfis = {} # Cache no monitor
+                    self.alunos_perfis = {} # Cache centralizado aqui na JanelaPrincipal
                     orb = cv2.ORB_create(1000)
                     
                     for a in self.alunos_data:
-                        if a.get('foto_url'):
+                        furl = a.get('foto_url')
+                        if furl:
                             try:
-                                resp = requests.get(a['foto_url'], timeout=5)
+                                # Se a URL for relativa, completa com o domínio
+                                if furl.startswith('/'): furl = f"{SITE_URL}{furl}"
+                                
+                                resp = requests.get(furl, timeout=7)
                                 if resp.status_code == 200:
                                     nparr = np.frombuffer(resp.content, np.uint8)
                                     img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-                                    # Redimensionar para padronizar
-                                    img = cv2.resize(img, (300, 300))
-                                    kp, des = orb.detectAndCompute(img, None)
-                                    self.monitor.alunos_perfis[a['matricula']] = {'des': des, 'data': a}
-                                    print(f"💾 Foto Cache: {a['nome']}")
-                            except: continue
+                                    if img is not None:
+                                        img = cv2.resize(img, (300, 300))
+                                        kp, des = orb.detectAndCompute(img, None)
+                                        self.alunos_perfis[a['matricula']] = {'des': des, 'data': a}
+                                        print(f"💾 Foto Cache: {a['nome']}")
+                            except Exception as e: 
+                                print(f"⚠️ Erro foto {a['nome']}: {e}")
                             
-                    print(f"✅ Sync Finalizado. {len(self.monitor.alunos_perfis)} rostos em memória.")
+                    print(f"✅ Sync Finalizado. {len(self.alunos_perfis)} rostos em memória.")
                     self.after(0, self.mostrar_todos)
             except Exception as e:
                 print(f"❌ Erro na sync: {e}")
