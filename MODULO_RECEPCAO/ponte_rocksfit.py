@@ -10,7 +10,7 @@ from io import BytesIO
 # --- CONFIGURAÇÕES IDENTITY ROCKS FIT ---
 SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
-CATRACA_IP = "169.254.255.255"
+CATRACA_IP = "169.254.37.150"
 CATRACA_PORTA = 3000
 SERVIDOR_PORTA = 5000
 POLLING_INTERVAL = 3
@@ -679,24 +679,35 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Protocolo TOLETUS BROADCAST (UDP Global) """
+        """ Protocolo TOLETUS MESTRE (STX + lgu + ID 0 + ETX) """
         def c():
             try:
-                # lgu + direcao + texto 
-                modo_txt = "0" if s == "0" else "1"
-                msg_txt = "Liberou Entrada" if s == "0" else "Liberou Saida"
-                pacote = f"lgu{modo_txt}{msg_txt}".encode('utf-8')
+                # O Gerenciador Toletus muitas vezes usa ID 0 (Universal) nos comandos rapidos
+                prefixo = b"\x02lgu"
+                id_universal = b"\x00" 
+                sentido = b"\x00" if s == "0" else b"\x01"
+                texto = ("Liberou Entrada" if s == "0" else "Liberou Saida").encode('utf-8')
+                pacote = prefixo + id_universal + sentido + texto + b"\x03"
                 
-                # Para usar o IP 169.254.255.255, PRECISAMOS do modo BROADCAST ativo
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Permissao especial
-                sock.settimeout(1)
-                sock.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
-                sock.close()
+                # 1. DISPARA VIA UDP (IP 150)
+                try:
+                    sock_u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    sock_u.settimeout(1)
+                    sock_u.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
+                    sock_u.close()
+                except: pass
 
-                print(f"📡 [BROADCAST] Comando enviado para {CATRACA_IP}")
+                # 2. DISPARA VIA TCP (IP 150)
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_t:
+                        sock_t.settimeout(1)
+                        sock_t.connect((CATRACA_IP, CATRACA_PORTA))
+                        sock_t.sendall(pacote)
+                except: pass
+
+                print(f"📡 [TOLETUS MESTRE] Comando enviado para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [BROADCAST] Erro: {e}")
+                print(f"❌ [TOLETUS MESTRE] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
