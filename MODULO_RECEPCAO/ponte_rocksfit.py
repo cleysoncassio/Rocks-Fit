@@ -679,37 +679,42 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Protocolo Forçado: Amarra o sinal ao cabo da catraca (IP 169.254.37.1) """
+        """ Protocolo de Precisao: lgu + Byte Nulo + Texto (Via Placa Ethernet 169.254.37.1) """
         def c():
-            LOCAL_IP = "169.254.37.1" # Seu IP na placa de rede da catraca
+            LOCAL_IP = "169.254.37.1"
             try:
-                # O comando que vimos que funciona no Toletus
-                modo_txt = "0" if s == "0" else "1"
-                msg_txt = "Liberou Entrada" if s == "0" else "Liberou Saida"
-                pacote = f"lgu{modo_txt}{msg_txt}".encode('utf-8')
+                # O comando Toletus real usa o Byte Nulo (0x00 / 0x01)
+                prefixo = b"lgu"
+                modo = b"\x00" if s == "0" else b"\x01"
+                texto = ("Liberou Entrada" if s == "0" else "Liberou Saida").encode('utf-8')
+                pacote = prefixo + modo + texto
                 
-                # 1. TENTA VIA UDP (Forçando pela placa certa)
-                try:
-                    sock_u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    sock_u.bind((LOCAL_IP, 0)) # FORCA SAIDA PELA ETHERNET
-                    sock_u.settimeout(1)
-                    sock_u.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
-                    sock_u.close()
-                except: pass
+                # Portas para testar
+                portas = [3000, 5000]
 
-                # 2. TENTA VIA TCP (Forçando pela placa certa)
-                try:
-                    sock_t = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sock_t.bind((LOCAL_IP, 0)) # FORCA SAIDA PELA ETHERNET
-                    sock_t.settimeout(1)
-                    sock_t.connect((CATRACA_IP, CATRACA_PORTA))
-                    sock_t.sendall(pacote)
-                    sock_t.close()
-                except: pass
+                for pta in portas:
+                    # 1. UDP
+                    try:
+                        sock_u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        sock_u.bind((LOCAL_IP, 0))
+                        sock_u.settimeout(0.5)
+                        sock_u.sendto(pacote, (CATRACA_IP, pta))
+                        sock_u.close()
+                    except: pass
 
-                print(f"📡 [CABO FORÇADO] Sinal enviado via {LOCAL_IP} para {CATRACA_IP}")
+                    # 2. TCP
+                    try:
+                        sock_t = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock_t.bind((LOCAL_IP, 0))
+                        sock_t.settimeout(0.5)
+                        sock_t.connect((CATRACA_IP, pta))
+                        sock_t.sendall(pacote)
+                        sock_t.close()
+                    except: pass
+
+                print(f"📡 [PRECISAO] Pacote Toletus enviado via {LOCAL_IP} para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [CABO FORÇADO] Erro: {e}")
+                print(f"❌ [PRECISAO] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
