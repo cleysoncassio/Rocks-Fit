@@ -679,24 +679,34 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Protocolo TOLETUS LiteNet V2.0 - Direcionado ao ID 3 """
+        """ Protocolo TOLETUS FINAL - Brute Force (TCP + UDP) """
         def c():
             try:
-                # Segundo o log e a tela de config: ID = 3
-                # O pacote e: lgu (prefixo) + ID (3) + Modo (0 ou 1) + Texto
-                prefixo = b"lgu"
-                id_catraca = bytes([3]) # ID identificado na foto
-                modo = b"\x00" if s == "0" else b"\x01"
-                texto = "Liberou Entrada" if s == "0" else "Liberou Saida"
-                pacote = prefixo + id_catraca + modo + texto.encode('utf-8')
+                # Segundo o log: lgu\0Liberou Entrada 
+                # Vamos testar o formato com o caractere '0' ou '1' (em vez de binario)
+                modo_txt = "0" if s == "0" else "1"
+                msg_txt = "Liberou Entrada" if s == "0" else "Liberou Saida"
+                pacote = f"lgu{modo_txt}{msg_txt}".encode('utf-8')
                 
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock.settimeout(2)
-                sock.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
-                sock.close()
-                print(f"📡 [HARDWARE ID3] Comando enviado para {CATRACA_IP}")
+                # 1. TENTA VIA UDP (Sempre rápido)
+                try:
+                    sock_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    sock_udp.settimeout(1)
+                    sock_udp.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
+                    sock_udp.close()
+                except: pass
+
+                # 2. TENTA VIA TCP (Garante entrega)
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
+                        sock_tcp.settimeout(1)
+                        sock_tcp.connect((CATRACA_IP, CATRACA_PORTA))
+                        sock_tcp.sendall(pacote)
+                except: pass
+
+                print(f"📡 [HARDWARE FINAL] Comandos disparados para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [HARDWARE ID3] Erro: {e}")
+                print(f"❌ [HARDWARE FINAL] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
