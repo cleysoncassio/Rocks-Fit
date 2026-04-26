@@ -223,18 +223,24 @@ class JanelaMonitor(ctk.CTkToplevel):
         """ Envia o frame atual para o servidor tentar identificar o aluno """
         def f():
             try:
+                print("🔍 [FACIAL] Analisando face na produção... aguarde.")
+                start_time = time.time()
                 _, b = cv2.imencode('.jpg', frame)
                 b64 = f"data:image/jpeg;base64,{base64.b64encode(b).decode('utf-8')}"
-                r = requests.post(f"{SITE_URL}/api/face-check/", data={'frame': b64, 'token': SYNC_TOKEN}, timeout=15)
+                r = requests.post(f"{SITE_URL}/api/face-check/", data={'frame': b64, 'token': SYNC_TOKEN}, timeout=30)
+                duration = time.time() - start_time
+                
                 if r.status_code == 200:
                     d = r.json()
+                    print(f"✅ [FACIAL] Reconhecido: {d.get('nome')} ({duration:.2f}s)")
                     self.after(0, lambda: self.identificar_aluno(d))
                     self.after(0, lambda: self.parent.abrir_catraca("0"))
                 else:
+                    print(f"❌ [FACIAL] Não reconhecido ou erro {r.status_code} ({duration:.2f}s)")
                     self.after(0, lambda: self.lbl_status.configure(text="❌ NÃO RECONHECIDO", text_color=COR_ERROR))
                     self.after(3000, self.reset)
             except Exception as e:
-                print(f"Falha no reconhecimento facial: {e}")
+                print(f"⚠️ [FACIAL] Erro de conexão/timeout: {e}")
         threading.Thread(target=f, daemon=True).start()
 
     def flash_effect(self):
