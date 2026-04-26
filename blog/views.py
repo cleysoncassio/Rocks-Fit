@@ -700,9 +700,9 @@ def catraca_face_check_api(request):
                            melhor_aluno = aluno
                 except: continue
 
-        # 4. Limiar de Confiança Calibrado para Rosto-a-Rosto (MAIS SENSÍVEL)
-        # Score > 35 ou Distância < 60
-        if melhor_aluno and (melhor_score > 35 or (melhor_score > 20 and melhor_dist < 65)):
+        # 4. Limiar de Confiança Calibrado para Rosto-a-Rosto (ALTA SENSIBILIDADE)
+        # Score > 25 ou (Score > 15 e Distância < 80)
+        if melhor_aluno and (melhor_score > 25 or (melhor_score >= 15 and melhor_dist < 80)):
             print(f"✅ FACIAL MATCH: {melhor_aluno.nome_completo} (Score={melhor_score}, Dist={melhor_dist:.2f})")
             return catraca_check_api(request, melhor_aluno.matricula)
         
