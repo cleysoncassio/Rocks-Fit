@@ -482,7 +482,8 @@ def catraca_sync_api(request):
             'vencimento': acc.data_vencimento.strftime('%Y-%m-%d') if acc and acc.data_vencimento else "N/A",
             'matricula': aluno.matricula,
             'dias_restantes': dias,
-            'status': aluno.status
+            'status': aluno.status,
+            'foto_url': aluno.foto.url if aluno.foto else None
         })
     
     return JsonResponse({'alunos': lista})
