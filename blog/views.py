@@ -170,9 +170,6 @@ def home(request):
     except Exception as e:
         import traceback
         return HttpResponse(f"ERRO DE DIAGNÓSTICO ROCKS-FIT (HOME): {str(e)}<br><pre>{traceback.format_exc()}</pre>", status=500)
-    except Exception as e:
-        import traceback
-        return HttpResponse(f"ERRO DE DIAGNÓSTICO ROCKS-FIT (HOME): {str(e)}<br><pre>{traceback.format_exc()}</pre>", status=500)
 
 def programs(request):
     programs_list = Program.objects.all()
