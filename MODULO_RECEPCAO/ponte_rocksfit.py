@@ -432,10 +432,55 @@ class AppRecepcao(ctk.CTk):
         self.sr = ctk.CTkScrollableFrame(self.main, fg_color="transparent"); self.sr.pack(fill="both", expand=True)
 
     def rodar_diagnostico(self):
-        script = os.path.join(BASE_DIR, "centro_diagnostico.py")
-        if os.path.exists(script):
-            import subprocess
-            threading.Thread(target=lambda: subprocess.run([sys.executable, script], creationflags=0x00000010 if os.name == 'nt' else 0), daemon=True).start()
+        """ Executa diagnóstico INTERNO profissional para manter o sistema limpo """
+        diag = ctk.CTkToplevel(self)
+        diag.title("DIAGNÓSTICO ROCKS FIT")
+        diag.geometry("500x600")
+        diag.attributes("-topmost", True)
+        diag.configure(fg_color=COR_BG)
+        
+        ctk.CTkLabel(diag, text="⚙️ DIAGNÓSTICO DE SISTEMA", font=("Space Grotesk", 22, "bold"), text_color=COR_PRIMARY).pack(pady=30)
+        
+        results_f = ctk.CTkFrame(diag, fg_color=COR_CARD, corner_radius=15, border_width=1, border_color=COR_CARD_HIGH); results_f.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+        
+        def add_line(txt, status="pending"):
+            color = COR_TEXT_SEC
+            icon = "⏳"
+            if status == "ok": color = COR_SUCCESS; icon = "✅"
+            if status == "error": color = COR_ERROR; icon = "❌"
+            l = ctk.CTkLabel(results_f, text=f"{icon} {txt}", font=("Inter", 16), text_color=color, anchor="w")
+            l.pack(fill="x", padx=25, pady=12)
+            return l
+
+        l_net = add_line("INTERNET / CONEXÃO"); diag.update()
+        try:
+            requests.get("https://google.com", timeout=3)
+            l_net.configure(text="✅ INTERNET: OK", text_color=COR_SUCCESS)
+        except: 
+            l_net.configure(text="❌ INTERNET: FALHA", text_color=COR_ERROR)
+
+        l_api = add_line("CONEXÃO COM CRM"); diag.update()
+        try:
+            r = requests.get(f"{SITE_URL}/api/catraca-sync/?token={SYNC_TOKEN}", timeout=3)
+            if r.status_code == 200:
+                l_api.configure(text=f"✅ CRM ({SITE_URL}): OK", text_color=COR_SUCCESS)
+            else:
+                l_api.configure(text=f"❌ CRM: ERRO {r.status_code}", text_color=COR_ERROR)
+        except:
+            l_api.configure(text="❌ CRM: OFFLINE", text_color=COR_ERROR)
+
+        l_board = add_line("PLACA DA CATRACA"); diag.update()
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(2)
+                if s.connect_ex((CATRACA_IP, CATRACA_PORTA)) == 0:
+                    l_board.configure(text=f"✅ PLACA ({CATRACA_IP}): ONLINE", text_color=COR_SUCCESS)
+                else:
+                    l_board.configure(text="❌ PLACA: NÃO ENCONTRADA", text_color=COR_ERROR)
+        except:
+            l_board.configure(text="❌ PLACA: ERRO DE REDE", text_color=COR_ERROR)
+
+        ctk.CTkButton(diag, text="FECHAR", font=("Inter", 14, "bold"), fg_color=COR_CARD_HIGH, command=diag.destroy).pack(pady=20)
 
     def saltar_monitor(self):
         if not self.monitor or not self.monitor.winfo_exists(): self.monitor = JanelaMonitor(self)
