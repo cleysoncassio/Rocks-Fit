@@ -679,20 +679,33 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Pulso Universal UDP: Mais rapido e evita erros de 'Placa Ocupada' """
+        """ Pulso Triplo: Tenta UDP Simples, UDP Toletus e HTTP Get para placas Universais """
         def c():
             try:
-                # O comando mais comum para placas universais: byte do numero (48 ou 49 ASCII)
-                pacote = s.encode('utf-8')
+                # 1. UDP SIMPLES
+                pacote_simples = s.encode('utf-8')
+                # 2. UDP TOLETUS
+                modo_txt = "0" if s == "0" else "1"
+                msg_txt = "Liberou Entrada" if s == "0" else "Liberou Saida"
+                pacote_toletus = f"lgu{modo_txt}{msg_txt}".encode('utf-8')
                 
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 sock.settimeout(1)
-                # Dispara para o IP da catraca na porta 3000
-                sock.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
+                sock.sendto(pacote_simples, (CATRACA_IP, CATRACA_PORTA))
+                time.sleep(0.05)
+                sock.sendto(pacote_toletus, (CATRACA_IP, CATRACA_PORTA))
                 sock.close()
-                print(f"📡 [UDP UNIVERSAL] Pulso '{s}' enviado para {CATRACA_IP}")
+
+                # 3. HTTP GET (Caso seja uma placa web)
+                # Tentamos os enderecos mais comuns de placas relay
+                urls = [f"http://{CATRACA_IP}/open", f"http://{CATRACA_IP}/relay?1=on"]
+                for url in urls:
+                    try: requests.get(url, timeout=0.5)
+                    except: continue
+
+                print(f"📡 [TRIPLO COMANDO] Disparado para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [UDP UNIVERSAL] Erro: {e}")
+                print(f"❌ [TRIPLO COMANDO] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
