@@ -264,8 +264,30 @@ class ControleAcessoAdmin(admin.ModelAdmin):
 
 @admin.register(GymSetting)
 class GymSettingAdmin(admin.ModelAdmin):
-    list_display = ('name', 'ver_logo')
+    list_display = ('name', 'ver_logo', 'catraca_fluxo')
     readonly_fields = ('ver_logo',)
+    
+    fieldsets = (
+        ('Identidade da Academia', {
+            'fields': ('name', 'logo', 'ver_logo'),
+        }),
+        ('Configurações de Fluxo da Catraca', {
+            'description': 'Configure o sentido de operação padrão dos sensores.',
+            'fields': ('catraca_fluxo',),
+        }),
+        ('Financeiro: Multas e Juros', {
+            'fields': (('multa_atraso', 'juros_mensal'), 'whatsapp_notificacao'),
+        }),
+        ('Mensagens Customizadas da Catraca', {
+            'description': 'Mensagens exibidas no Monitor de Recepção durante o acesso.',
+            'fields': (
+                ('msg_entrada', 'msg_saida'),
+                'msg_aniversario', 
+                'msg_bloqueio_crm', 
+                'msg_erro_wellhub'
+            ),
+        }),
+    )
 
     def ver_logo(self, obj):
         from django.utils.html import format_html

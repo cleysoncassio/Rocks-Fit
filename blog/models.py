@@ -577,9 +577,18 @@ class GymSetting(models.Model):
     whatsapp_notificacao = models.CharField(max_length=20, blank=True, null=True, verbose_name="WhatsApp para Suporte", help_text="Número que o aluno deve chamar ao ser barrado.")
 
     # Mensagens Customizadas da Catraca
+    msg_entrada = models.CharField(max_length=255, default="Bom treino!", verbose_name="Mensagem de Entrada")
+    msg_saida = models.CharField(max_length=255, default="Bom descanso!", verbose_name="Mensagem de Saída")
     msg_aniversario = models.CharField(max_length=255, default="Parabéns! A Rocks Fit deseja um feliz aniversário! 🎉", verbose_name="Mensagem de Aniversário")
     msg_bloqueio_crm = models.CharField(max_length=255, default="Cadastro Suspenso/Inativo. Procure a recepção.", verbose_name="Mensagem de Bloqueio (Administrativo)")
     msg_erro_wellhub = models.CharField(max_length=255, default="Erro no plano Wellhub/Gympass. Valide no app.", verbose_name="Mensagem Erro Corporativo")
+    
+    CATRACA_FLUXO_CHOICES = [
+        ('ENTRADA', 'Apenas Entrada'),
+        ('SAIDA', 'Apenas Saída'),
+        ('BIDIRECIONAL', 'Alternar Entrada/Saída Auto'),
+    ]
+    catraca_fluxo = models.CharField(max_length=20, choices=CATRACA_FLUXO_CHOICES, default='BIDIRECIONAL', verbose_name="Controle de Fluxo")
     
     def __str__(self):
         return f"Configurações de {self.name}"
