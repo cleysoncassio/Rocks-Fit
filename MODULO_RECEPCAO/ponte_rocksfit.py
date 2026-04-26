@@ -140,59 +140,51 @@ class JanelaMonitor(ctk.CTkToplevel):
 
         ctk.CTkLabel(self.header, text="ROCKS", font=("Space Grotesk", 48, "bold"), text_color=COR_TEXTO).pack(side="left")
         ctk.CTkLabel(self.header, text="FIT", font=("Space Grotesk", 48, "bold"), text_color=COR_PRIMARY).pack(side="left", padx=5)
+        
         self.container = ctk.CTkFrame(self, fg_color="transparent")
         self.container.pack(fill="both", expand=True, padx=40, pady=(20, 40))
         self.container.grid_columnconfigure(0, weight=1)
-        self.container.grid_columnconfigure(1, weight=0, minsize=450)
-        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_rowconfigure(0, weight=3) # Area da Camera (Maior)
+        self.container.grid_rowconfigure(1, weight=1) # Area de Mensagem (Abaixo)
         
-        # Área da Câmera
-        self.cam_f = ctk.CTkFrame(self.container, fg_color=COR_CARD, corner_radius=20, border_width=2, border_color=COR_PRIMARY)
-        self.cam_f.grid(row=0, column=0, sticky="nsew", padx=(0, 20))
+        # 1. ÁREA DA CÂMERA (Topo)
+        self.cam_f = ctk.CTkFrame(self.container, fg_color=COR_CARD, corner_radius=25, border_width=2, border_color=COR_CARD_HIGH)
+        self.cam_f.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
         
         self.lbl_cam = ctk.CTkLabel(self.cam_f, text="", text_color=COR_PRIMARY); self.lbl_cam.pack(expand=True, fill="both")
-        
-        # Overlay ID
-        self.lbl_cam_info = ctk.CTkLabel(self.cam_f, text="CÂMERA: ID --", font=("Inter", 14), text_color=COR_TEXT_SEC)
-        self.lbl_cam_info.place(relx=0.03, rely=0.03)
+        self.lbl_cam_info = ctk.CTkLabel(self.cam_f, text="CÂMERA ATIVA", font=("Inter", 12), text_color=COR_TEXT_SEC); self.lbl_cam_info.place(relx=0.03, rely=0.03)
+        self.btn_switch = ctk.CTkButton(self.cam_f, text="🔄 ALTERNAR", width=180, height=45, fg_color=COR_CARD_HIGH, corner_radius=15, command=self.alternar_camera); self.btn_switch.place(relx=0.5, rely=0.92, anchor="center")
 
-        # Botão Alternar
-        self.btn_switch = ctk.CTkButton(self.cam_f, text="🔄 ALTERNAR CÂMERA", width=220, height=55, fg_color=COR_CARD_HIGH, text_color=COR_TEXTO, font=("Inter", 14, "bold"), corner_radius=15, command=self.alternar_camera)
-        self.btn_switch.place(relx=0.5, rely=0.92, anchor="center")
+        # 2. PAINEL DE MENSAGEM (Abaixo da Câmera)
+        self.info_f = ctk.CTkFrame(self.container, fg_color=COR_CARD, corner_radius=25, border_width=1, border_color=COR_CARD_HIGH)
+        self.info_f.grid(row=1, column=0, sticky="nsew")
+        
+        # Grid Interno do Painel de Mensagem: [Mensagem e Nome (Esq)] [Foto (Dir)]
+        self.info_f.grid_columnconfigure(0, weight=1)
+        self.info_f.grid_columnconfigure(1, weight=0)
+        self.info_f.grid_rowconfigure(0, weight=1)
 
-        # Painel Lateral
-        self.info_f = ctk.CTkFrame(self.container, width=450, fg_color="transparent")
-        self.info_f.grid(row=0, column=1, sticky="nsew")
-        self.info_f.grid_propagate(False)
-        
-        ctk.CTkLabel(self.info_f, text="FOTO DO ALUNO", font=("Inter", 18, "bold"), text_color=COR_TEXT_SEC).pack(anchor="w", pady=(0, 10))
-        self.avatar_f = ctk.CTkFrame(self.info_f, width=410, height=410, corner_radius=25, fg_color=COR_CARD, border_width=1, border_color=COR_CARD_HIGH)
-        self.avatar_f.pack(pady=(0, 30)); self.avatar_f.pack_propagate(False)
-        self.lbl_aluno_foto = ctk.CTkLabel(self.avatar_f, text="AGUARDANDO", font=("Inter", 24, "bold"), text_color=COR_TEXT_SEC); self.lbl_aluno_foto.pack(expand=True)
-        
-        self.lbl_nome = ctk.CTkLabel(self.info_f, text="SISTEMA PRONTO", font=("Space Grotesk", 56, "bold"), text_color=COR_TEXTO, wraplength=430, justify="left"); self.lbl_nome.pack(anchor="w")
-        self.lbl_status = ctk.CTkLabel(self.info_f, text="POSICIONE-SE PARA SCAN", font=("Inter", 32, "bold"), text_color=COR_PRIMARY, wraplength=430, justify="left"); self.lbl_status.pack(anchor="w", pady=20)
-        
-        fb = ctk.CTkFrame(self.info_f, height=10, fg_color=COR_CARD_HIGH, corner_radius=5); fb.pack(fill="x", pady=20)
-        self.bar_fill = ctk.CTkFrame(fb, width=0, height=10, fg_color=COR_PRIMARY, corner_radius=5); self.bar_fill.place(x=0, y=0)
+        # Container de Texto (Mensagem e Nome)
+        self.text_f = ctk.CTkFrame(self.info_f, fg_color="transparent")
+        self.text_f.grid(row=0, column=0, sticky="nsw", padx=50, pady=30)
 
-        # --- CONTROLES MANUAIS NO MONITOR ---
-        self.manual_f = ctk.CTkFrame(self.info_f, fg_color="transparent")
-        self.manual_f.pack(side="bottom", fill="x", pady=(20, 0))
+        self.lbl_nome = ctk.CTkLabel(self.text_f, text="SISTEMA PRONTO", font=("Space Grotesk", 64, "bold"), text_color=COR_TEXTO, justify="left")
+        self.lbl_nome.pack(anchor="w")
         
-        ctk.CTkLabel(self.manual_f, text="CONTROLE MANUAL DA CATRACA", font=("Inter", 11, "bold"), text_color=COR_TEXT_SEC).pack(pady=(0, 10))
-        
-        self.btn_in = ctk.CTkButton(self.manual_f, text="🔓 LIBERAR ENTRADA", height=65, font=("Inter", 16, "bold"), 
-                                   fg_color=COR_CARD_HIGH, border_width=1, border_color=COR_PRIMARY, text_color=COR_PRIMARY,
-                                   hover_color="#1a1a1a",
-                                   command=lambda: self.parent.abrir_catraca("0"))
-        self.btn_in.pack(fill="x", pady=5)
-        
-        self.btn_out = ctk.CTkButton(self.manual_f, text="🔒 LIBERAR SAÍDA", height=65, font=("Inter", 16, "bold"), 
-                                    fg_color=COR_CARD_HIGH, border_width=1, border_color=COR_TEXT_SEC, text_color=COR_TEXT_SEC,
-                                    hover_color="#1a1a1a",
-                                    command=lambda: self.parent.abrir_catraca("1"))
-        self.btn_out.pack(fill="x", pady=5)
+        self.lbl_status = ctk.CTkLabel(self.text_f, text="APROXIME-SE PARA IDENTIFICAÇÃO", font=("Inter", 38, "bold"), text_color=COR_PRIMARY, justify="left")
+        self.lbl_status.pack(anchor="w", pady=(10, 20))
+
+        # Barra de Progresso
+        fb = ctk.CTkFrame(self.text_f, height=12, width=600, fg_color=COR_CARD_HIGH, corner_radius=6)
+        fb.pack(anchor="w")
+        self.bar_fill = ctk.CTkFrame(fb, width=0, height=12, fg_color=COR_PRIMARY, corner_radius=6); self.bar_fill.place(x=0, y=0)
+
+        # Container da Foto (Reduzida na Direita)
+        self.avatar_f = ctk.CTkFrame(self.info_f, width=280, height=280, corner_radius=25, fg_color="#050505", border_width=2, border_color=COR_CARD_HIGH)
+        self.avatar_f.grid(row=0, column=1, padx=40, pady=30); self.avatar_f.pack_propagate(False)
+        self.lbl_aluno_foto = ctk.CTkLabel(self.avatar_f, text="RKS", font=("Inter", 24, "bold"), text_color=COR_CARD_HIGH)
+        self.lbl_aluno_foto.pack(expand=True)
+.pack(fill="x", pady=5)
 
     def loop_camera(self):
         # O hardware ja foi capturado em tentar_proxima_camera() na inicializacao.
@@ -688,17 +680,22 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Retornado ao modo simples original que funcionou no botao """
+        """ Protocolo Oficial TOLETUS (Capturado do log do Gerenciador) """
         def c():
             try:
-                p = s.encode('utf-8') 
+                # O comando Toletus exige: lgu + byte binario (0 ou 1) + Texto de exibicao
+                prefixo = b"lgu"
+                modo = b"\x00" if s == "0" else b"\x01"
+                texto = "Liberou Entrada" if s == "0" else "Liberou Saida"
+                pacote = prefixo + modo + texto.encode('utf-8')
+                
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
                     k.settimeout(2)
                     k.connect((CATRACA_IP, CATRACA_PORTA))
-                    k.sendall(p)
-                    print(f"📡 [HARDWARE] Pulso enviado: {s}")
+                    k.sendall(pacote)
+                    print(f"📡 [HARDWARE TOLETUS] Comando enviado para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [HARDWARE] Erro: {e}")
+                print(f"❌ [HARDWARE TOLETUS] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
