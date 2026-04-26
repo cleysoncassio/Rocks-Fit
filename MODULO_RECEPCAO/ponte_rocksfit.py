@@ -679,33 +679,37 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Pulso Triplo: Tenta UDP Simples, UDP Toletus e HTTP Get para placas Universais """
+        """ Protocolo Forçado: Amarra o sinal ao cabo da catraca (IP 169.254.37.1) """
         def c():
+            LOCAL_IP = "169.254.37.1" # Seu IP na placa de rede da catraca
             try:
-                # 1. UDP SIMPLES
-                pacote_simples = s.encode('utf-8')
-                # 2. UDP TOLETUS
+                # O comando que vimos que funciona no Toletus
                 modo_txt = "0" if s == "0" else "1"
                 msg_txt = "Liberou Entrada" if s == "0" else "Liberou Saida"
-                pacote_toletus = f"lgu{modo_txt}{msg_txt}".encode('utf-8')
+                pacote = f"lgu{modo_txt}{msg_txt}".encode('utf-8')
                 
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock.settimeout(1)
-                sock.sendto(pacote_simples, (CATRACA_IP, CATRACA_PORTA))
-                time.sleep(0.05)
-                sock.sendto(pacote_toletus, (CATRACA_IP, CATRACA_PORTA))
-                sock.close()
+                # 1. TENTA VIA UDP (Forçando pela placa certa)
+                try:
+                    sock_u = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    sock_u.bind((LOCAL_IP, 0)) # FORCA SAIDA PELA ETHERNET
+                    sock_u.settimeout(1)
+                    sock_u.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
+                    sock_u.close()
+                except: pass
 
-                # 3. HTTP GET (Caso seja uma placa web)
-                # Tentamos os enderecos mais comuns de placas relay
-                urls = [f"http://{CATRACA_IP}/open", f"http://{CATRACA_IP}/relay?1=on"]
-                for url in urls:
-                    try: requests.get(url, timeout=0.5)
-                    except: continue
+                # 2. TENTA VIA TCP (Forçando pela placa certa)
+                try:
+                    sock_t = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock_t.bind((LOCAL_IP, 0)) # FORCA SAIDA PELA ETHERNET
+                    sock_t.settimeout(1)
+                    sock_t.connect((CATRACA_IP, CATRACA_PORTA))
+                    sock_t.sendall(pacote)
+                    sock_t.close()
+                except: pass
 
-                print(f"📡 [TRIPLO COMANDO] Disparado para {CATRACA_IP}")
+                print(f"📡 [CABO FORÇADO] Sinal enviado via {LOCAL_IP} para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [TRIPLO COMANDO] Erro: {e}")
+                print(f"❌ [CABO FORÇADO] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
