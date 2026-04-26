@@ -11,8 +11,8 @@ from io import BytesIO
 SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
 CATRACA_IP = "169.254.37.150"
-CATRACA_PORTA = 3000
-SERVIDOR_PORTA = 5000 
+CATRACA_PORTA = 5000
+SERVIDOR_PORTA = 5001 
 POLLING_INTERVAL = 3
 
 # Design System Oficial Rocks Fit (High Contrast)
