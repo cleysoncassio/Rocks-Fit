@@ -176,6 +176,24 @@ class JanelaMonitor(ctk.CTkToplevel):
         fb = ctk.CTkFrame(self.info_f, height=10, fg_color=COR_CARD_HIGH, corner_radius=5); fb.pack(fill="x", pady=20)
         self.bar_fill = ctk.CTkFrame(fb, width=0, height=10, fg_color=COR_PRIMARY, corner_radius=5); self.bar_fill.place(x=0, y=0)
 
+        # --- CONTROLES MANUAIS NO MONITOR ---
+        self.manual_f = ctk.CTkFrame(self.info_f, fg_color="transparent")
+        self.manual_f.pack(side="bottom", fill="x", pady=(20, 0))
+        
+        ctk.CTkLabel(self.manual_f, text="CONTROLE MANUAL DA CATRACA", font=("Inter", 11, "bold"), text_color=COR_TEXT_SEC).pack(pady=(0, 10))
+        
+        self.btn_in = ctk.CTkButton(self.manual_f, text="🔓 LIBERAR ENTRADA", height=65, font=("Inter", 16, "bold"), 
+                                   fg_color=COR_CARD_HIGH, border_width=1, border_color=COR_PRIMARY, text_color=COR_PRIMARY,
+                                   hover_color="#1a1a1a",
+                                   command=lambda: self.parent.abrir_catraca("0"))
+        self.btn_in.pack(fill="x", pady=5)
+        
+        self.btn_out = ctk.CTkButton(self.manual_f, text="🔒 LIBERAR SAÍDA", height=65, font=("Inter", 16, "bold"), 
+                                    fg_color=COR_CARD_HIGH, border_width=1, border_color=COR_TEXT_SEC, text_color=COR_TEXT_SEC,
+                                    hover_color="#1a1a1a",
+                                    command=lambda: self.parent.abrir_catraca("1"))
+        self.btn_out.pack(fill="x", pady=5)
+
     def loop_camera(self):
         # O hardware ja foi capturado em tentar_proxima_camera() na inicializacao.
         # Caso a capturade pare, este loop tentara recuperar.
@@ -670,30 +688,17 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Protocolo Multi-Comando: Tenta abrir a placa usando diferentes 'dialetos' técnicos """
+        """ Retornado ao modo simples original que funcionou no botao """
         def c():
-            comandos = [
-                s.encode('utf-8'),               # Padrão simples
-                (s + "\n").encode('utf-8'),      # Com pulo de linha
-                (s + "\r\n").encode('utf-8'),    # Com retorno (Padrão Windows)
-                f"\x02{s}\x03".encode('utf-8')   # Protocolo STX/ETX (Henry/TopData)
-            ]
-            
-            sucesso = False
-            for p in comandos:
-                try:
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
-                        k.settimeout(1)
-                        k.connect((CATRACA_IP, CATRACA_PORTA))
-                        k.sendall(p)
-                        print(f"📡 [HARDWARE] Enviado formato: {repr(p)} para {CATRACA_IP}")
-                        sucesso = True
-                except:
-                    continue
-            
-            if not sucesso:
-                print(f"❌ [HARDWARE] Falha total ao falar com a placa {CATRACA_IP}")
-                
+            try:
+                p = s.encode('utf-8') 
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
+                    k.settimeout(2)
+                    k.connect((CATRACA_IP, CATRACA_PORTA))
+                    k.sendall(p)
+                    print(f"📡 [HARDWARE] Pulso enviado: {s}")
+            except Exception as e:
+                print(f"❌ [HARDWARE] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
