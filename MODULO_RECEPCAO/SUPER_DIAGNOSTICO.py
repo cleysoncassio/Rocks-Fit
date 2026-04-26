@@ -28,21 +28,23 @@ def rodar_teste():
             print(f" Tentando {nome}...", end=" ", flush=True)
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.settimeout(2)
-                    inicio = time.time()
+                    s.settimeout(3)
                     s.connect((IP, porta))
                     s.sendall(cmd)
                     
-                    # Leitura da resposta
+                    # Tenta ler a resposta com insistencia
+                    time.sleep(0.2)
                     try:
                         resposta = s.recv(1024)
-                        fim = time.time()
-                        duracao = fim - inicio
+                        if not resposta:
+                            # Tenta uma segunda leitura caso a primeira falhe
+                            resposta = s.recv(1024)
                         
-                        print("✅ SUCESSO!")
-                        print(f"   [Tempo: {duracao:.3f}s]")
-                        print(f"   [Resposta Texto]: {resposta.decode('utf-8', errors='ignore')}")
+                        print("✅ CONECTADO!")
                         print(f"   [Resposta Hex  ]: {resposta.hex(' ')}")
+                        print(f"   [Resposta Texto]: {resposta.decode('utf-8', errors='ignore')}")
+                    except socket.timeout:
+                        print("⚠️ TIMEOUT (Sem resposta da placa)")
                         
                         if b"OK" in resposta or len(resposta) > 0:
                             print("   ⭐ A placa RECONHECEU este formato!")
