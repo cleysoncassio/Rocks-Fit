@@ -679,30 +679,20 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Teste Mestre: Tenta todos os formatos comuns para Placas Universais """
+        """ Pulso Universal UDP: Mais rapido e evita erros de 'Placa Ocupada' """
         def c():
             try:
-                # Formatos de comando para placas universais
-                modo_txt = "0" if s == "0" else "1"
-                msg_txt = "Liberou Entrada" if s == "0" else "Liberou Saida"
+                # O comando mais comum para placas universais: byte do numero (48 ou 49 ASCII)
+                pacote = s.encode('utf-8')
                 
-                # Lista de tentativas
-                pacotes = [
-                    s.encode('utf-8'),                              # 1. Simples (0 ou 1)
-                    f"lgu{modo_txt}{msg_txt}".encode('utf-8'),      # 2. Toletus ASCII
-                    f"RELAY{int(s)+1}=ON".encode('utf-8'),          # 3. Formato Relay
-                    b"\x01\x01\x01\x01"                             # 4. Formato Binario Puro
-                ]
-                
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as k:
-                    k.settimeout(2)
-                    k.connect((CATRACA_IP, CATRACA_PORTA))
-                    for p in pacotes:
-                        k.sendall(p)
-                        time.sleep(0.1) # Pequena pausa entre formatos
-                    print(f"📡 [TESTE MESTRE] Comandos enviados para {CATRACA_IP}:{CATRACA_PORTA}")
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.settimeout(1)
+                # Dispara para o IP da catraca na porta 3000
+                sock.sendto(pacote, (CATRACA_IP, CATRACA_PORTA))
+                sock.close()
+                print(f"📡 [UDP UNIVERSAL] Pulso '{s}' enviado para {CATRACA_IP}")
             except Exception as e:
-                print(f"❌ [TESTE MESTRE] Erro: {e} (VERIFIQUE SE O GERENCIADOR TOLETUS ESTA FECHADO)")
+                print(f"❌ [UDP UNIVERSAL] Erro: {e}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
