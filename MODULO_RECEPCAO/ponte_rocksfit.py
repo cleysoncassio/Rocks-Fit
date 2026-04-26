@@ -184,7 +184,6 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.avatar_f.grid(row=0, column=1, padx=40, pady=30); self.avatar_f.pack_propagate(False)
         self.lbl_aluno_foto = ctk.CTkLabel(self.avatar_f, text="RKS", font=("Inter", 24, "bold"), text_color=COR_CARD_HIGH)
         self.lbl_aluno_foto.pack(expand=True)
-.pack(fill="x", pady=5)
 
     def loop_camera(self):
         # O hardware ja foi capturado em tentar_proxima_camera() na inicializacao.
