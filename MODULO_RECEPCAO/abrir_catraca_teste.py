@@ -3,7 +3,7 @@ import sys
 
 # CONFIGURAÇÕES
 CATRACA_IP = "169.254.37.150"
-CATRACA_PORTA = 3000
+CATRACA_PORTA = 5000
 
 def testar_abertura():
     print(f"--- TESTE DE ABERTURA ROCKS FIT ---")
