@@ -16,20 +16,21 @@ pip install -r requirements.txt
 
 # 2. Configurações de Banco de Dados
 echo "Executando tarefas de banco de dados..."
-# (REMOVIDO: O Reset inicial já foi feito. Desativado para não apagar seus testes no deploy)
-# python3 manage.py shell -c "from blog.models import Aluno; Aluno.objects.all().update(status='INATIVO')"
 
 # ============================================
 # CONCEDER PERMISSÕES DO BANCO (CRÍTICO!)
 # ============================================
-echo "Configurando permissões do banco de dados..."
+echo "Passo 2a: Configurando permissões do banco de dados..."
 python3 -c "
+import os, sys, django
 from django.db import connection
-import django
-import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sitio.settings.production')
-django.setup()
+print('[PYTHON] Inicializando ambiente Django...')
+sys.stdout.flush()
 try:
+    django.setup()
+    print('[PYTHON] Ambiente carregado. Concedendo privilégios...')
+    sys.stdout.flush()
     with connection.cursor() as cursor:
         cursor.execute('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO CURRENT_USER;')
         cursor.execute('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO CURRENT_USER;')
@@ -38,22 +39,18 @@ try:
         cursor.execute('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO CURRENT_USER;')
         print('✅ Permissões do banco configuradas com sucesso')
 except Exception as e:
-        print(f'⚠️ Aviso ao configurar permissões: {e}')
+    print(f'⚠️ Aviso ao configurar permissões: {e}')
+    import traceback
+    traceback.print_exc()
+sys.stdout.flush()
 "
 
 # Executa migrações
-echo "Executando migrações..."
-python3 manage.py makemigrations --noinput || true
+echo "Passo 2b: Executando migrações..."
 python3 manage.py migrate --noinput
 
-# Carrega dados iniciais (REMOVIDO EM PRODUÇÃO PARA NÃO SOBRESCREVER DADOS REAIS)
-# if [ -f "dados_blog.json" ]; then
-#     echo "Carregando dados iniciais..."
-#     python3 manage.py loaddata dados_blog.json || true
-# fi
-
 # Coleta arquivos estáticos
-echo "Coletando arquivos estáticos..."
+echo "Passo 3: Coletando arquivos estáticos..."
 python3 manage.py collectstatic --noinput
 
 echo "=== BUILD CONCLUÍDO COM SUCESSO ==="

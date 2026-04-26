@@ -43,7 +43,7 @@ DATABASES = {
 }
 
 # ============================================
-# FUNÇÃO PARA CONCEDER PERMISSÕES (executa na inicialização)
+# FUNÇÃO PARA CONCEDER PERMISSÕES
 # ============================================
 def grant_db_permissions():
     """Concede permissões no PostgreSQL para o usuário atual"""
@@ -61,11 +61,8 @@ def grant_db_permissions():
         print(f"⚠️ Aviso ao conceder permissões: {e}")
         return False
 
-# Executar concessão de permissões (tenta, mas não quebra se falhar)
-try:
-    grant_db_permissions()
-except Exception as e:
-    print(f"⚠️ Erro na concessão de permissões: {e}")
+# REMOVIDO: A chamada automática foi movida para build.sh e start.sh 
+# para evitar travamentos durante o carregamento das configurações.
 
 # Segurança HTTPS
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
