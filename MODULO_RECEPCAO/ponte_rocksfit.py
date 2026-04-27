@@ -11,7 +11,7 @@ from io import BytesIO
 SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
 CATRACA_IP = "169.254.37.150"
-CATRACA_PORTA = 5000
+CATRACA_PORTA = 1001
 SERVIDOR_PORTA = 5001 
 POLLING_INTERVAL = 3
 
@@ -679,20 +679,25 @@ class AppRecepcao(ctk.CTk):
         except: pass
 
     def abrir_catraca(self, s="0"):
-        """ Restaurado para a versao 'Ouro' (O que funcionava anteriormente) """
+        """ Versao Final Blindada: Tenta Porta 1001 (Wireshark) com fallback para 3000/5000 """
         def c():
-            try:
-                # O comando exato do seu arquivo antigo
-                comando = b"lgu\x00Liberou Entrada" if s == "0" else b"lgu\x01Liberou Saida"
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.settimeout(5)
-                    sock.connect((CATRACA_IP, CATRACA_PORTA))
-                    sock.sendall(comando)
-                    # Espera a resposta (Crucial para a placa Toletus processar)
-                    resposta = sock.recv(1024)
-                    print(f"📡 [OURO] Catraca respondeu: {resposta.decode('utf-8', errors='ignore')}")
-            except Exception as e:
-                print(f"❌ [OURO] Erro ao falar com a catraca: {e}")
+            # Lista de portas em ordem de probabilidade
+            portas_teste = [1001, 3000, 5000]
+            comando = b"lgu\x00Liberou Entrada" if s == "0" else b"lgu\x01Liberou Saida"
+            
+            for pta in portas_teste:
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                        sock.settimeout(2) # Timeout curto para busca rapida
+                        sock.connect((CATRACA_IP, pta))
+                        sock.sendall(comando)
+                        sock.recv(1024) # Confirmacao
+                        print(f"✅ [SUCESSO] Catraca aberta na porta {pta}")
+                        return # SUCESSO! Sai do loop
+                except:
+                    continue # Tenta a proxima porta
+            
+            print(f"❌ [FALHA TOTAL] Nenhuma porta (1001, 3000, 5000) respondeu no IP {CATRACA_IP}")
         threading.Thread(target=c, daemon=True).start()
 
     def remote_polling(self):
