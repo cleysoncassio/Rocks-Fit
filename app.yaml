@@ -9,6 +9,6 @@ handlers:
   script: auto
 
 env_variables:
-  DJANGO_SETTINGS_MODULE: "sitio.settings"
+  DJANGO_SETTINGS_MODULE: "sitio.settings.production"
 
 
