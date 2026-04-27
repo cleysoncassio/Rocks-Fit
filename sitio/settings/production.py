@@ -8,7 +8,7 @@ from decouple import config
 from .base import *
 
 # Configurações de segurança: DEBUG deve ser False em produção
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = True # Alterado temporariamente para debugar o erro 500
 
 # ============================================
 # ALLOWED_HOSTS CORRIGIDO - NÃO usar '*' em produção!
