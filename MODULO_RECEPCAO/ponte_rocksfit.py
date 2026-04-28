@@ -224,14 +224,22 @@ class JanelaMonitor(ctk.CTkToplevel):
                         if self.lbl_cam.winfo_exists():
                             self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text="") if self.lbl_cam.winfo_exists() else None)
 
-                        # Gatilho de Reconhecimento
+                        # Gatilho de Reconhecimento (Instantâneo)
                         if len(faces) > 0 and self.face_cooldown <= 0:
                             self.face_lock_time += 1
-                            if self.face_lock_time == 3:
+                            if self.face_lock_time == 2:
                                 self.after(0, lambda: self.lbl_status.configure(text="🔍 SCANNEANDO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
-                            if self.face_lock_time >= 5: # Pequeno delay de estabilização
-                                self.reconhecer_facial(frame) # Usa o frame original cru para biometria
-                                self.face_cooldown = 80
+                            
+                            if self.face_lock_time >= 3: # Trigger ultra-rápido (aprox 100ms)
+                                (x, y, w, h) = faces[0]
+                                # Recorta a face com uma pequena margem de segurança (20%)
+                                margin = int(w * 0.2)
+                                x1, y1 = max(0, x - margin), max(0, y - margin)
+                                x2, y2 = min(frame.shape[1], x + w + margin), min(frame.shape[0], y + h + margin)
+                                face_roi = frame[y1:y2, x1:x2]
+                                
+                                self.reconhecer_facial(face_roi) 
+                                self.face_cooldown = 60 # Cooldown menor para re-tentativa rápida
                                 self.face_lock_time = 0
                         else:
                             if self.face_cooldown > 0: self.face_cooldown -= 1
@@ -266,15 +274,14 @@ class JanelaMonitor(ctk.CTkToplevel):
         def f():
             with self.facial_lock:
                 try:
-                    print("🔍 [FACIAL LOCAL] Analisando...")
-                    start_time = time.time()
-                    
-                    # 1. Preparar Frame da Webcam
-                    gray_webcam = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    # 1. Preparar Frame da Webcam (ROI focado no rosto)
+                    # Redimensiona para um tamanho padrão para acelerar o processamento
+                    frame_small = cv2.resize(frame, (300, 300))
+                    gray_webcam = cv2.cvtColor(frame_small, cv2.COLOR_BGR2GRAY)
                     gray_webcam = cv2.equalizeHist(gray_webcam)
                     
-                    # Dourado: 2000 pontos para reconhecimento ultra-preciso e rápido
-                    orb = cv2.ORB_create(2000)
+                    # 1000 pontos é o ideal para velocidade/precisão em ROI de rosto
+                    orb = cv2.ORB_create(1000)
                     kp_webcam, des_webcam = orb.detectAndCompute(gray_webcam, None)
                     
                     if des_webcam is None: return
@@ -282,25 +289,28 @@ class JanelaMonitor(ctk.CTkToplevel):
                     melhor_aluno = None
                     melhor_score = 0
                     
-                    # 2. Comparar com perfis em cache
+                    # 2. Comparar com perfis em cache (Busca Linear Otimizada)
                     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
                     
                     for matricula, perfil in perfis.items():
                         if perfil['des'] is None: continue
                         try:
                             matches = bf.match(des_webcam, perfil['des'])
+                            # Distância 75 é um bom equilíbrio; score é o número de matches bons
                             score = len([m for m in matches if m.distance < 75])
                             
                             if score > melhor_score:
                                 melhor_score = score
                                 melhor_aluno = perfil['data']
+                                
+                            # EARLY EXIT: Se encontrou um match muito forte, não precisa continuar a busca
+                            if melhor_score > 45:
+                                break
                         except: continue
-
-                    duration = time.time() - start_time
                     
-                    # 3. Limiar de Decisão Local
+                    # 3. Limiar de Decisão Local (ajustado para ROI 300x300)
                     if melhor_aluno and melhor_score > 18:
-                        print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score}) em {duration:.2f}s")
+                        print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score})")
                         try:
                             r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=5)
                             data = r.json() if r.status_code in [200, 403] else {}
