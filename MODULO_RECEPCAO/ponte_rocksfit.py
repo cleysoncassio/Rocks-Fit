@@ -442,9 +442,9 @@ class AppRecepcao(ctk.CTk):
         self.tag_temporaria = None
         self.overlay_bio = None
         
-        # Garante pastas de logs local
+        # Garante pastas de logs local para o CRM
         self.log_path = os.path.join(BASE_DIR, "CONTROLE_ACESSO")
-        self.log_alunos_path = os.path.join(BASE_DIR, "LOGS_ALUNOS")
+        self.log_alunos_path = os.path.join(self.log_path, "ALUNOS")
         for p in [self.log_path, self.log_alunos_path]:
             if not os.path.exists(p): os.makedirs(p)
         
@@ -824,28 +824,41 @@ class AppRecepcao(ctk.CTk):
     def salvar_log_local(self, d, sentido):
         try:
             agora_dt = datetime.now()
-            hoje = agora_dt.strftime("%Y-%m-%d")
+            hoje = agora_dt.strftime("%d-%m-%Y")
             agora = agora_dt.strftime("%H:%M:%S")
             nome = d.get('nome', 'N/D').upper()
             matricula = d.get('matricula', 'N/D')
             tipo = "ENTRADA" if str(sentido) == "0" else "SAÍDA"
             
             linha = f"[{agora}] {tipo} | {matricula} - {nome}\n"
-            linha_indiv = f"[{hoje} {agora}] {tipo}\n"
+            linha_crm = f"{agora};{tipo};{matricula};{nome}\n"
             
-            # 1. Log Diário Geral
-            arquivo_geral = os.path.join(self.log_path, f"ACESSO_{hoje}.log")
+            # 1. Log Diário Geral (.txt para o CRM)
+            arquivo_geral = os.path.join(self.log_path, f"DIARIO_{hoje}.txt")
             with open(arquivo_geral, "a", encoding="utf-8") as f:
                 f.write(linha)
                 
-            # 2. Log Individual do Aluno (Específico)
+            # 2. Log Individual do Aluno (Específico em .txt)
             if matricula != "N/D":
-                arquivo_indiv = os.path.join(self.log_alunos_path, f"{matricula}.log")
+                arquivo_indiv = os.path.join(self.log_alunos_path, f"{matricula}.txt")
                 with open(arquivo_indiv, "a", encoding="utf-8") as f:
-                    f.write(linha_indiv)
+                    f.write(f"{hoje} {agora} - {tipo}\n")
+            
+            # Bip de Confirmação (Cross-platform)
+            self.emitir_bip()
                     
         except Exception as e:
             print(f"⚠️ Erro ao salvar log local: {e}")
+
+    def emitir_bip(self):
+        try:
+            if sys.platform == "win32":
+                import winsound
+                winsound.Beep(1000, 250)
+            else:
+                sys.stdout.write('\a')
+                sys.stdout.flush()
+        except: pass
 
     def abrir_historico(self):
         hwin = ctk.CTkToplevel(self)
