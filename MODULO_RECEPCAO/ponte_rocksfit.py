@@ -73,30 +73,45 @@ class JanelaMonitor(ctk.CTkToplevel):
         threading.Thread(target=self.loop_camera, daemon=True).start()
 
     def tentar_proxima_camera(self):
-        # Tenta os índices 1, 0, 2
-        indices = [1, 0, 2]
+        # No Linux, tentamos uma faixa maior de índices e priorizamos V4L2
+        indices = [0, 1, 2, 3, 4]
+        print(f"--- INICIANDO BUSCA DE HARDWARE (LINUX) ---")
+        
         for idx in indices:
-            print(f"Buscando hardware no index {idx}...")
-            # Tenta com e sem CAP_DSHOW para compatibilidade máxima
-            for backend in [cv2.CAP_ANY, cv2.CAP_DSHOW]:
-                temp_cap = cv2.VideoCapture(idx, backend)
-                if temp_cap.isOpened():
-                    if hasattr(self, 'cap') and self.cap:
-                        try: self.cap.release()
-                        except: pass
+            # Backends para tentar: CAP_ANY (padrão) e CAP_V4L2 (específico para Linux)
+            # Nota: CAP_DSHOW removido por ser apenas Windows
+            for backend in [cv2.CAP_V4L2, cv2.CAP_ANY]:
+                try:
+                    print(f"Tentando Câmera {idx} com backend {backend}...")
+                    temp_cap = cv2.VideoCapture(idx, backend)
                     
-                    self.cap = temp_cap
-                    # Tenta configurar, mas ignora se falhar (alguns drivers não aceitam)
-                    try:
-                        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                    except: pass
-                    
-                    self.camera_index = idx
-                    self.after(0, lambda: self.lbl_cam_info.configure(text=f"CÂMERA ATIVA: ID {idx} {'(USB)' if idx > 0 else '(PC)'}"))
-                    return True
-                else:
-                    temp_cap.release()
+                    if temp_cap.isOpened():
+                        # Testa se realmente consegue ler um frame
+                        ret, frame = temp_cap.read()
+                        if ret:
+                            print(f"✅ Câmera {idx} encontrada e respondendo!")
+                            if self.cap:
+                                try: self.cap.release()
+                                except: pass
+                            
+                            self.cap = temp_cap
+                            # Configurações de imagem
+                            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                            self.camera_index = idx
+                            
+                            info_txt = f"CÂMERA ATIVA: ID {idx} (Webcam)"
+                            self.after(0, lambda: self.lbl_cam_info.configure(text=info_txt))
+                            return True
+                        else:
+                            print(f"⚠️ Câmera {idx} abriu mas não enviou imagem.")
+                            temp_cap.release()
+                    else:
+                        temp_cap.release()
+                except Exception as e:
+                    print(f"❌ Erro ao tentar câmera {idx}: {e}")
+        
+        print("🔴 NENHUMA CÂMERA ENCONTRADA")
         return False
 
     def setup_ui(self):
@@ -158,12 +173,14 @@ class JanelaMonitor(ctk.CTkToplevel):
 
     def loop_camera(self):
         # O hardware ja foi capturado em tentar_proxima_camera() na inicializacao.
-        # Caso a capturade pare, este loop tentara recuperar.
+        # Caso a captura pare, este loop tentara recuperar.
+        falhas_consecutivas = 0
         
         while self.rodando:
-            if hasattr(self, 'cap') and self.cap.isOpened():
+            if hasattr(self, 'cap') and self.cap and self.cap.isOpened():
                 ret, frame = self.cap.read()
                 if ret:
+                    falhas_consecutivas = 0
                     try:
                         frame_ui = frame.copy()
                         frame_ui = cv2.flip(frame_ui, 1) # Espelhar para ficar natural
@@ -213,7 +230,7 @@ class JanelaMonitor(ctk.CTkToplevel):
                         if self.lbl_cam.winfo_exists():
                             self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text="") if self.lbl_cam.winfo_exists() else None)
 
-                        # Gatilho de Reconhecimento (Cronômetro reduzido para ser mais rápido)
+                        # Gatilho de Reconhecimento
                         if len(faces) > 0 and self.face_cooldown <= 0:
                             self.face_lock_time += 1
                             if self.face_lock_time == 3:
@@ -229,10 +246,17 @@ class JanelaMonitor(ctk.CTkToplevel):
                     except Exception as e:
                         print(f"⚠️ Erro no processamento de frame: {e}")
                 else:
-                    # Falha na leitura: tenta recuperar hardware se persistir
+                    falhas_consecutivas += 1
+                    if falhas_consecutivas > 30:
+                        print("⚠️ Perda de sinal persistente. Tentando reconectar...")
+                        self.tentar_proxima_camera()
+                        falhas_consecutivas = 0
                     time.sleep(0.1)
             else:
-                time.sleep(1) # Câmera desconectada ou erro crítico
+                # Câmera desconectada ou erro crítico: tenta recuperar a cada 2 segundos
+                print("🔄 Tentando inicializar hardware de vídeo...")
+                self.tentar_proxima_camera()
+                time.sleep(2)
             time.sleep(0.033) # Estabiliza em ~30 FPS
 
     def reconhecer_facial(self, frame):
