@@ -62,6 +62,7 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.last_crop_rect = None # [x1, y1, x2, y2]
         self.zoom_persistence = 0
         self.facial_lock = threading.Lock()
+        self.cap = None
         
         # Inicia em modo Tela Cheia
         self.attributes('-fullscreen', True)
@@ -98,35 +99,6 @@ class JanelaMonitor(ctk.CTkToplevel):
                     temp_cap.release()
         return False
 
-    def alternar_camera(self):
-        proximo = (self.camera_index + 1) % 3
-        print(f"Alternando para hardware {proximo}...")
-        
-        # Tenta os backends no novo índice
-        sucesso = False
-        for backend in [cv2.CAP_ANY, cv2.CAP_DSHOW]:
-            temp_cap = cv2.VideoCapture(proximo, backend)
-            if temp_cap.isOpened():
-                if hasattr(self, 'cap') and self.cap:
-                    try: self.cap.release()
-                    except: pass
-                
-                self.cap = temp_cap
-                try:
-                    self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                    self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                except: pass
-                
-                self.camera_index = proximo
-                self.after(0, lambda: self.lbl_cam_info.configure(text=f"CÂMERA ATIVA: ID {proximo} {'(USB)' if proximo > 0 else '(PC)'}"))
-                sucesso = True
-                break
-            else:
-                temp_cap.release()
-        
-        if not sucesso:
-            self.tentar_proxima_camera()
-
     def setup_ui(self):
         # Header Laranja com Logomarca
         self.header = ctk.CTkFrame(self, fg_color="transparent", height=80)
@@ -153,7 +125,6 @@ class JanelaMonitor(ctk.CTkToplevel):
         
         self.lbl_cam = ctk.CTkLabel(self.cam_f, text="", text_color=COR_PRIMARY); self.lbl_cam.pack(expand=True, fill="both")
         self.lbl_cam_info = ctk.CTkLabel(self.cam_f, text="CÂMERA ATIVA", font=("Inter", 12), text_color=COR_TEXT_SEC); self.lbl_cam_info.place(relx=0.03, rely=0.03)
-        self.btn_switch = ctk.CTkButton(self.cam_f, text="🔄 ALTERNAR", width=180, height=45, fg_color=COR_CARD_HIGH, corner_radius=15, command=self.alternar_camera); self.btn_switch.place(relx=0.5, rely=0.92, anchor="center")
 
         # 2. PAINEL DE MENSAGEM (Abaixo da Câmera)
         self.info_f = ctk.CTkFrame(self.container, fg_color=COR_CARD, corner_radius=25, border_width=1, border_color=COR_CARD_HIGH)
@@ -491,7 +462,7 @@ class AppRecepcao(ctk.CTk):
 
         l_cam = add_line("CÂMERA E HARDWARE"); diag.update()
         try:
-            if hasattr(self, 'monitor') and self.monitor and self.monitor.cap:
+            if hasattr(self, 'monitor') and self.monitor and getattr(self.monitor, 'cap', None):
                 ret, _ = self.monitor.cap.read()
                 if ret:
                     l_cam.configure(text="✅ CÂMERA: OK (IMAGEM CAPTURADA)", text_color=COR_SUCCESS)
