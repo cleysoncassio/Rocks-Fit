@@ -59,8 +59,6 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.camera_index = 1 # Começa tentando a externa
         self.face_cooldown = 0
         self.face_lock_time = 0
-        self.last_crop_rect = None # [x1, y1, x2, y2]
-        self.zoom_persistence = 0
         self.facial_lock = threading.Lock()
         self.cap = None
         
@@ -190,24 +188,12 @@ class JanelaMonitor(ctk.CTkToplevel):
                             # Ajuste de escala e vizinhos para ambiente de academia (luz variada)
                             faces = FACE_CASCADE.detectMultiScale(gray, 1.1, 4)
                             
-                        # --- LÓGICA DE FOCO SUAVE (SMOOTH ZOOM) ---
+                        # --- DESTAQUE NO ROSTO (SEM ZOOM) ---
                         if len(faces) > 0:
                             (x, y, w, h) = faces[0]
-                            # Aumentado o padding para 1.2 para diminuir o zoom excessivo
-                            pad_w, pad_h = int(w*1.2), int(h*1.2)
-                            x1, y1 = max(0, x-pad_w), max(0, y-pad_h)
-                            x2, y2 = min(frame_ui.shape[1], x+w+pad_w), min(frame_ui.shape[0], y+h+pad_h)
-                            self.last_crop_rect = (x1, y1, x2, y2)
-                            self.zoom_persistence = 20
                             cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 2)
                         
-                        if self.zoom_persistence > 0 and self.last_crop_rect:
-                            x1, y1, x2, y2 = self.last_crop_rect
-                            frame_display = frame_ui[y1:y2, x1:x2]
-                            self.zoom_persistence -= 1
-                        else:
-                            frame_display = frame_ui
-                            last_crop_rect = None
+                        frame_display = frame_ui
 
                         if not self.winfo_exists(): break
                         
