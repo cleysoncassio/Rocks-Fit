@@ -76,8 +76,8 @@ class JanelaMonitor(ctk.CTkToplevel):
         print(f"--- INICIANDO BUSCA DE HARDWARE (LINUX) ---")
         
         for idx in indices:
-            # Backends para tentar: CAP_ANY (padrão) e CAP_V4L2 (específico para Linux)
-            for backend in [cv2.CAP_V4L2, cv2.CAP_ANY]:
+            # Backends para tentar: CAP_V4L2 (Linux), CAP_DSHOW (Windows), CAP_ANY (Padrão)
+            for backend in [cv2.CAP_V4L2, cv2.CAP_DSHOW, cv2.CAP_ANY]:
                 try:
                     print(f"Tentando Câmera {idx} com backend {backend}...")
                     temp_cap = cv2.VideoCapture(idx, backend)
@@ -431,6 +431,7 @@ class AppRecepcao(ctk.CTk):
         self.title("ROCKS FIT - GESTOR")
         self.geometry("1100x850"); self.configure(fg_color=COR_BG)
         self.monitor = None; self.alunos_data = []; self.aluno_em_registro = None
+        self.alunos_perfis = {} # Inicializa vazio para evitar erro de atributo
         self.tag_temporaria = None
         self.overlay_bio = None
         
@@ -638,8 +639,8 @@ class AppRecepcao(ctk.CTk):
             c = ctk.CTkFrame(self.sr, fg_color=COR_CARD, height=90, corner_radius=15); c.pack(fill="x", pady=6, padx=10); c.pack_propagate(False)
             
             # Foto do Aluno na Lista (Gestão)
-            perfil = self.alunos_perfis.get(a.get('matricula'))
-            img_list = perfil['photo_ui'] if perfil and 'photo_ui' in perfil else None
+            perfil = self.alunos_perfis.get(a.get('matricula')) if hasattr(self, 'alunos_perfis') else None
+            img_list = perfil.get('photo_ui') if perfil and isinstance(perfil, dict) else None
             
             f_img = ctk.CTkFrame(c, width=60, height=60, corner_radius=30, fg_color="#050505", border_width=1, border_color=COR_CARD_HIGH)
             f_img.pack(side="left", padx=15); f_img.pack_propagate(False)
