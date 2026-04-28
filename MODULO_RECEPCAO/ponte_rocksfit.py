@@ -258,7 +258,7 @@ class JanelaMonitor(ctk.CTkToplevel):
                                 face_roi = frame[y1:y2, x1:x2]
                                 
                                 self.reconhecer_facial(face_roi) 
-                                self.face_cooldown = 40 # Cooldown reduzido para 1.3s
+                                self.face_cooldown = 35 # Cooldown de ~1.1s
                                 self.face_lock_time = 0
                         else:
                             if self.face_cooldown > 0: self.face_cooldown -= 1
@@ -381,8 +381,8 @@ class JanelaMonitor(ctk.CTkToplevel):
         # 3. Registro de Histórico
         self.parent.adicionar_ao_historico(d)
         
-        # 4. Agenda Limpeza
-        self.reset_timer = self.after(3000, self.reset)
+        # 4. Agenda Limpeza Ultra-Rápida para o próximo aluno
+        self.reset_timer = self.after(2000, self.reset)
 
     def reset(self):
         self.reset_timer = None
@@ -459,7 +459,7 @@ class AppRecepcao(ctk.CTk):
         ctk.CTkLabel(self.logo_f, text="ROCKS", font=("Space Grotesk", 28, "bold"), text_color=COR_TEXTO).pack(side="left")
         ctk.CTkLabel(self.logo_f, text="FIT", font=("Space Grotesk", 28, "bold"), text_color=COR_PRIMARY).pack(side="left", padx=2)
         
-        btn_st = {"height": 55, "corner_radius": 10, "font": ("Inter", 13, "bold")}
+        btn_st = {"height": 48, "corner_radius": 12, "font": ("Inter", 13, "bold")}
         ctk.CTkButton(self.sidebar, text="🖥️  MONITORAR", fg_color=COR_PRIMARY, text_color="#000", hover_color="#ff8533", command=self.saltar_monitor, **btn_st).pack(pady=(10, 8), padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="🔄  ATUALIZAR", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.carregar_alunos, **btn_st).pack(pady=8, padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="📑  HISTÓRICO", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.abrir_historico, **btn_st).pack(pady=8, padx=20, fill="x")
@@ -679,8 +679,8 @@ class AppRecepcao(ctk.CTk):
             tem_foto = True if a.get('foto_url') else False
             btn_foto_st = {"state": "disabled", "fg_color": "#1a1a1a"} if tem_foto else {"fg_color": COR_CARD_HIGH}
             
-            ctk.CTkButton(af, text="📸", width=45, height=45, hover_color=COR_PRIMARY, command=lambda aid=a['id']: self.reg_foto_imediata(aid), **btn_foto_st).pack(side="left", padx=5)
-            ctk.CTkButton(af, text="☝️", width=45, height=45, fg_color=COR_CARD_HIGH, hover_color=COR_PRIMARY, command=lambda aid=a['id']: self.iniciar_registro_digital(aid)).pack(side="left", padx=5)
+            ctk.CTkButton(af, text="📸", width=42, height=42, hover_color=COR_PRIMARY, command=lambda aid=a['id']: self.reg_foto_imediata(aid), **btn_foto_st).pack(side="left", padx=4)
+            ctk.CTkButton(af, text="☝️", width=42, height=42, fg_color=COR_CARD_HIGH, hover_color=COR_PRIMARY, command=lambda aid=a['id']: self.iniciar_registro_digital(aid)).pack(side="left", padx=4)
 
     def iniciar_registro_digital(self, aid):
         aluno = next((a for a in self.alunos_data if a['id'] == aid), {'nome': 'Aluno'})
