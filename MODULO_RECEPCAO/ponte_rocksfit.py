@@ -313,23 +313,31 @@ class JanelaMonitor(ctk.CTkToplevel):
                     melhor_score = 0
                     
                     # 2. Comparar com perfis em cache (Busca Linear Otimizada)
-                    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                    # Nota: crossCheck deve ser False para usar knnMatch
+                    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
                     
                     for matricula, perfil in perfis.items():
                         if perfil['des'] is None: continue
                         try:
-                            matches = bf.match(des_webcam, perfil['des'])
-                            # Reduzido a distância para 64 (Mais rigoroso que 75)
-                            score = len([m for m in matches if m.distance < 64])
+                            # Matcher com Teste de Razão de Lowe (Muito mais preciso)
+                            matches = bf.knnMatch(des_webcam, perfil['des'], k=2)
+                            
+                            # Filtra apenas os "bons" matches (onde a melhor opção é muito melhor que a segunda)
+                            bons_matches = []
+                            for m, n in matches:
+                                if m.distance < 0.75 * n.distance:
+                                    bons_matches.append(m)
+                            
+                            score = len(bons_matches)
                             
                             if score > melhor_score:
                                 melhor_score = score
                                 melhor_aluno = perfil['data']
-                            if melhor_score > 45: break
+                            if melhor_score > 60: break # Sucesso garantido
                         except: continue
                     
-                    # 3. Limiar de Decisão Local (Equilíbrio de Precisão 30)
-                    if melhor_aluno and melhor_score > 30:
+                    # 3. Limiar de Decisão Local (Aumentado para 50 para Segurança Máxima)
+                    if melhor_aluno and melhor_score > 50:
                         print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score})")
                         try:
                             # Validação no servidor com timeout curto para não travar a interface
@@ -618,8 +626,17 @@ class AppRecepcao(ctk.CTk):
                                     photo_ctk = ctk.CTkImage(light_image=img_ui, dark_image=img_ui, size=(50, 50))
                                     
                                     if img_gray is not None:
-                                        img_gray = cv2.resize(img_gray, (300, 300))
-                                        kp, des = orb.detectAndCompute(img_gray, None)
+                                        # Recorta APENAS a Face da foto de perfil (Limpeza de Fundo)
+                                        f_p = FACE_CASCADE.detectMultiScale(img_gray, 1.1, 4)
+                                        if len(f_p) > 0:
+                                            (fx, fy, fw, fh) = f_p[0]
+                                            img_face = img_gray[fy:fy+fh, fx:fx+fw]
+                                            img_face = cv2.resize(img_face, (300, 300))
+                                        else:
+                                            # Se não detectar face clara, usa a imagem toda como fallback
+                                            img_face = cv2.resize(img_gray, (300, 300))
+                                            
+                                        kp, des = orb.detectAndCompute(img_face, None)
                                         self.alunos_perfis[a['matricula']] = {
                                             'des': des, 
                                             'data': a, 
