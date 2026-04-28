@@ -77,7 +77,6 @@ class JanelaMonitor(ctk.CTkToplevel):
         
         for idx in indices:
             # Backends para tentar: CAP_ANY (padrão) e CAP_V4L2 (específico para Linux)
-            # Nota: CAP_DSHOW removido por ser apenas Windows
             for backend in [cv2.CAP_V4L2, cv2.CAP_ANY]:
                 try:
                     print(f"Tentando Câmera {idx} com backend {backend}...")
@@ -93,12 +92,18 @@ class JanelaMonitor(ctk.CTkToplevel):
                                 except: pass
                             
                             self.cap = temp_cap
-                            # Configurações de imagem
+                            
+                            # 🔧 CONFIGURAÇÕES AVANÇADAS ROCKS FIT
                             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                            self.camera_index = idx
+                            self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)          # Autofoco ligado
+                            self.cap.set(cv2.CAP_PROP_FOCUS, 0)              # Automático
+                            self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)   # Autoexposição
+                            self.cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)       # Brilho médio
+                            self.cap.set(cv2.CAP_PROP_CONTRAST, 0.6)         # Contraste aumentado
                             
-                            info_txt = f"CÂMERA ATIVA: ID {idx} (Webcam)"
+                            self.camera_index = idx
+                            info_txt = f"CÂMERA ATIVA: ID {idx} (Webcam) | AUTOFOC ON | CONTRASTE AJUSTADO"
                             self.after(0, lambda: self.lbl_cam_info.configure(text=info_txt))
                             return True
                         else:
@@ -173,6 +178,7 @@ class JanelaMonitor(ctk.CTkToplevel):
         # O hardware ja foi capturado em tentar_proxima_camera() na inicializacao.
         # Caso a captura pare, este loop tentara recuperar.
         falhas_consecutivas = 0
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         
         while self.rodando:
             if hasattr(self, 'cap') and self.cap and self.cap.isOpened():
@@ -183,15 +189,32 @@ class JanelaMonitor(ctk.CTkToplevel):
                         frame_ui = frame.copy()
                         frame_ui = cv2.flip(frame_ui, 1) # Espelhar para ficar natural
                         gray = cv2.cvtColor(frame_ui, cv2.COLOR_BGR2GRAY)
+                        
+                        # 🔥 APLICA CLAHE PARA MELHOR CONTRASTE EM ACADEMIAS (LUZ VARIÁVEL)
+                        gray_equalized = clahe.apply(gray)
+                        
                         faces = []
                         if OPENCV_OK:
-                            # Ajuste de escala e vizinhos para ambiente de academia (luz variada)
-                            faces = FACE_CASCADE.detectMultiScale(gray, 1.1, 4)
+                            # 🔧 PARÂMETROS REFINADOS ROCKS FIT
+                            faces = FACE_CASCADE.detectMultiScale(
+                                gray_equalized,
+                                scaleFactor=1.05,      # Mais sensível (padrão 1.1)
+                                minNeighbors=6,        # Reduz falsos positivos (padrão 4)
+                                minSize=(80, 80),      # Ignora rostos muito distantes
+                                maxSize=(500, 500)     # Ignora ruído/proximidade excessiva
+                            )
                             
-                        # --- DESTAQUE NO ROSTO (SEM ZOOM) ---
                         if len(faces) > 0:
                             (x, y, w, h) = faces[0]
-                            cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 2)
+                            cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 3)
+                            
+                            # 🔥 APLICA FUNDO DISTORCIDO (DESFOQUE BOKEH)
+                            # Cria uma versão desfocada do frame total
+                            blurred = cv2.GaussianBlur(frame_ui, (55, 55), 30)
+                            # Restaura apenas a região do rosto (ROI) sem desfoque
+                            roi = frame_ui[y:y+h, x:x+w]
+                            blurred[y:y+h, x:x+w] = roi
+                            frame_ui = blurred
                         
                         frame_display = frame_ui
 
@@ -221,8 +244,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                             self.face_lock_time += 1
                             if self.face_lock_time == 3:
                                 self.after(0, lambda: self.lbl_status.configure(text="🔍 SCANNEANDO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
-                            if self.face_lock_time > 8:
-                                self.reconhecer_facial(frame)
+                            if self.face_lock_time >= 5: # Pequeno delay de estabilização
+                                self.reconhecer_facial(frame) # Usa o frame original cru para biometria
                                 self.face_cooldown = 80
                                 self.face_lock_time = 0
                         else:
