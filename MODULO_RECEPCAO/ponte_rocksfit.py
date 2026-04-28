@@ -361,7 +361,14 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.cam_f.configure(border_color="#ffffff")
         self.after(100, lambda: self.cam_f.configure(border_color=COR_PRIMARY))
 
-        # Cancela timer de reset anterior se houver
+    def identificar_aluno(self, d):
+        # 1. Atualiza Interface Principal
+        self.lbl_nome.configure(text=d.get('nome', 'IDENTIFICADO').upper())
+        msg = d.get('mensagem', 'ACESSO LIBERADO').upper()
+        self.lbl_status.configure(text=msg, text_color=COR_SUCCESS)
+        self.bar_fill.configure(width=300, fg_color=COR_SUCCESS)
+
+        # 2. Gestão de Memória e Reset
         if self.reset_timer:
             self.after_cancel(self.reset_timer)
             self.reset_timer = None
@@ -369,10 +376,10 @@ class JanelaMonitor(ctk.CTkToplevel):
         if d.get('foto_url'): 
             threading.Thread(target=self.carregar_foto, args=(d.get('foto_url'),), daemon=True).start()
         
-        # Adiciona ao histórico central do gestor
+        # 3. Registro de Histórico
         self.parent.adicionar_ao_historico(d)
         
-        # Agenda o reset para 3 segundos (Mais ágil)
+        # 4. Agenda Limpeza
         self.reset_timer = self.after(3000, self.reset)
 
     def reset(self):
