@@ -350,20 +350,34 @@ class JanelaMonitor(ctk.CTkToplevel):
         msg = d.get('mensagem', 'ACESSO LIBERADO').upper()
         self.lbl_status.configure(text=msg, text_color=COR_SUCCESS)
         self.bar_fill.configure(width=300, fg_color=COR_SUCCESS)
-        if d.get('foto_url'): threading.Thread(target=self.carregar_foto, args=(d.get('foto_url'),), daemon=True).start()
-        threading.Timer(5, self.reset).start()
+        
+        if d.get('foto_url'): 
+            threading.Thread(target=self.carregar_foto, args=(d.get('foto_url'),), daemon=True).start()
+        
+        # Agenda o reset para 5 segundos na thread principal (Thread-safe)
+        self.after(5000, self.reset)
 
     def reset(self):
-        self.lbl_nome.configure(text="SISTEMA PRONTO")
-        self.lbl_status.configure(text="POSICIONE-SE PARA SCAN", text_color=COR_PRIMARY)
-        self.lbl_aluno_foto.configure(image=None, text="AGUARDANDO"); self.bar_fill.configure(width=0, fg_color=COR_PRIMARY)
+        if self.lbl_nome.winfo_exists():
+            self.lbl_nome.configure(text="SISTEMA PRONTO")
+            self.lbl_status.configure(text="POSICIONE-SE PARA SCAN", text_color=COR_PRIMARY)
+            self.lbl_aluno_foto.configure(image=None, text="AGUARDANDO")
+            self.bar_fill.configure(width=0, fg_color=COR_PRIMARY)
 
     def carregar_foto(self, url):
         try:
             r = requests.get(url, timeout=5)
-            i = Image.open(BytesIO(r.content)).resize((280, 280), Image.Resampling.LANCZOS)
-            p = ImageTk.PhotoImage(i); self.lbl_aluno_foto.configure(image=p, text=""); self.lbl_aluno_foto.image = p
+            if r.status_code == 200:
+                i = Image.open(BytesIO(r.content)).resize((280, 280), Image.Resampling.LANCZOS)
+                p = ImageTk.PhotoImage(i)
+                # Atualização segura na thread principal
+                self.after(0, lambda: self._set_foto(p))
         except: pass
+
+    def _set_foto(self, photo):
+        if self.lbl_aluno_foto.winfo_exists():
+            self.lbl_aluno_foto.configure(image=photo, text="")
+            self.lbl_aluno_foto.image = photo
 
     def fechar(self):
         self.rodando = False
