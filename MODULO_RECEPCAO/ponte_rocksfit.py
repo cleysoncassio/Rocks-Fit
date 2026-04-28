@@ -193,7 +193,19 @@ class JanelaMonitor(ctk.CTkToplevel):
         falhas_consecutivas = 0
         
         while self.rodando:
-            if hasattr(self, 'cap') and self.cap and self.cap.isOpened():
+            # Lógica de Compartilhamento de Hardware com o CRM
+            if self.parent.camera_liberada:
+                if self.cap:
+                    self.cap.release()
+                    self.cap = None
+                self.after(0, lambda: self.lbl_cam.configure(image=None, text="DISPOSITIVO LIBERADO PARA O CRM\n\n(Clique em 'RETOMAR MONITOR' para voltar)"))
+                time.sleep(0.5)
+                continue
+            
+            if not self.cap:
+                self.cap = cv2.VideoCapture(self.cam_id)
+
+            if self.cap and self.cap.isOpened():
                 ret, frame = self.cap.read()
                 if ret:
                     falhas_consecutivas = 0
@@ -449,6 +461,7 @@ class AppRecepcao(ctk.CTk):
         self.historico_acessos = [] # Lista global de acessos
         self.tag_temporaria = None
         self.overlay_bio = None
+        self.camera_liberada = False # Estado para compartilhamento com o CRM
         
         # Garante pastas de logs local para o CRM
         self.log_path = os.path.join(BASE_DIR, "CONTROLE_ACESSO")
@@ -484,6 +497,8 @@ class AppRecepcao(ctk.CTk):
         
         btn_st = {"height": 48, "corner_radius": 12, "font": ("Inter", 13, "bold")}
         ctk.CTkButton(self.sidebar, text="🖥️  MONITORAR", fg_color=COR_PRIMARY, text_color="#000", hover_color="#ff8533", command=self.saltar_monitor, **btn_st).pack(pady=(10, 8), padx=20, fill="x")
+        self.btn_cam_lock = ctk.CTkButton(self.sidebar, text="📷  LIBERAR CÂMERA", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.toggle_camera_hardware, **btn_st)
+        self.btn_cam_lock.pack(pady=8, padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="🔄  ATUALIZAR", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.carregar_alunos, **btn_st).pack(pady=8, padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="📑  HISTÓRICO", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.abrir_historico, **btn_st).pack(pady=8, padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="📂  LOGS TXT", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.abrir_pasta_logs, **btn_st).pack(pady=8, padx=20, fill="x")
@@ -881,6 +896,13 @@ class AppRecepcao(ctk.CTk):
                 sys.stdout.write('\a')
                 sys.stdout.flush()
         except: pass
+
+    def toggle_camera_hardware(self):
+        self.camera_liberada = not self.camera_liberada
+        if self.camera_liberada:
+            self.btn_cam_lock.configure(text="🎥  RETOMAR MONITOR", fg_color=COR_SUCCESS, text_color="#000")
+        else:
+            self.btn_cam_lock.configure(text="📷  LIBERAR CÂMERA", fg_color=COR_CARD, text_color=COR_TEXTO)
 
     def abrir_pasta_logs(self):
         try:
