@@ -243,8 +243,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                         if self.lbl_cam.winfo_exists():
                             self.after(0, lambda: self.lbl_cam.configure(image=self.photo, text="") if self.lbl_cam.winfo_exists() else None)
 
-                        # Gatilho de Reconhecimento (Instantâneo)
-                        if len(faces) > 0 and self.face_cooldown <= 0:
+                        # Gatilho de Reconhecimento (Bloqueado se já houver alguém na tela)
+                        if len(faces) > 0 and self.face_cooldown <= 0 and self.lbl_nome.cget("text") == "SISTEMA PRONTO":
                             self.face_lock_time += 1
                             if self.face_lock_time == 2:
                                 self.after(0, lambda: self.lbl_status.configure(text="🔍 SCANNEANDO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
@@ -258,7 +258,7 @@ class JanelaMonitor(ctk.CTkToplevel):
                                 face_roi = frame[y1:y2, x1:x2]
                                 
                                 self.reconhecer_facial(face_roi) 
-                                self.face_cooldown = 35 # Cooldown de ~1.1s
+                                self.face_cooldown = 80 # Cooldown de 2.5s para evitar loop
                                 self.face_lock_time = 0
                         else:
                             if self.face_cooldown > 0: self.face_cooldown -= 1
