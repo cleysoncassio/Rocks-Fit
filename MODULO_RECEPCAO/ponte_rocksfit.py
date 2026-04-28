@@ -248,6 +248,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                             self.face_lock_time += 1
                             if self.face_lock_time == 2:
                                 self.after(0, lambda: self.lbl_status.configure(text="🔍 SCANNEANDO...", text_color="#FFF") if self.lbl_status.winfo_exists() else None)
+                                # Limpa a foto anterior para sinalizar novo scan
+                                self.after(0, lambda: self.lbl_aluno_foto.configure(image=None, text="PROCESSANDO...") if self.lbl_aluno_foto.winfo_exists() else None)
                             
                             if self.face_lock_time >= 3: # Trigger ultra-rápido (aprox 100ms)
                                 (x, y, w, h) = faces[0]
@@ -366,6 +368,10 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.after(100, lambda: self.cam_f.configure(border_color=COR_PRIMARY))
 
     def identificar_aluno(self, d):
+        # 0. Limpeza Imediata de qualquer resquício anterior
+        self.lbl_aluno_foto.configure(image=None, text="CARREGANDO...")
+        self.lbl_aluno_foto.image = None
+        
         # 1. Atualiza Interface Principal
         self.lbl_nome.configure(text=d.get('nome', 'IDENTIFICADO').upper())
         msg = d.get('mensagem', 'ACESSO LIBERADO').upper()
@@ -394,6 +400,7 @@ class JanelaMonitor(ctk.CTkToplevel):
             self.lbl_nome.configure(text="SISTEMA PRONTO")
             self.lbl_status.configure(text="POSICIONE-SE PARA SCAN", text_color=COR_PRIMARY)
             self.lbl_aluno_foto.configure(image=None, text="AGUARDANDO")
+            self.lbl_aluno_foto.image = None # Destrói referência
             self.bar_fill.configure(width=0, fg_color=COR_PRIMARY)
 
     def carregar_foto(self, url):
