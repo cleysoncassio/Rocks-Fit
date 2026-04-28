@@ -442,9 +442,11 @@ class AppRecepcao(ctk.CTk):
         self.tag_temporaria = None
         self.overlay_bio = None
         
-        # Garante pasta de logs local
+        # Garante pastas de logs local
         self.log_path = os.path.join(BASE_DIR, "CONTROLE_ACESSO")
-        if not os.path.exists(self.log_path): os.makedirs(self.log_path)
+        self.log_alunos_path = os.path.join(BASE_DIR, "LOGS_ALUNOS")
+        for p in [self.log_path, self.log_alunos_path]:
+            if not os.path.exists(p): os.makedirs(p)
         
         self.setup_ui()
         threading.Thread(target=self.servidor_bio, daemon=True).start()
@@ -821,16 +823,27 @@ class AppRecepcao(ctk.CTk):
 
     def salvar_log_local(self, d, sentido):
         try:
-            hoje = datetime.now().strftime("%Y-%m-%d")
-            arquivo = os.path.join(self.log_path, f"ACESSO_{hoje}.log")
-            agora = datetime.now().strftime("%H:%M:%S")
+            agora_dt = datetime.now()
+            hoje = agora_dt.strftime("%Y-%m-%d")
+            agora = agora_dt.strftime("%H:%M:%S")
             nome = d.get('nome', 'N/D').upper()
             matricula = d.get('matricula', 'N/D')
             tipo = "ENTRADA" if str(sentido) == "0" else "SAÍDA"
             
             linha = f"[{agora}] {tipo} | {matricula} - {nome}\n"
-            with open(arquivo, "a", encoding="utf-8") as f:
+            linha_indiv = f"[{hoje} {agora}] {tipo}\n"
+            
+            # 1. Log Diário Geral
+            arquivo_geral = os.path.join(self.log_path, f"ACESSO_{hoje}.log")
+            with open(arquivo_geral, "a", encoding="utf-8") as f:
                 f.write(linha)
+                
+            # 2. Log Individual do Aluno (Específico)
+            if matricula != "N/D":
+                arquivo_indiv = os.path.join(self.log_alunos_path, f"{matricula}.log")
+                with open(arquivo_indiv, "a", encoding="utf-8") as f:
+                    f.write(linha_indiv)
+                    
         except Exception as e:
             print(f"⚠️ Erro ao salvar log local: {e}")
 
