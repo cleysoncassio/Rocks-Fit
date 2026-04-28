@@ -47,6 +47,19 @@ try:
     OPENCV_OK = True
 except: OPENCV_OK = False
 
+def preparar_imagem_circular(img_pil, size=(280, 280)):
+    """ Recorta uma imagem PIL em formato de círculo perfeito """
+    img_pil = img_pil.convert("RGBA").resize(size, Image.Resampling.LANCZOS)
+    mask = Image.new("L", size, 0)
+    draw = Image.new("L", size, 0)
+    from PIL import ImageDraw
+    draw_mask = ImageDraw.Draw(mask)
+    draw_mask.ellipse((0, 0) + size, fill=255)
+    
+    result = Image.new("RGBA", size, (0, 0, 0, 0))
+    result.paste(img_pil, (0, 0), mask=mask)
+    return result
+
 # --- UI COMPONENTS ---
 
 class JanelaMonitor(ctk.CTkToplevel):
@@ -311,8 +324,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                                 break
                         except: continue
                     
-                    # 3. Limiar de Decisão Local (ajustado para ROI 300x300)
-                    if melhor_aluno and melhor_score > 18:
+                    # 3. Limiar de Decisão Local (Aumentado para 25 para evitar falsos positivos)
+                    if melhor_aluno and melhor_score > 25:
                         print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score})")
                         try:
                             r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=5)
@@ -374,8 +387,9 @@ class JanelaMonitor(ctk.CTkToplevel):
         try:
             r = requests.get(url, timeout=5)
             if r.status_code == 200:
-                i = Image.open(BytesIO(r.content)).resize((280, 280), Image.Resampling.LANCZOS)
-                p = ImageTk.PhotoImage(i)
+                img_pil = Image.open(BytesIO(r.content))
+                img_circ = preparar_imagem_circular(img_pil, (280, 280))
+                p = ImageTk.PhotoImage(img_circ)
                 # Atualização segura na thread principal
                 self.after(0, lambda: self._set_foto(p))
         except: pass
@@ -575,8 +589,9 @@ class AppRecepcao(ctk.CTk):
                                     nparr = np.frombuffer(resp.content, np.uint8)
                                     # Para processamento ORB (Grayscale)
                                     img_gray = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-                                    # Para exibição na UI (RGB)
-                                    img_ui = Image.open(BytesIO(resp.content)).resize((60, 60), Image.Resampling.LANCZOS)
+                                    # Para exibição na UI (Circular RGB)
+                                    img_pil = Image.open(BytesIO(resp.content))
+                                    img_ui = preparar_imagem_circular(img_pil, (60, 60))
                                     photo_ctk = ctk.CTkImage(light_image=img_ui, dark_image=img_ui, size=(50, 50))
                                     
                                     if img_gray is not None:
