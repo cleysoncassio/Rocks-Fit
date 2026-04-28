@@ -92,18 +92,12 @@ class JanelaMonitor(ctk.CTkToplevel):
                                 except: pass
                             
                             self.cap = temp_cap
-                            
-                            # 🔧 CONFIGURAÇÕES AVANÇADAS ROCKS FIT
+                            # CONFIGURAÇÕES BÁSICAS (DEIXA O HARDWARE CONTROLAR LUZ/FOCO AUTOMATICAMENTE)
                             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                            self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)          # Autofoco ligado
-                            self.cap.set(cv2.CAP_PROP_FOCUS, 0)              # Automático
-                            self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)   # Autoexposição
-                            self.cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)       # Brilho médio
-                            self.cap.set(cv2.CAP_PROP_CONTRAST, 0.6)         # Contraste aumentado
                             
                             self.camera_index = idx
-                            info_txt = f"CÂMERA ATIVA: ID {idx} (Webcam) | AUTOFOC ON | CONTRASTE AJUSTADO"
+                            info_txt = f"CÂMERA ATIVA: ID {idx} (Webcam) | AJUSTE AUTOMÁTICO"
                             self.after(0, lambda: self.lbl_cam_info.configure(text=info_txt))
                             return True
                         else:
@@ -178,7 +172,6 @@ class JanelaMonitor(ctk.CTkToplevel):
         # O hardware ja foi capturado em tentar_proxima_camera() na inicializacao.
         # Caso a captura pare, este loop tentara recuperar.
         falhas_consecutivas = 0
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         
         while self.rodando:
             if hasattr(self, 'cap') and self.cap and self.cap.isOpened():
@@ -190,31 +183,23 @@ class JanelaMonitor(ctk.CTkToplevel):
                         frame_ui = cv2.flip(frame_ui, 1) # Espelhar para ficar natural
                         gray = cv2.cvtColor(frame_ui, cv2.COLOR_BGR2GRAY)
                         
-                        # 🔥 APLICA CLAHE PARA MELHOR CONTRASTE EM ACADEMIAS (LUZ VARIÁVEL)
-                        gray_equalized = clahe.apply(gray)
+                        # Ajuste Automático de Brilho/Contraste (Global e Rápido)
+                        gray_balanced = cv2.equalizeHist(gray)
                         
                         faces = []
                         if OPENCV_OK:
-                            # 🔧 PARÂMETROS REFINADOS ROCKS FIT
+                            # Parâmetros Balanceados: Rápido e Fiel
                             faces = FACE_CASCADE.detectMultiScale(
-                                gray_equalized,
-                                scaleFactor=1.05,      # Mais sensível (padrão 1.1)
-                                minNeighbors=6,        # Reduz falsos positivos (padrão 4)
-                                minSize=(80, 80),      # Ignora rostos muito distantes
-                                maxSize=(500, 500)     # Ignora ruído/proximidade excessiva
+                                gray_balanced,
+                                scaleFactor=1.1,       # Velocidade padrão
+                                minNeighbors=5,       # Equilíbrio entre precisão e falsos positivos
+                                minSize=(100, 100)    # Ignora ruídos distantes
                             )
                             
                         if len(faces) > 0:
                             (x, y, w, h) = faces[0]
-                            cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 3)
-                            
-                            # 🔥 APLICA FUNDO DISTORCIDO (DESFOQUE BOKEH)
-                            # Cria uma versão desfocada do frame total
-                            blurred = cv2.GaussianBlur(frame_ui, (55, 55), 30)
-                            # Restaura apenas a região do rosto (ROI) sem desfoque
-                            roi = frame_ui[y:y+h, x:x+w]
-                            blurred[y:y+h, x:x+w] = roi
-                            frame_ui = blurred
+                            # Apenas a moldura de foco, sem desfoque de fundo para manter a fluidez
+                            cv2.rectangle(frame_ui, (x, y), (x+w, y+h), (242, 113, 33), 2)
                         
                         frame_display = frame_ui
 
