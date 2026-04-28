@@ -296,15 +296,15 @@ class JanelaMonitor(ctk.CTkToplevel):
             with self.facial_lock:
                 try:
                     # 1. Preparar Frame da Webcam (ROI focado no rosto com Realce de Detalhes)
-                    frame_small = cv2.resize(frame, (300, 300))
+                    frame_small = cv2.resize(frame, (200, 200))
                     gray_webcam = cv2.cvtColor(frame_small, cv2.COLOR_BGR2GRAY)
                     
-                    # CLAHE: Realce adaptativo de contraste para revelar poros e traços finos
+                    # CLAHE: Realce adaptativo de contraste
                     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
                     gray_webcam = clahe.apply(gray_webcam)
                     
-                    # 1200 pontos para maior densidade de informação
-                    orb = cv2.ORB_create(1200)
+                    # 700 pontos é o equilíbrio perfeito entre velocidade e detalhe
+                    orb = cv2.ORB_create(700)
                     kp_webcam, des_webcam = orb.detectAndCompute(gray_webcam, None)
                     
                     if des_webcam is None: return
@@ -333,7 +333,7 @@ class JanelaMonitor(ctk.CTkToplevel):
                             if score > melhor_score:
                                 melhor_score = score
                                 melhor_aluno = perfil['data']
-                            if melhor_score > 60: break # Sucesso garantido
+                            if melhor_score > 45: break # Early Exit (Match Seguro)
                         except: continue
                     
                     # 3. Limiar de Decisão Local (Reajustado para 35 - Equilíbrio Perfeito)
@@ -606,7 +606,7 @@ class AppRecepcao(ctk.CTk):
                     self.after(0, lambda: self.lbl_flow_status.configure(text=fluxo_txt))
 
                     self.alunos_perfis = {} # Cache centralizado aqui na JanelaPrincipal
-                    orb = cv2.ORB_create(1200)
+                    orb = cv2.ORB_create(700)
                     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
                     
                     for a in self.alunos_data:
@@ -632,12 +632,12 @@ class AppRecepcao(ctk.CTk):
                                         if len(f_p) > 0:
                                             (fx, fy, fw, fh) = f_p[0]
                                             img_face = img_gray[fy:fy+fh, fx:fx+fw]
-                                            img_face = cv2.resize(img_face, (300, 300))
+                                            img_face = cv2.resize(img_face, (200, 200))
                                             # Aplica o mesmo realce da webcam para paridade de features
                                             img_face = clahe.apply(img_face)
                                         else:
                                             # Se não detectar face clara, usa a imagem toda como fallback
-                                            img_face = cv2.resize(img_gray, (300, 300))
+                                            img_face = cv2.resize(img_gray, (200, 200))
                                             img_face = clahe.apply(img_face)
                                             
                                         kp, des = orb.detectAndCompute(img_face, None)
