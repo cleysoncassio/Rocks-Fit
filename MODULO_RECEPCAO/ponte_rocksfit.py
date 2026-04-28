@@ -258,7 +258,7 @@ class JanelaMonitor(ctk.CTkToplevel):
                                 face_roi = frame[y1:y2, x1:x2]
                                 
                                 self.reconhecer_facial(face_roi) 
-                                self.face_cooldown = 60 # Cooldown menor para re-tentativa rápida
+                                self.face_cooldown = 40 # Cooldown reduzido para 1.3s
                                 self.face_lock_time = 0
                         else:
                             if self.face_cooldown > 0: self.face_cooldown -= 1
@@ -386,6 +386,8 @@ class JanelaMonitor(ctk.CTkToplevel):
 
     def reset(self):
         self.reset_timer = None
+        self.face_cooldown = 0
+        self.face_lock_time = 0
         if self.lbl_nome.winfo_exists():
             self.lbl_nome.configure(text="SISTEMA PRONTO")
             self.lbl_status.configure(text="POSICIONE-SE PARA SCAN", text_color=COR_PRIMARY)
