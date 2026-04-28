@@ -74,6 +74,7 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.face_lock_time = 0
         self.facial_lock = threading.Lock()
         self.cap = None
+        self.reset_timer = None # Referência para o timer de limpeza
         
         # Inicia em modo Tela Cheia
         self.attributes('-fullscreen', True)
@@ -360,12 +361,10 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.cam_f.configure(border_color="#ffffff")
         self.after(100, lambda: self.cam_f.configure(border_color=COR_PRIMARY))
 
-    def identificar_aluno(self, d):
-        self.lbl_nome.configure(text=d.get('nome', 'IDENTIFICADO').upper())
-        # Exibe a mensagem personalizada vinda do servidor (Aniversário, Boas Vindas, etc)
-        msg = d.get('mensagem', 'ACESSO LIBERADO').upper()
-        self.lbl_status.configure(text=msg, text_color=COR_SUCCESS)
-        self.bar_fill.configure(width=300, fg_color=COR_SUCCESS)
+        # Cancela timer de reset anterior se houver
+        if self.reset_timer:
+            self.after_cancel(self.reset_timer)
+            self.reset_timer = None
         
         if d.get('foto_url'): 
             threading.Thread(target=self.carregar_foto, args=(d.get('foto_url'),), daemon=True).start()
@@ -373,10 +372,11 @@ class JanelaMonitor(ctk.CTkToplevel):
         # Adiciona ao histórico central do gestor
         self.parent.adicionar_ao_historico(d)
         
-        # Agenda o reset para 5 segundos na thread principal (Thread-safe)
-        self.after(5000, self.reset)
+        # Agenda o reset para 3 segundos (Mais ágil)
+        self.reset_timer = self.after(3000, self.reset)
 
     def reset(self):
+        self.reset_timer = None
         if self.lbl_nome.winfo_exists():
             self.lbl_nome.configure(text="SISTEMA PRONTO")
             self.lbl_status.configure(text="POSICIONE-SE PARA SCAN", text_color=COR_PRIMARY)
@@ -395,7 +395,9 @@ class JanelaMonitor(ctk.CTkToplevel):
         except: pass
 
     def _set_foto(self, photo):
-        if self.lbl_aluno_foto.winfo_exists():
+        # Só aplica a foto se o sistema ainda estiver no modo "IDENTIFICADO"
+        # Se já tiver dado reset (SISTEMA PRONTO), não coloca a foto do aluno anterior
+        if self.lbl_aluno_foto.winfo_exists() and self.lbl_nome.cget("text") != "SISTEMA PRONTO":
             self.lbl_aluno_foto.configure(image=photo, text="")
             self.lbl_aluno_foto.image = photo
 
