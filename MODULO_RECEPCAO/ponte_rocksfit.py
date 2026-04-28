@@ -293,11 +293,13 @@ class JanelaMonitor(ctk.CTkToplevel):
         def f():
             with self.facial_lock:
                 try:
-                    # 1. Preparar Frame da Webcam (ROI focado no rosto)
-                    # Redimensiona para um tamanho padrão para acelerar o processamento
+                    # 1. Preparar Frame da Webcam (ROI focado no rosto com Realce de Detalhes)
                     frame_small = cv2.resize(frame, (300, 300))
                     gray_webcam = cv2.cvtColor(frame_small, cv2.COLOR_BGR2GRAY)
-                    gray_webcam = cv2.equalizeHist(gray_webcam)
+                    
+                    # CLAHE: Realce adaptativo de contraste para revelar poros e traços finos
+                    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+                    gray_webcam = clahe.apply(gray_webcam)
                     
                     # 1000 pontos é o ideal para velocidade/precisão em ROI de rosto
                     orb = cv2.ORB_create(1000)
@@ -315,8 +317,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                         if perfil['des'] is None: continue
                         try:
                             matches = bf.match(des_webcam, perfil['des'])
-                            # Distância 75 é um bom equilíbrio; score é o número de matches bons
-                            score = len([m for m in matches if m.distance < 75])
+                            # Reduzido a distância para 64 (Mais rigoroso que 75)
+                            score = len([m for m in matches if m.distance < 64])
                             
                             if score > melhor_score:
                                 melhor_score = score
@@ -327,8 +329,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                                 break
                         except: continue
                     
-                    # 3. Limiar de Decisão Local (Aumentado para 25 para evitar falsos positivos)
-                    if melhor_aluno and melhor_score > 25:
+                    # 3. Limiar de Decisão Local (Aumentado para 40 para Precisão Industrial)
+                    if melhor_aluno and melhor_score > 40:
                         print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score})")
                         try:
                             r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=5)
