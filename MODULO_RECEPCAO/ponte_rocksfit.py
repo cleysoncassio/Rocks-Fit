@@ -464,20 +464,14 @@ class AppRecepcao(ctk.CTk):
         ctk.CTkButton(self.sidebar, text="🔄  ATUALIZAR", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.carregar_alunos, **btn_st).pack(pady=8, padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="📑  HISTÓRICO", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.abrir_historico, **btn_st).pack(pady=8, padx=20, fill="x")
         
-        ctk.CTkFrame(self.sidebar, height=1, fg_color=COR_CARD_HIGH).pack(fill="x", pady=25, padx=30)
-        ctk.CTkButton(self.sidebar, text="🔓  ENTRADA", fg_color="#1a120b", text_color=COR_PRIMARY, border_width=1, border_color=COR_PRIMARY, command=lambda: self.abrir_catraca("0"), **btn_st).pack(pady=8, padx=20, fill="x")
-        ctk.CTkButton(self.sidebar, text="🔒  SAÍDA", fg_color="#121212", text_color=COR_TEXT_SEC, border_width=1, border_color=COR_CARD_HIGH, command=lambda: self.abrir_catraca("1"), **btn_st).pack(pady=8, padx=20, fill="x")
-
-        ctk.CTkFrame(self.sidebar, height=1, fg_color=COR_CARD_HIGH).pack(fill="x", pady=15, padx=30)
+        ctk.CTkFrame(self.sidebar, height=1, fg_color=COR_CARD_HIGH).pack(fill="x", pady=20, padx=30)
         
-        # Indicador de Fluxo
-        self.flow_f = ctk.CTkFrame(self.sidebar, fg_color=COR_CARD_HIGH, corner_radius=8, height=40)
-        self.flow_f.pack(pady=10, padx=20, fill="x"); self.flow_f.pack_propagate(False)
-        ctk.CTkLabel(self.flow_f, text="MODO:", font=("Inter", 11, "bold"), text_color=COR_TEXT_SEC).pack(side="left", padx=15)
-        self.lbl_flow_status = ctk.CTkLabel(self.flow_f, text="CARREGANDO...", font=("Inter", 11, "bold"), text_color=COR_PRIMARY)
-        self.lbl_flow_status.pack(side="right", padx=15)
+        # Botões de Liberar (Manual)
+        ctk.CTkButton(self.sidebar, text="🔓  ENTRADA", fg_color="#1a120b", text_color=COR_PRIMARY, border_width=1, border_color=COR_PRIMARY, command=lambda: self.abrir_catraca("0"), **btn_st).pack(pady=6, padx=20, fill="x")
+        ctk.CTkButton(self.sidebar, text="🔒  SAÍDA", fg_color="#121212", text_color=COR_TEXT_SEC, border_width=1, border_color=COR_CARD_HIGH, command=lambda: self.abrir_catraca("1"), **btn_st).pack(pady=6, padx=20, fill="x")
 
-        ctk.CTkButton(self.sidebar, text="⚙️ DIAGNÓSTICO", fg_color="transparent", text_color=COR_TEXT_SEC, hover_color=COR_CARD, command=self.rodar_diagnostico, **btn_st).pack(pady=0, padx=25, fill="x")
+        # Botão Diagnóstico reposicionado para não sumir
+        ctk.CTkButton(self.sidebar, text="⚙️  DIAGNÓSTICO", fg_color="transparent", text_color=COR_TEXT_SEC, hover_color=COR_CARD, command=self.rodar_diagnostico, **btn_st).pack(pady=(20, 0), padx=20, fill="x")
 
         self.main = ctk.CTkFrame(self, fg_color="transparent"); self.main.pack(side="right", fill="both", expand=True, padx=40, pady=40)
         
