@@ -303,8 +303,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
                     gray_webcam = clahe.apply(gray_webcam)
                     
-                    # 1000 pontos é o ideal para velocidade/precisão em ROI de rosto
-                    orb = cv2.ORB_create(1000)
+                    # 1200 pontos para maior densidade de informação
+                    orb = cv2.ORB_create(1200)
                     kp_webcam, des_webcam = orb.detectAndCompute(gray_webcam, None)
                     
                     if des_webcam is None: return
@@ -322,10 +322,10 @@ class JanelaMonitor(ctk.CTkToplevel):
                             # Matcher com Teste de Razão de Lowe (Muito mais preciso)
                             matches = bf.knnMatch(des_webcam, perfil['des'], k=2)
                             
-                            # Filtra apenas os "bons" matches (onde a melhor opção é muito melhor que a segunda)
+                            # Filtra apenas os "bons" matches (Ratio Test de Lowe: 0.8)
                             bons_matches = []
                             for m, n in matches:
-                                if m.distance < 0.75 * n.distance:
+                                if m.distance < 0.8 * n.distance:
                                     bons_matches.append(m)
                             
                             score = len(bons_matches)
@@ -336,8 +336,8 @@ class JanelaMonitor(ctk.CTkToplevel):
                             if melhor_score > 60: break # Sucesso garantido
                         except: continue
                     
-                    # 3. Limiar de Decisão Local (Aumentado para 50 para Segurança Máxima)
-                    if melhor_aluno and melhor_score > 50:
+                    # 3. Limiar de Decisão Local (Reajustado para 35 - Equilíbrio Perfeito)
+                    if melhor_aluno and melhor_score > 35:
                         print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score})")
                         try:
                             # Validação no servidor com timeout curto para não travar a interface
@@ -606,7 +606,8 @@ class AppRecepcao(ctk.CTk):
                     self.after(0, lambda: self.lbl_flow_status.configure(text=fluxo_txt))
 
                     self.alunos_perfis = {} # Cache centralizado aqui na JanelaPrincipal
-                    orb = cv2.ORB_create(1000)
+                    orb = cv2.ORB_create(1200)
+                    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
                     
                     for a in self.alunos_data:
                         furl = a.get('foto_url')
@@ -632,9 +633,12 @@ class AppRecepcao(ctk.CTk):
                                             (fx, fy, fw, fh) = f_p[0]
                                             img_face = img_gray[fy:fy+fh, fx:fx+fw]
                                             img_face = cv2.resize(img_face, (300, 300))
+                                            # Aplica o mesmo realce da webcam para paridade de features
+                                            img_face = clahe.apply(img_face)
                                         else:
                                             # Se não detectar face clara, usa a imagem toda como fallback
                                             img_face = cv2.resize(img_gray, (300, 300))
+                                            img_face = clahe.apply(img_face)
                                             
                                         kp, des = orb.detectAndCompute(img_face, None)
                                         self.alunos_perfis[a['matricula']] = {
