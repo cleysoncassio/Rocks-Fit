@@ -478,6 +478,7 @@ class AppRecepcao(ctk.CTk):
         ctk.CTkButton(self.sidebar, text="🖥️  MONITORAR", fg_color=COR_PRIMARY, text_color="#000", hover_color="#ff8533", command=self.saltar_monitor, **btn_st).pack(pady=(10, 8), padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="🔄  ATUALIZAR", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.carregar_alunos, **btn_st).pack(pady=8, padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="📑  HISTÓRICO", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.abrir_historico, **btn_st).pack(pady=8, padx=20, fill="x")
+        ctk.CTkButton(self.sidebar, text="📂  LOGS TXT", fg_color=COR_CARD, text_color=COR_TEXTO, border_width=1, border_color=COR_CARD_HIGH, command=self.abrir_pasta_logs, **btn_st).pack(pady=8, padx=20, fill="x")
         
         ctk.CTkFrame(self.sidebar, height=1, fg_color=COR_CARD_HIGH).pack(fill="x", pady=20, padx=30)
         
@@ -824,27 +825,27 @@ class AppRecepcao(ctk.CTk):
     def salvar_log_local(self, d, sentido):
         try:
             agora_dt = datetime.now()
-            hoje = agora_dt.strftime("%d-%m-%Y")
+            hoje = agora_dt.strftime("%d/%m/%Y")
+            hoje_arquivo = agora_dt.strftime("%d-%m-%Y")
             agora = agora_dt.strftime("%H:%M:%S")
             nome = d.get('nome', 'N/D').upper()
             matricula = d.get('matricula', 'N/D')
             tipo = "ENTRADA" if str(sentido) == "0" else "SAÍDA"
             
-            linha = f"[{agora}] {tipo} | {matricula} - {nome}\n"
-            linha_crm = f"{agora};{tipo};{matricula};{nome}\n"
+            # Formato Estruturado para o CRM: DATA;HORA;MATRICULA;NOME;TIPO
+            linha_crm = f"{hoje};{agora};{matricula};{nome};{tipo}\n"
             
-            # 1. Log Diário Geral (.txt para o CRM)
-            arquivo_geral = os.path.join(self.log_path, f"DIARIO_{hoje}.txt")
+            # 1. Log Diário Geral Consolidado (Todos os Alunos)
+            arquivo_geral = os.path.join(self.log_path, f"DIARIO_{hoje_arquivo}.txt")
             with open(arquivo_geral, "a", encoding="utf-8") as f:
-                f.write(linha)
+                f.write(linha_crm)
                 
-            # 2. Log Individual do Aluno (Específico em .txt)
+            # 2. Mantém também o Log Individual por segurança
             if matricula != "N/D":
                 arquivo_indiv = os.path.join(self.log_alunos_path, f"{matricula}.txt")
                 with open(arquivo_indiv, "a", encoding="utf-8") as f:
                     f.write(f"{hoje} {agora} - {tipo}\n")
             
-            # Bip de Confirmação (Cross-platform)
             self.emitir_bip()
                     
         except Exception as e:
@@ -859,6 +860,20 @@ class AppRecepcao(ctk.CTk):
                 sys.stdout.write('\a')
                 sys.stdout.flush()
         except: pass
+
+    def abrir_pasta_logs(self):
+        try:
+            path = os.path.realpath(self.log_path)
+            if sys.platform == "win32":
+                os.startfile(path)
+            elif sys.platform == "darwin":
+                import subprocess
+                subprocess.Popen(["open", path])
+            else:
+                import subprocess
+                subprocess.Popen(["xdg-open", path])
+        except Exception as e:
+            print(f"⚠️ Erro ao abrir pasta: {e}")
 
     def abrir_historico(self):
         hwin = ctk.CTkToplevel(self)
