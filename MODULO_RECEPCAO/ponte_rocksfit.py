@@ -127,20 +127,29 @@ class JanelaMonitor(ctk.CTkToplevel):
         
         self.container = ctk.CTkFrame(self, fg_color="transparent")
         self.container.pack(fill="both", expand=True, padx=40, pady=(20, 40))
-        self.container.grid_columnconfigure(0, weight=1)
-        self.container.grid_rowconfigure(0, weight=3) # Area da Camera (Maior)
-        self.container.grid_rowconfigure(1, weight=1) # Area de Mensagem (Abaixo)
+        self.container.grid_columnconfigure(0, weight=3) # Área Principal
+        self.container.grid_columnconfigure(1, weight=1) # Histórico
+        self.container.grid_rowconfigure(0, weight=1)
         
-        # 1. ÁREA DA CÂMERA (Topo)
-        self.cam_f = ctk.CTkFrame(self.container, fg_color=COR_CARD, corner_radius=25, border_width=2, border_color=COR_CARD_HIGH)
+        # 1. LADO ESQUERDO: CÂMERA E MENSAGEM
+        self.main_f = ctk.CTkFrame(self.container, fg_color="transparent")
+        self.main_f.grid(row=0, column=0, sticky="nsew", padx=(0, 20))
+        self.main_f.grid_rowconfigure(0, weight=3)
+        self.main_f.grid_rowconfigure(1, weight=1)
+        self.main_f.grid_columnconfigure(0, weight=1)
+
+        # Câmera (Agora dentro de main_f)
+        self.cam_f = ctk.CTkFrame(self.main_f, fg_color=COR_CARD, corner_radius=25, border_width=2, border_color=COR_CARD_HIGH)
         self.cam_f.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
         
         self.lbl_cam = ctk.CTkLabel(self.cam_f, text="", text_color=COR_PRIMARY); self.lbl_cam.pack(expand=True, fill="both")
         self.lbl_cam_info = ctk.CTkLabel(self.cam_f, text="CÂMERA ATIVA", font=("Inter", 12), text_color=COR_TEXT_SEC); self.lbl_cam_info.place(relx=0.03, rely=0.03)
 
-        # 2. PAINEL DE MENSAGEM (Abaixo da Câmera)
-        self.info_f = ctk.CTkFrame(self.container, fg_color=COR_CARD, corner_radius=25, border_width=1, border_color=COR_CARD_HIGH)
+        # Painel de Mensagem (Abaixo da Câmera, dentro de main_f)
+        self.info_f = ctk.CTkFrame(self.main_f, fg_color=COR_CARD, corner_radius=25, border_width=1, border_color=COR_CARD_HIGH)
         self.info_f.grid(row=1, column=0, sticky="nsew")
+        
+        # ... (restante do setup_ui continua, mas movido para dentro de main_f)
         
         # Grid Interno do Painel de Mensagem: [Mensagem e Nome (Esq)] [Foto (Dir)]
         self.info_f.grid_columnconfigure(0, weight=1)
@@ -167,6 +176,14 @@ class JanelaMonitor(ctk.CTkToplevel):
         self.avatar_f.grid(row=0, column=1, padx=40, pady=30); self.avatar_f.pack_propagate(False)
         self.lbl_aluno_foto = ctk.CTkLabel(self.avatar_f, text="RKS", font=("Inter", 24, "bold"), text_color=COR_CARD_HIGH)
         self.lbl_aluno_foto.pack(expand=True)
+
+        # 3. LADO DIREITO: HISTÓRICO DE ACESSOS
+        self.hist_f = ctk.CTkFrame(self.container, fg_color=COR_CARD, corner_radius=25, border_width=1, border_color=COR_CARD_HIGH)
+        self.hist_f.grid(row=0, column=1, sticky="nsew")
+        
+        ctk.CTkLabel(self.hist_f, text="ÚLTIMOS ACESSOS", font=("Inter", 14, "bold"), text_color=COR_PRIMARY).pack(pady=20)
+        self.hist_sr = ctk.CTkScrollableFrame(self.hist_f, fg_color="transparent", scrollbar_button_color=COR_CARD_HIGH)
+        self.hist_sr.pack(fill="both", expand=True, padx=10, pady=10)
 
     def loop_camera(self):
         # O hardware ja foi capturado em tentar_proxima_camera() na inicializacao.
@@ -354,8 +371,27 @@ class JanelaMonitor(ctk.CTkToplevel):
         if d.get('foto_url'): 
             threading.Thread(target=self.carregar_foto, args=(d.get('foto_url'),), daemon=True).start()
         
+        # Adiciona ao histórico lateral
+        self.adicionar_ao_historico(d)
+        
         # Agenda o reset para 5 segundos na thread principal (Thread-safe)
         self.after(5000, self.reset)
+
+    def adicionar_ao_historico(self, d):
+        horario = time.strftime("%H:%M")
+        nome = d.get('nome', 'ALUNO').upper()[:15]
+        status = "LIBERADO" if d.get('status') in ['ativo', 'alerta', 'liberado'] else "BLOQUEADO"
+        cor = COR_SUCCESS if status == "LIBERADO" else COR_ERROR
+        
+        item = ctk.CTkFrame(self.hist_sr, fg_color="#080808", height=60, corner_radius=10)
+        item.pack(fill="x", pady=4, padx=5); item.pack_propagate(False)
+        
+        ctk.CTkLabel(item, text=f"{horario} - {nome}\n{status}", font=("Inter", 11, "bold"), text_color=cor, justify="left").pack(side="left", padx=15)
+        
+        # Limita o histórico visual aos últimos 10
+        filhos = self.hist_sr.winfo_children()
+        if len(filhos) > 10:
+            filhos[0].destroy()
 
     def reset(self):
         if self.lbl_nome.winfo_exists():
@@ -564,11 +600,20 @@ class AppRecepcao(ctk.CTk):
                                 resp = requests.get(furl, timeout=7)
                                 if resp.status_code == 200:
                                     nparr = np.frombuffer(resp.content, np.uint8)
-                                    img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-                                    if img is not None:
-                                        img = cv2.resize(img, (300, 300))
-                                        kp, des = orb.detectAndCompute(img, None)
-                                        self.alunos_perfis[a['matricula']] = {'des': des, 'data': a}
+                                    # Para processamento ORB (Grayscale)
+                                    img_gray = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+                                    # Para exibição na UI (RGB)
+                                    img_ui = Image.open(BytesIO(resp.content)).resize((60, 60), Image.Resampling.LANCZOS)
+                                    photo_ctk = ctk.CTkImage(light_image=img_ui, dark_image=img_ui, size=(50, 50))
+                                    
+                                    if img_gray is not None:
+                                        img_gray = cv2.resize(img_gray, (300, 300))
+                                        kp, des = orb.detectAndCompute(img_gray, None)
+                                        self.alunos_perfis[a['matricula']] = {
+                                            'des': des, 
+                                            'data': a, 
+                                            'photo_ui': photo_ctk
+                                        }
                                         print(f"💾 Foto Cache: {a['nome']}")
                             except Exception as e: 
                                 print(f"⚠️ Erro foto {a['nome']}: {e}")
@@ -592,19 +637,32 @@ class AppRecepcao(ctk.CTk):
             st_c = COR_PRIMARY if "ATIVO" in str(a.get('status','')).upper() else COR_CARD_HIGH
             c = ctk.CTkFrame(self.sr, fg_color=COR_CARD, height=90, corner_radius=15); c.pack(fill="x", pady=6, padx=10); c.pack_propagate(False)
             
-            # Círculo Laranja Rocks
-            f_status = ctk.CTkFrame(c, width=12, height=12, corner_radius=6, fg_color=st_c)
-            f_status.pack(side="left", padx=25)
+            # Foto do Aluno na Lista (Gestão)
+            perfil = self.alunos_perfis.get(a.get('matricula'))
+            img_list = perfil['photo_ui'] if perfil and 'photo_ui' in perfil else None
+            
+            f_img = ctk.CTkFrame(c, width=60, height=60, corner_radius=30, fg_color="#050505", border_width=1, border_color=COR_CARD_HIGH)
+            f_img.pack(side="left", padx=15); f_img.pack_propagate(False)
+            
+            if img_list:
+                ctk.CTkLabel(f_img, image=img_list, text="").pack(expand=True)
+            else:
+                ctk.CTkLabel(f_img, text="👤", font=("Inter", 24)).pack(expand=True)
             
             dias = a.get('dias_restantes', 0)
             cor_dias = COR_SUCCESS if dias > 0 else COR_ERROR
-            txt_dias = f"{dias} DIAS RESTANTES" if dias > 0 else "PLANO VENCIDO"
+            txt_dias = f"{dias} DIAS" if dias > 0 else "VENCIDO"
             
-            lbl = ctk.CTkLabel(c, text=f"{a.get('nome','').upper()[:35]}\n{txt_dias}", font=("Inter", 13, "bold"), justify="left", text_color=cor_dias)
+            lbl = ctk.CTkLabel(c, text=f"{a.get('nome','').upper()[:30]}\n{txt_dias}", font=("Inter", 13, "bold"), justify="left", text_color=COR_TEXTO)
             lbl.pack(side="left", padx=5)
             
             af = ctk.CTkFrame(c, fg_color="transparent"); af.pack(side="right", padx=20)
-            ctk.CTkButton(af, text="📸", width=45, height=45, fg_color=COR_CARD_HIGH, hover_color=COR_PRIMARY, command=lambda aid=a['id']: self.reg_foto_imediata(aid)).pack(side="left", padx=5)
+            
+            # Lógica Condicional: Só libera câmera se não tiver foto
+            tem_foto = True if a.get('foto_url') else False
+            btn_foto_st = {"state": "disabled", "fg_color": "#1a1a1a"} if tem_foto else {"fg_color": COR_CARD_HIGH}
+            
+            ctk.CTkButton(af, text="📸", width=45, height=45, hover_color=COR_PRIMARY, command=lambda aid=a['id']: self.reg_foto_imediata(aid), **btn_foto_st).pack(side="left", padx=5)
             ctk.CTkButton(af, text="☝️", width=45, height=45, fg_color=COR_CARD_HIGH, hover_color=COR_PRIMARY, command=lambda aid=a['id']: self.iniciar_registro_digital(aid)).pack(side="left", padx=5)
 
     def iniciar_registro_digital(self, aid):
