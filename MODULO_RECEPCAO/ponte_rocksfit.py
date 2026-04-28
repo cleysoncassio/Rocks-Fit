@@ -325,36 +325,36 @@ class JanelaMonitor(ctk.CTkToplevel):
                             if score > melhor_score:
                                 melhor_score = score
                                 melhor_aluno = perfil['data']
-                                
-                            # EARLY EXIT: Se encontrou um match muito forte, não precisa continuar a busca
-                            if melhor_score > 45:
-                                break
+                            if melhor_score > 45: break
                         except: continue
                     
-                    # 3. Limiar de Decisão Local (Aumentado para 40 para Precisão Industrial)
-                    if melhor_aluno and melhor_score > 40:
+                    # 3. Limiar de Decisão Local (Equilíbrio de Precisão 30)
+                    if melhor_aluno and melhor_score > 30:
                         print(f"✅ [SUCESSO] Local Match: {melhor_aluno['nome']} (Score: {melhor_score})")
                         try:
-                            r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=5)
-                            data = r.json() if r.status_code in [200, 403] else {}
-                            
+                            # Validação no servidor com timeout curto para não travar a interface
+                            r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=3)
                             if r.status_code == 200:
+                                data = r.json()
+                                self.after(0, lambda: self.identificar_aluno(data))
+                                # Abre a catraca no sentido retornado pelo servidor
                                 sentido = data.get('s', '0')
-                                self.after(0, lambda: self.identificar_aluno(data))
                                 self.after(0, lambda: self.parent.abrir_catraca(sentido))
-                            elif r.status_code == 403:
-                                # Aluno bloqueado ou erro administrativo - ainda assim mostramos no painel
-                                self.after(0, lambda: self.identificar_aluno(data))
                             else:
-                                print(f"⚠️ Servidor retornou {r.status_code}")
-                                self.after(0, lambda: self.lbl_status.configure(text="❌ ERRO NO SERVIDOR", text_color=COR_ERROR))
+                                # Fallback para dados locais se o servidor der erro mas o rosto conferir
+                                print(f"⚠️ Servidor Offline/Erro {r.status_code}, usando Match Local")
+                                self.after(0, lambda: self.identificar_aluno(melhor_aluno))
                         except Exception as e:
-                            print(f"❌ Erro de rede ao validar: {e}")
+                            print(f"❌ Erro de conexão: {e}. Liberando por Match Local.")
+                            self.after(0, lambda: self.identificar_aluno(melhor_aluno))
                     else:
-                        msg = "ROSTO NÃO RECONHECIDO"
-                        if melhor_score < 10: msg = "APROXIME-SE DA CÂMERA"
-                        print(f"❌ [FALHA] Match local insuficiente (Score: {melhor_score:.1f})")
-                        self.after(0, lambda: self.lbl_status.configure(text=f"❌ {msg}", text_color=COR_ERROR))
+                        # Feedback de Falha
+                        msg_falha = "ROSTO NÃO RECONHECIDO"
+                        if melhor_aluno and melhor_score > 15: msg_falha = "MANTENHA O ROSTO PARADO"
+                        elif melhor_score < 10: msg_falha = "APROXIME-SE DA CÂMERA"
+                        
+                        print(f"❌ [FALHA] Score baixo: {melhor_score:.1f}")
+                        self.after(0, lambda: self.lbl_status.configure(text=f"❌ {msg_falha}", text_color=COR_ERROR))
                         self.after(2000, self.reset)
                 except Exception as e:
                     print(f"⚠️ Erro no reconhecimento local: {e}")
