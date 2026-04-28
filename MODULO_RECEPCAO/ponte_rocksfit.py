@@ -442,6 +442,10 @@ class AppRecepcao(ctk.CTk):
         self.tag_temporaria = None
         self.overlay_bio = None
         
+        # Garante pasta de logs local
+        self.log_path = os.path.join(BASE_DIR, "CONTROLE_ACESSO")
+        if not os.path.exists(self.log_path): os.makedirs(self.log_path)
+        
         self.setup_ui()
         threading.Thread(target=self.servidor_bio, daemon=True).start()
         threading.Thread(target=self.remote_polling, daemon=True).start()
@@ -802,13 +806,33 @@ class AppRecepcao(ctk.CTk):
             time.sleep(POLLING_INTERVAL)
 
     def adicionar_ao_historico(self, d):
+        sentido = d.get('s', '0') # 0: Entrada, 1: Saída
         registro = {
             'hora': time.strftime("%H:%M:%S"),
             'nome': d.get('nome', 'ALUNO').upper(),
-            'status': "LIBERADO" if d.get('status') in ['ativo', 'alerta', 'liberado'] else "BLOQUEADO"
+            'status': "LIBERADO" if d.get('status') in ['ativo', 'alerta', 'liberado'] else "BLOQUEADO",
+            'tipo': "ENTRADA" if str(sentido) == "0" else "SAÍDA"
         }
-        self.historico_acessos.insert(0, registro) # Mais recente no topo
+        self.historico_acessos.insert(0, registro) 
         if len(self.historico_acessos) > 50: self.historico_acessos.pop()
+        
+        # Salva no arquivo de LOG local
+        self.salvar_log_local(d, sentido)
+
+    def salvar_log_local(self, d, sentido):
+        try:
+            hoje = datetime.now().strftime("%Y-%m-%d")
+            arquivo = os.path.join(self.log_path, f"ACESSO_{hoje}.log")
+            agora = datetime.now().strftime("%H:%M:%S")
+            nome = d.get('nome', 'N/D').upper()
+            matricula = d.get('matricula', 'N/D')
+            tipo = "ENTRADA" if str(sentido) == "0" else "SAÍDA"
+            
+            linha = f"[{agora}] {tipo} | {matricula} - {nome}\n"
+            with open(arquivo, "a", encoding="utf-8") as f:
+                f.write(linha)
+        except Exception as e:
+            print(f"⚠️ Erro ao salvar log local: {e}")
 
     def abrir_historico(self):
         hwin = ctk.CTkToplevel(self)
