@@ -9,17 +9,19 @@ echo "=== ROCKS-FIT: INICIANDO AMBIENTE ==="
 # 1. Tarefas Pré-Start (Executadas em BACKGROUND para não travar o Gunicorn)
 echo "[BOOT] Iniciando auto-reparo, migrações e sincronização em segundo plano..."
 (
-    echo "[BOOT] Executando auto-reparo de permissões do banco..."
+    python3 manage.py migrate --noinput || echo "AVISO: Falha na migração no boot."
+
+    echo "[BOOT] Executando auto-reparo de permissões do banco após migrações..."
     python3 manage.py shell -c "from django.db import connection; 
 with connection.cursor() as cursor:
     try:
-        cursor.execute('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO Rocksfit;')
-        cursor.execute('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO Rocksfit;')
-        print('✅ Permissões concedidas com sucesso!')
+        cursor.execute('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO CURRENT_USER;')
+        cursor.execute('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO CURRENT_USER;')
+        cursor.execute('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO CURRENT_USER;')
+        cursor.execute('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO CURRENT_USER;')
+        print('✅ Permissões concedidas com sucesso ao CURRENT_USER!')
     except Exception as e:
         print(f'❌ Falha no auto-reparo: {e}')" || echo "Aviso: Script de reparo falhou."
-
-    python3 manage.py migrate --noinput || echo "AVISO: Falha na migração no boot."
     if [ -f "master_production_data.json" ]; then
         SKIP_SIGNALS=1 python3 manage.py loaddata master_production_data.json || echo "AVISO: Falha no loaddata."
     fi

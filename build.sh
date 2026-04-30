@@ -17,10 +17,14 @@ pip install -r requirements.txt
 # 2. Configurações de Banco de Dados
 echo "Executando tarefas de banco de dados..."
 
+# Executa migrações (DEVE SER ANTES DE CONCEDER PERMISSÕES)
+echo "Passo 2a: Executando migrações..."
+python3 manage.py migrate --noinput
+
 # ============================================
 # CONCEDER PERMISSÕES DO BANCO (CRÍTICO!)
 # ============================================
-echo "Passo 2a: Configurando permissões do banco de dados..."
+echo "Passo 2b: Configurando permissões do banco de dados..."
 python3 -c "
 import os, sys, django
 from django.db import connection
@@ -44,10 +48,6 @@ except Exception as e:
     traceback.print_exc()
 sys.stdout.flush()
 "
-
-# Executa migrações
-echo "Passo 2b: Executando migrações..."
-python3 manage.py migrate --noinput
 
 # Coleta arquivos estáticos
 echo "Passo 3: Coletando arquivos estáticos..."
