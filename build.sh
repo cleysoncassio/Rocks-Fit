@@ -23,31 +23,10 @@ python3 manage.py migrate --noinput
 
 # ============================================
 # CONCEDER PERMISSÕES DO BANCO (CRÍTICO!)
+# Usa o management command robusto que verifica e reporta o resultado
 # ============================================
 echo "Passo 2b: Configurando permissões do banco de dados..."
-python3 -c "
-import os, sys, django
-from django.db import connection
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sitio.settings.production')
-print('[PYTHON] Inicializando ambiente Django...')
-sys.stdout.flush()
-try:
-    django.setup()
-    print('[PYTHON] Ambiente carregado. Concedendo privilégios...')
-    sys.stdout.flush()
-    with connection.cursor() as cursor:
-        cursor.execute('GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO CURRENT_USER;')
-        cursor.execute('GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO CURRENT_USER;')
-        cursor.execute('GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO CURRENT_USER;')
-        cursor.execute('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO CURRENT_USER;')
-        cursor.execute('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO CURRENT_USER;')
-        print('✅ Permissões do banco configuradas com sucesso')
-except Exception as e:
-    print(f'⚠️ Aviso ao configurar permissões: {e}')
-    import traceback
-    traceback.print_exc()
-sys.stdout.flush()
-"
+python3 manage.py fix_db_permissions || echo "AVISO: fix_db_permissions retornou erro (ver log acima)."
 
 # Coleta arquivos estáticos
 echo "Passo 3: Coletando arquivos estáticos..."

@@ -118,58 +118,76 @@ def crm_reparar_banco(request):
 
 
 def home(request):
-    # Inicializa variáveis com valores vazios caso o banco negue acesso (InsufficientPrivilege)
+    """
+    View da página principal.
+    RESILIENTE A FALHAS DE BANCO: nunca retorna HTTP 500.
+    Qualquer erro de DB é logado no servidor e a página é renderizada com dados vazios.
+    """
+    import logging
+    import traceback
+    logger = logging.getLogger(__name__)
+
     trainers_list = []
     plans_list = []
     programs_list = []
     days_data = []
-    today = "monday"
-    
+
+    from django.utils import timezone
+    today = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][timezone.now().weekday()]
+
+    # --- Trainers ---
     try:
-        from django.utils import timezone
-        # Consultas defensivas para evitar Erro 500 se as migrações ou permissões falharem no Hostman
+        trainers_list = list(Trainer.objects.all().order_by('order'))
+    except Exception:
         try:
-            trainers_list = list(Trainer.objects.all().order_by('order'))
-            plans_list = list(Plan.objects.all().order_by('order'))
-            programs_list = list(Program.objects.all().order_by('order'))
-        except Exception as e:
-            print(f"[DB_ERROR] Erro ao carregar ordenação: {e}")
             trainers_list = list(Trainer.objects.all().order_by('id'))
-            plans_list = list(Plan.objects.all().order_by('id'))
-            programs_list = list(Program.objects.all().order_by('id'))
-
-        # Horários de Funcionamento (Envolvido em try específico pois a tabela schedule está com erro de permissão)
-        try:
-            days_order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-            # O Segredo: Transformar em list() IMEDIATAMENTE para capturar o erro aqui e não depois
-            schedules_qs = Schedule.objects.all().select_related('trainer', 'program')
-            schedules = list(schedules_qs) 
-            
-            for d_id, d_name in [
-                ('monday', 'Segunda'), ('tuesday', 'Terça'), ('wednesday', 'Quarta'),
-                ('thursday', 'Quinta'), ('friday', 'Sexta'), ('saturday', 'Sábado'), ('sunday', 'Domingo'),
-            ]:
-                days_data.append({
-                    'id': d_id,
-                    'name': d_name,
-                    'schedules': [s for s in schedules if s.day == d_id]
-                })
-            today = days_order[timezone.now().weekday()]
         except Exception as e:
-            print(f"[DB_ERROR] Erro ao carregar horários (Schedule): {e}")
-            days_data = []
+            logger.error(f"[HOME] Falha ao carregar Trainers: {e}\n{traceback.format_exc()}")
 
-        context = {
-            "trainers": trainers_list,
-            "plans": plans_list,
-            "programs": programs_list,
-            "days_data": days_data,
-            "today": today,
-        }
-        return render(request, "base/home.html", context)
+    # --- Plans ---
+    try:
+        plans_list = list(Plan.objects.all().order_by('order'))
+    except Exception:
+        try:
+            plans_list = list(Plan.objects.all().order_by('id'))
+        except Exception as e:
+            logger.error(f"[HOME] Falha ao carregar Plans: {e}\n{traceback.format_exc()}")
+
+    # --- Programs ---
+    try:
+        programs_list = list(Program.objects.all().order_by('order'))
+    except Exception:
+        try:
+            programs_list = list(Program.objects.all().order_by('id'))
+        except Exception as e:
+            logger.error(f"[HOME] Falha ao carregar Programs: {e}\n{traceback.format_exc()}")
+
+    # --- Schedules ---
+    try:
+        days_order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        schedules = list(Schedule.objects.all().select_related('trainer', 'program'))
+        for d_id, d_name in [
+            ('monday', 'Segunda'), ('tuesday', 'Terça'), ('wednesday', 'Quarta'),
+            ('thursday', 'Quinta'), ('friday', 'Sexta'), ('saturday', 'Sábado'), ('sunday', 'Domingo'),
+        ]:
+            days_data.append({
+                'id': d_id,
+                'name': d_name,
+                'schedules': [s for s in schedules if s.day == d_id]
+            })
+        today = days_order[timezone.now().weekday()]
     except Exception as e:
-        import traceback
-        return HttpResponse(f"ERRO DE DIAGNÓSTICO ROCKS-FIT (HOME): {str(e)}<br><pre>{traceback.format_exc()}</pre>", status=500)
+        logger.error(f"[HOME] Falha ao carregar Schedules: {e}\n{traceback.format_exc()}")
+        days_data = []
+
+    context = {
+        "trainers": trainers_list,
+        "plans": plans_list,
+        "programs": programs_list,
+        "days_data": days_data,
+        "today": today,
+    }
+    return render(request, "base/home.html", context)
 
 def programs(request):
     programs_list = Program.objects.all()
