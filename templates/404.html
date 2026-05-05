@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Não Encontrada - Rocks-Fit Academia</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@500;700&display=swap');
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            color: #d4d4d4;
+            font-family: 'Teko', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            padding: 50px 40px;
+            background: linear-gradient(135deg, #1c1c1c 0%, #0d0d0d 100%);
+            border: 2px solid #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 69, 0, 0.05);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .stripes-top, .stripes-bottom {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 15px;
+            background: repeating-linear-gradient(
+                45deg,
+                #ff4500,
+                #ff4500 15px,
+                #111 15px,
+                #111 30px
+            );
+        }
+        
+        .stripes-top { top: 0; border-bottom: 2px solid #333; }
+        .stripes-bottom { bottom: 0; border-top: 2px solid #333; }
+
+        h1 {
+            font-size: 6rem;
+            margin: 0;
+            color: #ff4500;
+            text-shadow: 3px 3px 0px #000, -1px -1px 0px #000, 0 0 20px rgba(255, 69, 0, 0.4);
+            line-height: 1;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin: 10px 0 20px;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        p {
+            font-family: 'Arial', sans-serif;
+            font-size: 1.1rem;
+            text-transform: none;
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .icon-container {
+            margin: 20px 0 30px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .weight-plate {
+            width: 140px;
+            height: 140px;
+            fill: #333;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+        }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            fill: #ff4500;
+            filter: drop-shadow(0 0 10px rgba(255, 69, 0, 0.3));
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 35px;
+            font-size: 1.5rem;
+            color: #111;
+            background-color: #ff4500;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border: 2px solid #ff4500;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: transparent;
+            color: #ff4500;
+            box-shadow: 0 0 20px rgba(255, 69, 0, 0.5);
+        }
+
+        .error-code {
+            position: absolute;
+            top: -40px;
+            right: -20px;
+            font-size: 12rem;
+            color: rgba(255, 255, 255, 0.02);
+            z-index: -1;
+            font-weight: bold;
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        .alert-box {
+            display: inline-block;
+            background-color: rgba(255, 69, 0, 0.1);
+            border-left: 4px solid #ff4500;
+            padding: 10px 20px;
+            margin-bottom: 25px;
+            font-family: 'Arial', sans-serif;
+            text-transform: none;
+            color: #ff4500;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="stripes-top"></div>
+        <div class="error-code">404</div>
+        
+        <div class="icon-container">
+            <svg class="weight-plate" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" stroke="#222" stroke-width="4" fill="#333" />
+                <circle cx="50" cy="50" r="35" stroke="#222" stroke-width="2" fill="none" />
+                <circle cx="50" cy="50" r="10" stroke="#222" stroke-width="2" fill="#111" />
+                <text x="50" y="25" fill="#222" font-family="Arial" font-size="8" font-weight="bold" text-anchor="middle">ROCKS-FIT</text>
+                <text x="50" y="80" fill="#222" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">404 LBS</text>
+            </svg>
+            <svg class="search-icon" viewBox="0 0 24 24">
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+        </div>
+
+        <h1>ERRO 404</h1>
+        <h2>Aparelho Não Encontrado</h2>
+        
+        <div class="alert-box">
+            Parece que você desviou da sua série de exercícios.
+        </div>
+        
+        <p>A página que você está procurando não existe, mudou de lugar ou o equipamento está ocupado. Vamos voltar para a recepção e recalcular a sua rota de treino!</p>
+        
+        <a href="/" class="btn">Voltar para a Home</a>
+
+        <div class="stripes-bottom"></div>
+    </div>
+
+</body>
+</html>

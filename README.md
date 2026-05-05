@@ -64,6 +64,14 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
 
 Abra o navegador e vá para http://localhost:8000 para ver o site da academia Rocks Fit em ação.
 
+10. **Inicie o Módulo de Recepção (Gestor de Academia)**
+
+    Caso precise rodar a interface local da recepção para testar layout ou acesso:
+    ```bash
+    cd MODULO_RECEPCAO
+    python3 ponte_rocksfit_flet.py
+    ```
+
 ## 📂 Estrutura do Projeto
 
 ```Plaitext
