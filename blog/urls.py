@@ -39,5 +39,10 @@ urlpatterns = [
     path('crm/aluno/<int:aluno_id>/delete/', views.crm_aluno_delete, name='crm_aluno_delete'),
 
     path('crm/caixa/', views.crm_caixa, name='crm_caixa'),
+    
+    path('crm/ia/', views.crm_ia_dashboard, name='crm_ia_dashboard'),
+    path('crm/ia/generate/', views.crm_ia_generate, name='crm_ia_generate'),
+    path('crm/ia/action/<int:action_id>/', views.crm_ia_action, name='crm_ia_action'),
+
     path('fix/', views.crm_reparar_banco, name='fix_db_shortcuts'),
 ]

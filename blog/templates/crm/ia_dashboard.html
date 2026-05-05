@@ -1,0 +1,243 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>RKS Master IA | ROCKS FIT</title>
+    <script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "var(--surface)",
+                        "primary": "#ff9159",
+                        "dark-bg": "#0e0e0e",
+                        "card-bg": "#131313",
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        :root { --surface: #0e0e0e; }
+        .font-headline { font-family: 'Space Grotesk', sans-serif; }
+        .font-body { font-family: 'Manrope', sans-serif; }
+        .glass { background: rgba(19, 19, 19, 0.8); backdrop-filter: blur(12px); }
+        .gradient-text { background: linear-gradient(90deg, #ff9159, #ff5e3a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .ai-glow { box-shadow: 0 0 30px rgba(255, 145, 89, 0.15); }
+        .btn-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(255, 145, 89, 0.5); }
+    </style>
+</head>
+<body class="bg-surface text-white font-body min-h-screen">
+
+    <div class="flex h-screen overflow-hidden">
+        {% include "crm/sidebar.html" %}
+
+        <main class="flex-grow overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-[#0e0e0e]">
+            
+            <!-- Header Animado -->
+            <header class="p-8 md:p-12 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#0e0e0e]/80 sticky top-0 z-30 glass">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="p-2 bg-primary/10 rounded-lg">
+                                <span class="material-symbols-outlined text-primary animate-pulse">psychology</span>
+                            </span>
+                            <span class="text-[10px] font-black text-primary uppercase tracking-[0.3em]">IA Strategy Engine</span>
+                        </div>
+                        <h2 class="font-headline font-black text-4xl tracking-tighter uppercase italic text-slate-900 dark:text-white">
+                            RKS <span class="gradient-text">Master IA</span>
+                        </h2>
+                        <p class="text-slate-500 dark:text-neutral-500 font-headline uppercase text-[10px] tracking-widest mt-1 italic">Diretoria Geral de Inteligência Artificial</p>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <a href="{% url 'crm_ia_generate' %}" class="bg-primary text-black px-8 py-4 rounded-2xl font-headline font-black text-xs uppercase tracking-widest btn-hover flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">refresh</span>
+                            Atualizar Insights
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-8 md:p-12 space-y-10">
+                
+                <!-- Cards de Métricas IA -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-white dark:bg-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-xl ai-glow">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="p-3 bg-red-500/10 rounded-2xl text-red-500">
+                                <span class="material-symbols-outlined">trending_down</span>
+                            </div>
+                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Risco de Churn</h3>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="text-5xl font-headline font-black text-slate-900 dark:text-white">{{ analise.risco_evasao_percentual|default:"0" }}%</span>
+                            <span class="text-xs font-bold text-red-500 mb-2 uppercase italic">Atenção</span>
+                        </div>
+                        <div class="mt-6 w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
+                            <div class="bg-red-500 h-full rounded-full transition-all duration-1000" style="width: {{ analise.risco_evasao_percentual|default:0 }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-xl ai-glow">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="p-3 bg-green-500/10 rounded-2xl text-green-500">
+                                <span class="material-symbols-outlined">account_balance_wallet</span>
+                            </div>
+                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Saúde Financeira</h3>
+                        </div>
+                        <p class="text-slate-700 dark:text-neutral-300 font-bold leading-relaxed">
+                            {{ analise.saude_financeira|default:"Sem dados processados." }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white dark:bg-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-xl ai-glow">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="p-3 bg-primary/10 rounded-2xl text-primary">
+                                <span class="material-symbols-outlined">lightbulb</span>
+                            </div>
+                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Insight do Dia</h3>
+                        </div>
+                        <p class="text-slate-700 dark:text-neutral-300 font-bold italic leading-relaxed">
+                            "{{ analise.insight_do_dia|default:"Gere uma nova análise para obter insights." }}"
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Ações Diárias Pendentes -->
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-headline font-black text-2xl uppercase tracking-tighter text-slate-900 dark:text-white">
+                            Ações <span class="text-primary italic">Estratégicas</span> Pendentes
+                        </h3>
+                        <span class="bg-primary/20 text-primary px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                            {{ acoes.count }} Aguardando Aprovação
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {% for acao in acoes %}
+                        <div class="bg-white dark:bg-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-2xl relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-4">
+                                <span class="text-[8px] font-black text-neutral-500 uppercase tracking-widest">{{ acao.id_acao }}</span>
+                            </div>
+                            
+                            <div class="flex gap-6">
+                                <div class="flex-shrink-0">
+                                    <div class="p-4 {% if acao.tipo == 'POST_REDE_SOCIAL' %}bg-purple-500/10 text-purple-500{% else %}bg-green-500/10 text-green-500{% endif %} rounded-2xl">
+                                        <span class="material-symbols-outlined text-3xl">
+                                            {% if acao.tipo == 'POST_REDE_SOCIAL' %}campaign{% else %}chat{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex-grow">
+                                    <h4 class="font-headline font-black text-lg text-slate-900 dark:text-white uppercase leading-tight mb-1">{{ acao.titulo_painel }}</h4>
+                                    <div class="flex items-center gap-3 mb-6">
+                                        <span class="text-[9px] font-black text-primary uppercase tracking-widest">{{ acao.departamento }}</span>
+                                        <span class="w-1 h-1 bg-neutral-600 rounded-full"></span>
+                                        <span class="text-[9px] font-black text-neutral-500 uppercase tracking-widest">{{ acao.tipo }}</span>
+                                    </div>
+
+                                    <div class="bg-slate-50 dark:bg-black/30 p-6 rounded-3xl border border-slate-100 dark:border-white/5 mb-8">
+                                        <p class="text-xs font-bold text-slate-500 dark:text-neutral-500 uppercase tracking-widest mb-3 italic">Detalhes da IA:</p>
+                                        <p class="text-slate-800 dark:text-neutral-300 text-sm font-medium leading-relaxed">
+                                            {{ acao.detalhes_para_aprovacao }}
+                                        </p>
+                                    </div>
+
+                                    <div class="flex items-center gap-4">
+                                        <form method="post" action="{% url 'crm_ia_action' acao.id %}" class="flex-grow">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="APROVADO">
+                                            <button type="submit" class="w-full bg-primary text-black font-headline font-black text-[10px] uppercase tracking-widest py-4 rounded-xl btn-hover flex items-center justify-center gap-2">
+                                                <span class="material-symbols-outlined text-sm">check_circle</span>
+                                                Aprovar e Executar
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{% url 'crm_ia_action' acao.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="REJEITADO">
+                                            <button type="submit" class="bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-4 rounded-xl hover:bg-red-500 hover:text-white transition-all">
+                                                <span class="material-symbols-outlined">close</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-span-2 py-20 text-center bg-white dark:bg-[#131313] rounded-[40px] border border-dashed border-slate-300 dark:border-white/10">
+                            <span class="material-symbols-outlined text-5xl text-neutral-700 mb-4">smart_toy</span>
+                            <p class="text-neutral-500 font-headline uppercase text-xs tracking-[0.3em]">Nenhuma ação pendente no momento.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Histórico de Decisões -->
+                <div class="bg-white dark:bg-[#131313] p-10 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-xl">
+                    <h3 class="font-headline font-black text-xl uppercase tracking-tighter text-slate-900 dark:text-white mb-8">Log de Decisões do Diretor</h3>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="text-left border-b border-slate-100 dark:border-white/5">
+                                    <th class="pb-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Ação</th>
+                                    <th class="pb-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Status</th>
+                                    <th class="pb-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Data</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50 dark:divide-white/5">
+                                {% for acao in historico_acoes %}
+                                <tr>
+                                    <td class="py-4">
+                                        <div class="flex flex-col">
+                                            <span class="text-sm font-bold text-slate-900 dark:text-white">{{ acao.titulo_painel }}</span>
+                                            <span class="text-[10px] text-neutral-500 uppercase font-black">{{ acao.tipo }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4">
+                                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
+                                            {% if acao.status == 'APROVADO' %}bg-green-500/10 text-green-500
+                                            {% elif acao.status == 'REJEITADO' %}bg-red-500/10 text-red-500
+                                            {% else %}bg-blue-500/10 text-blue-500{% endif %}">
+                                            {{ acao.status }}
+                                        </span>
+                                    </td>
+                                    <td class="py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+                                        {{ acao.data_criacao|date:"d/m/Y H:i" }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ff9159; }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #333 transparent; }
+    </div>
+</body>
+</html>

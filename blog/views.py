@@ -626,6 +626,13 @@ def catraca_check_api(request, id_tag):
     acesso.esta_dentro = not acesso.esta_dentro
     acesso.ultimo_acesso = timezone.now()
     
+    # Registrar Log de Acesso para IA
+    from .models import AcessoLog
+    AcessoLog.objects.create(
+        aluno=aluno,
+        tipo='SAIDA' if esta_saindo else 'ENTRADA'
+    )
+    
     msg_final = gym_settings.msg_entrada if not esta_saindo else gym_settings.msg_saida
     if esta_saindo:
         # Se for DIÁRIA, esgota o acesso após a saída
@@ -1086,6 +1093,10 @@ def crm_config(request):
             gym_settings.msg_aniversario = request.POST.get('msg_aniversario', '')
             gym_settings.msg_bloqueio_crm = request.POST.get('msg_bloqueio_crm', '')
             gym_settings.msg_erro_wellhub = request.POST.get('msg_erro_wellhub', '')
+            
+            # IA
+            gym_settings.ai_api_key = request.POST.get('ai_api_key', '')
+            gym_settings.ai_system_prompt = request.POST.get('ai_system_prompt', '')
             
             gym_settings.save()
             
@@ -1737,5 +1748,65 @@ def crm_aluno_edit(request, aluno_id):
         'title': 'Editar Membro',
         'aluno': aluno
     })
+
+
+@login_required
+def crm_ia_dashboard(request):
+    """Painel de Controle da RKS Master IA"""
+    if not request.user.is_superuser:
+        return HttpResponse("Acesso Negado", status=403)
+    
+    from .models import AnaliseGeralIA, AcaoIA, GymSetting
+    
+    analise = AnaliseGeralIA.objects.first()
+    acoes = AcaoIA.objects.filter(status='PENDENTE')
+    historico_acoes = AcaoIA.objects.exclude(status='PENDENTE')[:15]
+    
+    context = {
+        'analise': analise,
+        'acoes': acoes,
+        'historico_acoes': historico_acoes,
+        'gym_settings': GymSetting.objects.first(),
+        'title': 'RKS Master IA'
+    }
+    return render(request, 'crm/ia_dashboard.html', context)
+
+@login_required
+def crm_ia_generate(request):
+    """Gera nova análise via IA"""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Acesso Negado'}, status=403)
+    
+    from .ai_engine import analisar_dados_ia
+    result = analisar_dados_ia()
+    
+    if isinstance(result, dict) and 'error' in result:
+        messages.error(request, result['error'])
+    else:
+        messages.success(request, "Relatório estratégico gerado com sucesso!")
+        
+    return redirect('crm_ia_dashboard')
+
+@login_required
+def crm_ia_action(request, action_id):
+    """Aprova ou Rejeita uma ação da IA"""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Acesso Negado'}, status=403)
+    
+    from .models import AcaoIA
+    acao = get_object_or_404(AcaoIA, id=action_id)
+    status = request.POST.get('status')
+    
+    if status in ['APROVADO', 'REJEITADO']:
+        acao.status = status
+        acao.save()
+        messages.info(request, f"Ação {status}: {acao.titulo_painel}")
+        
+        # Simulação de disparo de integração
+        if status == 'APROVADO':
+            # Log de integração simulada
+            print(f"[IA INTEGRATION] Enviando para {acao.tipo}: {acao.payload}")
+            
+    return redirect('crm_ia_dashboard')
 
 

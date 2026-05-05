@@ -136,6 +136,16 @@
                     </li>
                 </ul>
             </li>
+
+            <!-- RKS MASTER IA -->
+            {% if user.is_superuser %}
+            <li>
+                <a class="nav-link py-4 px-8 flex items-center gap-4 font-headline uppercase text-[10px] font-black tracking-[0.2em] transition-all {% if request.resolver_match.url_name == 'crm_ia_dashboard' %}text-primary bg-primary/5 border-r-4 border-primary{% else %}hover:bg-neutral-800/10 dark:hover:bg-neutral-800/40{% endif %}" href="{% url 'crm_ia_dashboard' %}">
+                    <span class="material-symbols-outlined text-lg text-primary animate-pulse">psychology</span>
+                    <span class="nav-text">RKS Master IA</span>
+                </a>
+            </li>
+            {% endif %}
             
             {% if perms.blog.can_manage_students or user.is_superuser %}
             <li>

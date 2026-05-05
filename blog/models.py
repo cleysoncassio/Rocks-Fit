@@ -590,12 +590,74 @@ class GymSetting(models.Model):
     ]
     catraca_fluxo = models.CharField(max_length=20, choices=CATRACA_FLUXO_CHOICES, default='BIDIRECIONAL', verbose_name="Controle de Fluxo")
     
+    # Configurações de IA
+    ai_system_prompt = models.TextField(blank=True, null=True, verbose_name="Prompt de Sistema da IA")
+    ai_api_key = models.CharField(max_length=255, blank=True, null=True, verbose_name="API Key (OpenRouter/Qwen)")
+
     def __str__(self):
         return f"Configurações de {self.name}"
 
     class Meta:
         verbose_name = "Configuração da Academia"
         verbose_name_plural = "Configuração da Academia"
+
+
+class AnaliseGeralIA(models.Model):
+    risco_evasao_percentual = models.FloatField(verbose_name="Risco de Evasão (%)")
+    saude_financeira = models.TextField(verbose_name="Saúde Financeira")
+    insight_do_dia = models.TextField(verbose_name="Insight do Dia")
+    data_analise = models.DateTimeField(auto_now_add=True, verbose_name="Data da Análise")
+
+    class Meta:
+        verbose_name = "Análise Geral de IA"
+        verbose_name_plural = "Análises Gerais de IA"
+        ordering = ['-data_analise']
+
+
+class AcaoIA(models.Model):
+    TIPO_CHOICES = [
+        ('POST_REDE_SOCIAL', 'Post Rede Social'),
+        ('MENSAGEM_WHATSAPP', 'Mensagem WhatsApp'),
+        ('CAMPANHA_EMAIL', 'Campanha de E-mail'),
+        ('OUTRO', 'Outro'),
+    ]
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('APROVADO', 'Aprovado'),
+        ('REJEITADO', 'Rejeitado'),
+        ('EXECUTADO', 'Executado'),
+    ]
+    id_acao = models.CharField(max_length=100, verbose_name="ID da Ação")
+    tipo = models.CharField(max_length=50, choices=TIPO_CHOICES, verbose_name="Tipo")
+    departamento = models.CharField(max_length=100, verbose_name="Departamento")
+    titulo_painel = models.CharField(max_length=255, verbose_name="Título no Painel")
+    detalhes_para_aprovacao = models.TextField(verbose_name="Detalhes para Aprovação")
+    payload = models.JSONField(verbose_name="Dados da Ação (Payload)")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDENTE', verbose_name="Status")
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+
+    def __str__(self):
+        return f"{self.titulo_painel} ({self.get_status_display()})"
+
+    class Meta:
+        verbose_name = "Ação de IA"
+        verbose_name_plural = "Ações de IA"
+        ordering = ['-data_criacao']
+
+
+class AcessoLog(models.Model):
+    aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='acessos', verbose_name="Aluno")
+    data_hora = models.DateTimeField(auto_now_add=True, verbose_name="Data/Hora")
+    tipo = models.CharField(max_length=10, choices=[('ENTRADA', 'Entrada'), ('SAIDA', 'Saída')], default='ENTRADA')
+
+    def __str__(self):
+        return f"{self.aluno.nome_completo} - {self.tipo} em {self.data_hora}"
+
+    class Meta:
+        verbose_name = "Log de Acesso"
+        verbose_name_plural = "Logs de Acessos"
+        ordering = ['-data_hora']
+
 
 # --- 🚀 AUTOMATIC PROFILE CREATION (SIGNALS) ---
 from django.db.models.signals import post_save
