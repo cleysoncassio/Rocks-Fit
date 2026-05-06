@@ -132,7 +132,7 @@
                 </div>                <!-- Member Grid -->
                 <div class="grid grid-cols-1 gap-4">
                     {% for aluno in alunos %}
-                    <div onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="group relative flex flex-col md:grid md:grid-cols-12 items-center gap-6 p-6 bg-surface-container-low rounded-2xl transition-all duration-300 hover:bg-surface-container-high cursor-pointer border border-white/5 shadow-xl">
+                    <div onclick="location.href='{% url 'crm_aluno_detail' aluno.id %}'" class="group relative flex flex-col md:grid md:grid-cols-12 items-center gap-6 p-6 bg-gradient-to-br from-[#1c1c1c] to-[#131313] rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl cursor-pointer border border-white/10 hover:border-primary/20 shadow-lg">
                         <div class="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity
                             {% if aluno.status == 'ATIVO' %}bg-primary
                             {% elif aluno.status == 'INADIMPLENTE' %}bg-error
