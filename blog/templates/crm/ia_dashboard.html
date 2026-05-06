@@ -41,7 +41,7 @@
         .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(255, 145, 89, 0.5); }
     </style>
 </head>
-<body class="bg-surface text-white font-body min-h-screen">
+<body class="bg-surface text-on-surface font-body min-h-screen transition-colors duration-300">
 
     <div class="flex h-screen overflow-hidden">
         {% include "crm/sidebar.html" %}
@@ -78,44 +78,44 @@
                 <!-- Cards de Métricas IA -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <!-- Card de Risco -->
-                    <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[40px] border border-white/10 shadow-2xl hover:border-red-500/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
+                    <div class="bg-white dark:bg-gradient-to-br dark:from-[#1c1c1c] dark:to-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl hover:border-red-500/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
                         <div class="flex items-center gap-4 mb-6">
                             <div class="p-3 bg-red-500/10 rounded-2xl text-red-500 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined">trending_down</span>
                             </div>
-                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Risco de Churn</h3>
+                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-slate-400 dark:text-neutral-400">Risco de Churn</h3>
                         </div>
                         <div class="flex items-end gap-2">
-                            <span class="text-5xl font-headline font-black text-white italic leading-none">{{ analise.risco_evasao_percentual|default:"0" }}%</span>
+                            <span class="text-5xl font-headline font-black text-slate-900 dark:text-white italic leading-none">{{ analise.risco_evasao_percentual|default:"0" }}%</span>
                             <span class="text-xs font-bold text-red-500 mb-2 uppercase italic">Atenção</span>
                         </div>
-                        <div class="mt-6 w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                        <div class="mt-6 w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
                             <div class="bg-red-500 h-full rounded-full transition-all duration-1000" style="width: {{ analise.risco_evasao_percentual|default:0 }}%"></div>
                         </div>
                     </div>
 
                     <!-- Card Financeiro -->
-                    <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[40px] border border-white/10 shadow-2xl hover:border-green-500/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
+                    <div class="bg-white dark:bg-gradient-to-br dark:from-[#1c1c1c] dark:to-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl hover:border-green-500/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
                         <div class="flex items-center gap-4 mb-6">
                             <div class="p-3 bg-green-500/10 rounded-2xl text-green-500 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined">account_balance_wallet</span>
                             </div>
-                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Saúde Financeira</h3>
+                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-slate-400 dark:text-neutral-400">Saúde Financeira</h3>
                         </div>
-                        <p class="text-neutral-300 font-bold leading-relaxed">
+                        <p class="text-slate-700 dark:text-neutral-300 font-bold leading-relaxed">
                             {{ analise.saude_financeira|default:"Sem dados processados." }}
                         </p>
                     </div>
 
                     <!-- Card Insight -->
-                    <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[40px] border border-white/10 shadow-2xl hover:border-primary/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
+                    <div class="bg-white dark:bg-gradient-to-br dark:from-[#1c1c1c] dark:to-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl hover:border-primary/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
                         <div class="flex items-center gap-4 mb-6">
                             <div class="p-3 bg-primary/10 rounded-2xl text-primary group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined">lightbulb</span>
                             </div>
-                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Insight do Dia</h3>
+                            <h3 class="font-headline font-black uppercase text-xs tracking-widest text-slate-400 dark:text-neutral-400">Insight do Dia</h3>
                         </div>
-                        <p class="text-neutral-300 font-bold italic leading-relaxed">
+                        <p class="text-slate-700 dark:text-neutral-300 font-bold italic leading-relaxed">
                             "{{ analise.insight_do_dia|default:"Gere uma nova análise para obter insights." }}"
                         </p>
                     </div>
@@ -134,7 +134,7 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {% for acao in acoes %}
-                        <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[40px] border border-white/10 shadow-2xl relative overflow-hidden group hover:-translate-y-2 transition-all duration-500 hover:border-primary/40 hover:shadow-primary/5">
+                        <div class="bg-white dark:bg-gradient-to-br dark:from-[#1c1c1c] dark:to-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl relative overflow-hidden group hover:-translate-y-2 transition-all duration-500 dark:hover:border-primary/40 hover:shadow-primary/5">
                             <div class="absolute top-0 right-0 p-4">
                                 <span class="text-[8px] font-black text-neutral-500 uppercase tracking-widest">{{ acao.id_acao }}</span>
                             </div>
@@ -148,16 +148,16 @@
                                     </div>
                                 </div>
                                 <div class="flex-grow">
-                                    <h4 class="font-headline font-black text-lg text-white uppercase leading-tight mb-1">{{ acao.titulo_painel }}</h4>
+                                    <h4 class="font-headline font-black text-lg text-slate-900 dark:text-white uppercase leading-tight mb-1">{{ acao.titulo_painel }}</h4>
                                     <div class="flex items-center gap-3 mb-6">
                                         <span class="text-[9px] font-black text-primary uppercase tracking-widest">{{ acao.departamento }}</span>
                                         <span class="w-1 h-1 bg-neutral-600 rounded-full"></span>
                                         <span class="text-[9px] font-black text-neutral-500 uppercase tracking-widest">{{ acao.tipo }}</span>
                                     </div>
 
-                                    <div class="bg-black/30 p-6 rounded-3xl border border-white/5 mb-8 group-hover:bg-black/50 transition-colors">
-                                        <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3 italic">Detalhes da IA:</p>
-                                        <p class="text-neutral-300 text-sm font-medium leading-relaxed">
+                                    <div class="bg-slate-50 dark:bg-black/30 p-6 rounded-3xl border border-slate-100 dark:border-white/5 mb-8 group-hover:bg-slate-100 dark:group-hover:bg-black/50 transition-colors">
+                                        <p class="text-xs font-bold text-slate-500 dark:text-neutral-500 uppercase tracking-widest mb-3 italic">Detalhes da IA:</p>
+                                        <p class="text-slate-800 dark:text-neutral-300 text-sm font-medium leading-relaxed">
                                             {{ acao.detalhes_para_aprovacao }}
                                         </p>
                                     </div>

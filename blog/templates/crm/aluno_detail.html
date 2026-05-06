@@ -143,12 +143,12 @@
         <section class="p-6 md:p-12 pb-6">
             <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
                 <!-- Status Access Bento -->
-                <div class="col-span-1 md:col-span-12 lg:col-span-4 bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[32px] border border-white/10 flex flex-col justify-between relative overflow-hidden group min-h-[160px] shadow-xl hover:-translate-y-1 transition-all duration-500">
+                <div class="col-span-1 md:col-span-12 lg:col-span-4 bg-white dark:bg-gradient-to-br dark:from-[#1c1c1c] dark:to-[#131313] p-8 rounded-[32px] border border-slate-200 dark:border-white/10 flex flex-col justify-between relative overflow-hidden group min-h-[160px] shadow-xl dark:shadow-2xl hover:-translate-y-1 transition-all duration-500">
                     <div class="absolute -right-8 -top-8 text-white/5 opacity-5 group-hover:opacity-10 transition-opacity">
                         <span class="material-symbols-outlined text-[160px]">verified_user</span>
                     </div>
                     <div>
-                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-4 font-headline italic">Perímetro de Acesso</p>
+                        <p class="text-[9px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-[0.4em] mb-4 font-headline italic">Perímetro de Acesso</p>
                         <h3 class="text-4xl font-black font-headline tracking-tighter uppercase
                             {% if aluno.acesso.dias_vencimento < 0 %}text-error
                             {% elif aluno.acesso.dias_vencimento <= 1 %}text-success
@@ -169,29 +169,29 @@
                             {% endif %}
                         </h3>
                     </div>
-                    <div class="mt-8 pt-8 border-t border-white/5 flex gap-12">
+                    <div class="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 flex gap-12">
                         <div>
-                            <p class="text-[8px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Validade</p>
-                            <p class="text-xs font-black font-headline uppercase">{{ aluno.acesso.data_vencimento|date:"d M Y"|default:"----" }}</p>
+                            <p class="text-[8px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-widest leading-none mb-1">Validade</p>
+                            <p class="text-xs font-black font-headline uppercase text-slate-900 dark:text-white">{{ aluno.acesso.data_vencimento|date:"d M Y"|default:"----" }}</p>
                         </div>
                         <div>
-                            <p class="text-[8px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Último Ingresso</p>
-                            <p class="text-xs font-black font-headline uppercase italic">{{ aluno.acesso.ultimo_acesso|date:"d/m H:i"|default:"----" }}</p>
+                            <p class="text-[8px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-widest leading-none mb-1">Último Ingresso</p>
+                            <p class="text-xs font-black font-headline uppercase italic text-slate-900 dark:text-white">{{ aluno.acesso.ultimo_acesso|date:"d/m H:i"|default:"----" }}</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Financial Bento -->
                 <div class="col-span-12 lg:col-span-8 grid grid-cols-3 gap-8">
-                    <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[32px] border border-white/10 hover:border-white/20 transition-all shadow-xl group hover:-translate-y-1 duration-500">
-                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic group-hover:text-primary transition-colors">Investimento</p>
-                        <h4 class="text-4xl font-black font-headline tracking-tighter">R$ {{ total_pago|floatformat:2 }}</h4>
-                        <p class="text-[9px] font-black uppercase text-neutral-500 mt-2 tracking-widest">Total acumulado</p>
+                    <div class="bg-white dark:bg-gradient-to-br dark:from-[#1c1c1c] dark:to-[#131313] p-8 rounded-[32px] border border-slate-200 dark:border-white/10 hover:border-primary/20 transition-all shadow-xl dark:shadow-2xl group hover:-translate-y-1 duration-500">
+                        <p class="text-[9px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic group-hover:text-primary transition-colors">Investimento</p>
+                        <h4 class="text-4xl font-black font-headline tracking-tighter text-slate-900 dark:text-white">R$ {{ total_pago|floatformat:2 }}</h4>
+                        <p class="text-[9px] font-black uppercase text-slate-500 dark:text-neutral-500 mt-2 tracking-widest">Total acumulado</p>
                     </div>
-                    <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[32px] border border-white/10 hover:border-white/20 transition-all shadow-xl group hover:-translate-y-1 duration-500">
-                        <p class="text-[9px] font-black text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic group-hover:text-error transition-colors">Débitos</p>
+                    <div class="bg-white dark:bg-gradient-to-br dark:from-[#1c1c1c] dark:to-[#131313] p-8 rounded-[32px] border border-slate-200 dark:border-white/10 hover:border-error/20 transition-all shadow-xl dark:shadow-2xl group hover:-translate-y-1 duration-500">
+                        <p class="text-[9px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic group-hover:text-error transition-colors">Débitos</p>
                         <h4 class="text-4xl font-black font-headline tracking-tighter {% if debitos > 0 %}text-error{% endif %}">R$ {{ debitos|floatformat:2 }}</h4>
-                        <p class="text-[9px] font-black uppercase text-neutral-500 mt-2 tracking-widest">Saldo pendente</p>
+                        <p class="text-[9px] font-black uppercase text-slate-500 dark:text-neutral-500 mt-2 tracking-widest">Saldo pendente</p>
                     </div>
                     <div class="bg-primary p-8 rounded-[32px] shadow-2xl relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-2 -bottom-2 text-black/10">
