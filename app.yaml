@@ -1,5 +1,5 @@
 runtime: python311
-entrypoint: gunicorn -b :$PORT sitio.wsgi
+entrypoint: sh start.sh
 
 handlers:
 - url: /static

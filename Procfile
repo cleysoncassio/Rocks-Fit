@@ -1,2 +1,2 @@
-web: gunicorn sitio.wsgi:application -b :$PORT --log-file -
+web: sh start.sh
 test: python test_home.py
