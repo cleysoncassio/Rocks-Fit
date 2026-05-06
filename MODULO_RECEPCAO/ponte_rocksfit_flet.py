@@ -664,7 +664,9 @@ def main(page: ft.Page):
 
         def check_camera():
             if "cv2" not in sys.modules: return False
-            for i in ["/dev/video0", 0, 1]:
+            # No Windows usamos índices numéricos, no Linux tentamos o dispositivo padrão primeiro
+            indices = [0, 1, 2] if os.name == "nt" else ["/dev/video0", 0, 1]
+            for i in indices:
                 try:
                     c = cv2.VideoCapture(i)
                     if c.isOpened():

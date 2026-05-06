@@ -2,16 +2,16 @@
 :: Lançador Universal Rocks-Fit (Windows)
 cd /d "%~dp0"
 
-:: 1. Tenta encontrar o Python na pasta atual (Caso do seu print)
+:: 1. Tenta encontrar o Python na pasta atual
 if exist ".venv\Scripts\pythonw.exe" (
-    start "" ".venv\Scripts\pythonw.exe" "ponte_rocksfit.py"
+    start "" ".venv\Scripts\pythonw.exe" "ponte_rocksfit_flet.py"
     exit
 )
 
-:: 2. Tenta encontrar o Python na pasta de cima (Caso padrão)
+:: 2. Tenta encontrar o Python na pasta de cima
 cd ..
 if exist ".venv\Scripts\pythonw.exe" (
-    start "" ".venv\Scripts\pythonw.exe" "MODULO_RECEPCAO\ponte_rocksfit.py"
+    start "" ".venv\Scripts\pythonw.exe" "MODULO_RECEPCAO\ponte_rocksfit_flet.py"
     exit
 )
 

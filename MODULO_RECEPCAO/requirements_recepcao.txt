@@ -1,6 +1,7 @@
-customtkinter
+flet
 requests
 opencv-python
 pillow
 numpy
+face-recognition
 pywin32

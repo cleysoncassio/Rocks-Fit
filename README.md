@@ -64,13 +64,18 @@ Bem-vindo ao projeto do site da academia Rocks Fit! Este repositório contém o 
 
 Abra o navegador e vá para http://localhost:8000 para ver o site da academia Rocks Fit em ação.
 
-10. **Inicie o Módulo de Recepção (Gestor de Academia)**
+### 🖥️ Módulo de Recepção (Gestor Local)
 
-    Caso precise rodar a interface local da recepção para testar layout ou acesso:
-    ```bash
-    cd MODULO_RECEPCAO
-    python3 ponte_rocksfit_flet.py
-    ```
+O sistema possui um módulo dedicado para a recepção da academia, focado em biometria facial e controle de acesso em tempo real. Este módulo foi otimizado para **Windows**.
+
+Para instalar e configurar o módulo de recepção:
+1. Navegue até a pasta `MODULO_RECEPCAO`.
+2. Siga as instruções detalhadas no arquivo [LEIA-ME.md](file:///home/ccs/Modelos/Rocks-Fit/MODULO_RECEPCAO/LEIA-ME.md) dentro da pasta.
+
+Basicamente, você precisará:
+- Criar um ambiente virtual (`python -m venv .venv`).
+- Instalar os requisitos (`pip install -r requirements_recepcao.txt`).
+- Executar via `INICIAR_ROCKSFIT.bat`.
 
 ## 📂 Estrutura do Projeto
 

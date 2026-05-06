@@ -44,6 +44,9 @@ class Command(BaseCommand):
         # Lista de comandos SQL para corrigir permissões
         # Inclui: tabelas, sequências, funções e privilégios padrão para tabelas futuras
         grant_commands = [
+            # Permissões de Schema
+            f"GRANT USAGE ON SCHEMA public TO \"{current_user}\";",
+            f"GRANT CREATE ON SCHEMA public TO \"{current_user}\";",
             # Permissões imediatas sobre objetos existentes
             f"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"{current_user}\";",
             f"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"{current_user}\";",
@@ -66,12 +69,14 @@ class Command(BaseCommand):
 
         # Verificar se tabelas críticas ficaram acessíveis
         critical_tables = [
+            "blog_user",
             "blog_trainer",
             "blog_plan",
             "blog_program",
             "blog_schedule",
             "blog_aluno",
             "blog_controleacesso",
+            "blog_loginattempt",
         ]
         self.stdout.write("\n[fix_db_permissions] Verificando acessibilidade das tabelas críticas...")
         all_ok = True
@@ -96,13 +101,18 @@ class Command(BaseCommand):
                 self.style.ERROR(
                     f"[fix_db_permissions] ⚠️  Concluído com {len(erros)} erro(s) de GRANT e "
                     f"{'FALHA' if not all_ok else 'OK'} na verificação. "
-                    "O usuário pode não ter privilégio de GRANT (apenas o owner pode)."
+                )
+            )
+            self.stdout.write(
+                self.style.WARNING(
+                    "Isso geralmente ocorre quando o usuário da aplicação não é o OWNER das tabelas.\n"
+                    "O OWNER (quem rodou o migrate original) ou um Superusuário deve rodar os comandos abaixo."
                 )
             )
             # Instrução de fallback para o operador
             self.stdout.write(
-                "\n[fix_db_permissions] SOLUÇÃO MANUAL (rodar no psql como superusuário):\n"
-                f"  GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {current_user};\n"
-                f"  GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {current_user};\n"
-                f"  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {current_user};\n"
+                "\n[fix_db_permissions] SOLUÇÃO MANUAL (rodar no psql como superusuário ou owner):\n"
+                f"  GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"{current_user}\";\n"
+                f"  GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"{current_user}\";\n"
+                f"  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO \"{current_user}\";\n"
             )

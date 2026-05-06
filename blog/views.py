@@ -81,11 +81,22 @@ def crm_reparar_banco(request):
 
     results = []
     
-    # 1. Tenta corrigir permissões de esquema
+    # 0. Identificar Usuário Corrente
+    current_user = "unknown"
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT current_user;")
+            current_user = cursor.fetchone()[0]
+            results.append(f"ℹ️ Usuário do Banco: <b>{current_user}</b>")
+    except Exception as e:
+        results.append(f"❌ Falha ao identificar usuário: {e}")
+
+    # 1. Tenta corrigir permissões de esquema e objetos
     commands = [
-        "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO CURRENT_USER;",
-        "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO CURRENT_USER;",
-        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO CURRENT_USER;"
+        f"GRANT USAGE ON SCHEMA public TO \"{current_user}\";",
+        f"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"{current_user}\";",
+        f"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"{current_user}\";",
+        f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO \"{current_user}\";"
     ]
     
     with connection.cursor() as cursor:
@@ -96,25 +107,55 @@ def crm_reparar_banco(request):
             except Exception as e:
                 results.append(f"❌ FALHA: {cmd} | Erro: {e}")
 
-    # 2. Corrigir Erro de Log de Admin (ForeignKeyViolation auth_user)
-    # Isso acontece quando trocamos para Custom User Model e o bando mantém FKs para a tabela antiga.
+    # 2. Verificação de tabelas críticas
+    critical_tables = ["blog_user", "blog_trainer", "blog_aluno", "blog_plan"]
+    for table in critical_tables:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT 1 FROM {table} LIMIT 1;")
+            results.append(f"✅ VERIFICAÇÃO: Tabela <b>{table}</b> está acessível.")
+        except Exception as e:
+            results.append(f"🔴 ERRO: Tabela <b>{table}</b> inacessível: {e}")
+
+    # 3. Corrigir Erro de Log de Admin (ForeignKeyViolation auth_user)
     try:
         with connection.cursor() as cursor:
-            # Remove a tabela que está com chaves estrangeiras corrompidas
             cursor.execute("DROP TABLE IF EXISTS django_admin_log CASCADE;")
             results.append("✅ Tabela django_admin_log removida para reconstrução.")
-            
-            # Remove o registro da migração para que o Django a execute novamente com o novo User Model
             MigrationRecorder.Migration.objects.filter(app='admin').delete()
             results.append("✅ Registro de migração 'admin' resetado.")
             
-        # Força a migração do admin para recriar a tabela apontando para blog_user
         call_command('migrate', 'admin', interactive=False)
         results.append("✅ Tabela de logs recriada com sucesso apontando para o Usuário correto.")
     except Exception as e:
         results.append(f"⚠️ Aviso ao reparar logs: {e}")
 
-    return HttpResponse("<h2>Resultado do Reparo Nuclear:</h2>" + "<br>".join(results) + "<br><br><a href='/'>Voltar para Home</a>")
+    html_response = f"""
+    <html>
+    <head><title>Reparo de Banco - Rocks Fit</title>
+    <style>body {{ font-family: sans-serif; line-height: 1.6; padding: 20px; background: #f4f4f9; }} 
+    .container {{ max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+    h2 {{ color: #d32f2f; border-bottom: 2px solid #eee; padding-bottom: 10px; }}
+    .log {{ background: #eee; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 14px; white-space: pre-wrap; }}
+    .success {{ color: #2e7d32; }} .error {{ color: #d32f2f; }} .info {{ color: #0277bd; }}
+    a {{ display: inline-block; margin-top: 20px; color: #1976d2; text-decoration: none; font-weight: bold; }}
+    </style></head>
+    <body>
+    <div class="container">
+        <h2>Relatório de Reparo Nuclear</h2>
+        <div class="log">
+            {"<br>".join(results)}
+        </div>
+        <p>Se as falhas persistirem, execute manualmente como Superusuário:</p>
+        <div class="log" style="background: #333; color: #fff;">
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "{current_user}";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "{current_user}";
+        </div>
+        <a href="/">Voltar para Home</a> | <a href="/login/">Ir para Login</a>
+    </div>
+    </body></html>
+    """
+    return HttpResponse(html_response)
 
 
 def home(request):
