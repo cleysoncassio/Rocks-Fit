@@ -77,42 +77,45 @@
                 
                 <!-- Cards de Métricas IA -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="bg-white dark:bg-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-xl ai-glow">
+                    <!-- Card de Risco -->
+                    <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[40px] border border-white/10 shadow-2xl hover:border-red-500/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
                         <div class="flex items-center gap-4 mb-6">
-                            <div class="p-3 bg-red-500/10 rounded-2xl text-red-500">
+                            <div class="p-3 bg-red-500/10 rounded-2xl text-red-500 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined">trending_down</span>
                             </div>
                             <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Risco de Churn</h3>
                         </div>
                         <div class="flex items-end gap-2">
-                            <span class="text-5xl font-headline font-black text-slate-900 dark:text-white">{{ analise.risco_evasao_percentual|default:"0" }}%</span>
+                            <span class="text-5xl font-headline font-black text-white italic leading-none">{{ analise.risco_evasao_percentual|default:"0" }}%</span>
                             <span class="text-xs font-bold text-red-500 mb-2 uppercase italic">Atenção</span>
                         </div>
-                        <div class="mt-6 w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
+                        <div class="mt-6 w-full bg-white/5 h-2 rounded-full overflow-hidden">
                             <div class="bg-red-500 h-full rounded-full transition-all duration-1000" style="width: {{ analise.risco_evasao_percentual|default:0 }}%"></div>
                         </div>
                     </div>
 
-                    <div class="bg-white dark:bg-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-xl ai-glow">
+                    <!-- Card Financeiro -->
+                    <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[40px] border border-white/10 shadow-2xl hover:border-green-500/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
                         <div class="flex items-center gap-4 mb-6">
-                            <div class="p-3 bg-green-500/10 rounded-2xl text-green-500">
+                            <div class="p-3 bg-green-500/10 rounded-2xl text-green-500 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined">account_balance_wallet</span>
                             </div>
                             <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Saúde Financeira</h3>
                         </div>
-                        <p class="text-slate-700 dark:text-neutral-300 font-bold leading-relaxed">
+                        <p class="text-neutral-300 font-bold leading-relaxed">
                             {{ analise.saude_financeira|default:"Sem dados processados." }}
                         </p>
                     </div>
 
-                    <div class="bg-white dark:bg-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-xl ai-glow">
+                    <!-- Card Insight -->
+                    <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[40px] border border-white/10 shadow-2xl hover:border-primary/30 transition-all duration-500 group hover:-translate-y-2 ai-glow">
                         <div class="flex items-center gap-4 mb-6">
-                            <div class="p-3 bg-primary/10 rounded-2xl text-primary">
+                            <div class="p-3 bg-primary/10 rounded-2xl text-primary group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined">lightbulb</span>
                             </div>
                             <h3 class="font-headline font-black uppercase text-xs tracking-widest text-neutral-400">Insight do Dia</h3>
                         </div>
-                        <p class="text-slate-700 dark:text-neutral-300 font-bold italic leading-relaxed">
+                        <p class="text-neutral-300 font-bold italic leading-relaxed">
                             "{{ analise.insight_do_dia|default:"Gere uma nova análise para obter insights." }}"
                         </p>
                     </div>
@@ -131,30 +134,30 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {% for acao in acoes %}
-                        <div class="bg-white dark:bg-[#131313] p-8 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-2xl relative overflow-hidden group">
+                        <div class="bg-gradient-to-br from-[#1c1c1c] to-[#131313] p-8 rounded-[40px] border border-white/10 shadow-2xl relative overflow-hidden group hover:-translate-y-2 transition-all duration-500 hover:border-primary/40 hover:shadow-primary/5">
                             <div class="absolute top-0 right-0 p-4">
                                 <span class="text-[8px] font-black text-neutral-500 uppercase tracking-widest">{{ acao.id_acao }}</span>
                             </div>
                             
                             <div class="flex gap-6">
                                 <div class="flex-shrink-0">
-                                    <div class="p-4 {% if acao.tipo == 'POST_REDE_SOCIAL' %}bg-purple-500/10 text-purple-500{% else %}bg-green-500/10 text-green-500{% endif %} rounded-2xl">
+                                    <div class="p-4 {% if acao.tipo == 'POST_REDE_SOCIAL' %}bg-purple-500/10 text-purple-500{% else %}bg-green-500/10 text-green-500{% endif %} rounded-2xl group-hover:scale-110 transition-transform">
                                         <span class="material-symbols-outlined text-3xl">
                                             {% if acao.tipo == 'POST_REDE_SOCIAL' %}campaign{% else %}chat{% endif %}
                                         </span>
                                     </div>
                                 </div>
                                 <div class="flex-grow">
-                                    <h4 class="font-headline font-black text-lg text-slate-900 dark:text-white uppercase leading-tight mb-1">{{ acao.titulo_painel }}</h4>
+                                    <h4 class="font-headline font-black text-lg text-white uppercase leading-tight mb-1">{{ acao.titulo_painel }}</h4>
                                     <div class="flex items-center gap-3 mb-6">
                                         <span class="text-[9px] font-black text-primary uppercase tracking-widest">{{ acao.departamento }}</span>
                                         <span class="w-1 h-1 bg-neutral-600 rounded-full"></span>
                                         <span class="text-[9px] font-black text-neutral-500 uppercase tracking-widest">{{ acao.tipo }}</span>
                                     </div>
 
-                                    <div class="bg-slate-50 dark:bg-black/30 p-6 rounded-3xl border border-slate-100 dark:border-white/5 mb-8">
-                                        <p class="text-xs font-bold text-slate-500 dark:text-neutral-500 uppercase tracking-widest mb-3 italic">Detalhes da IA:</p>
-                                        <p class="text-slate-800 dark:text-neutral-300 text-sm font-medium leading-relaxed">
+                                    <div class="bg-black/30 p-6 rounded-3xl border border-white/5 mb-8 group-hover:bg-black/50 transition-colors">
+                                        <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3 italic">Detalhes da IA:</p>
+                                        <p class="text-neutral-300 text-sm font-medium leading-relaxed">
                                             {{ acao.detalhes_para_aprovacao }}
                                         </p>
                                     </div>
@@ -163,7 +166,7 @@
                                         <form method="post" action="{% url 'crm_ia_action' acao.id %}" class="flex-grow">
                                             {% csrf_token %}
                                             <input type="hidden" name="status" value="APROVADO">
-                                            <button type="submit" class="w-full bg-primary text-black font-headline font-black text-[10px] uppercase tracking-widest py-4 rounded-xl btn-hover flex items-center justify-center gap-2">
+                                            <button type="submit" class="w-full bg-primary text-black font-headline font-black text-[10px] uppercase tracking-widest py-4 rounded-xl btn-hover flex items-center justify-center gap-2 shadow-lg shadow-primary/10">
                                                 <span class="material-symbols-outlined text-sm">check_circle</span>
                                                 Aprovar e Executar
                                             </button>
@@ -171,7 +174,7 @@
                                         <form method="post" action="{% url 'crm_ia_action' acao.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="status" value="REJEITADO">
-                                            <button type="submit" class="bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-4 rounded-xl hover:bg-red-500 hover:text-white transition-all">
+                                            <button type="submit" class="bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-4 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg">
                                                 <span class="material-symbols-outlined">close</span>
                                             </button>
                                         </form>
