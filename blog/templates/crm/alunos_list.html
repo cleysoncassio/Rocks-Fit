@@ -157,7 +157,7 @@
                                     <span class="md:hidden px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/5
                                         {% if aluno.status == 'ATIVO' %}bg-primary/10 text-primary
                                         {% elif aluno.status == 'INADIMPLENTE' %}bg-error/10 text-error
-                                        {% else %}bg-neutral-800 text-neutral-400{% endif %}">
+                                        {% else %}bg-slate-100 text-slate-600 dark:bg-neutral-800 dark:text-neutral-400{% endif %}">
                                         {{ aluno.get_status_display }}
                                     </span>
                                 </div>
@@ -178,7 +178,7 @@
                                 <span class="px-4 py-2 shrink-0 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border text-center
                                     {% if aluno.status == 'ATIVO' %}bg-primary/10 text-primary border-primary/20
                                     {% elif aluno.status == 'INADIMPLENTE' %}bg-error/10 text-error border-error/20
-                                    {% else %}bg-neutral-800 text-neutral-400 border-white/5{% endif %}">
+                                    {% else %}bg-slate-100 text-slate-600 border-slate-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-white/5{% endif %}">
                                     {{ aluno.get_status_display }}
                                 </span>
                             </div>
