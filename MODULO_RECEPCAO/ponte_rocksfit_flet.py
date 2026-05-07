@@ -118,63 +118,79 @@ def render_cadastro_view(matricula, page, biometria_manager, render_main_content
     
     COR_BG = "#050505"
     COR_PRIMARY = "#f27121"
+    COR_CARD = "#141414"
     COR_CARD_HIGH = "#1e1e1e"
     COR_TEXTO = "#ffffff"
     COR_TEXT_SEC = "#888888"
     COR_SUCCESS = "#2ecc71"
     COR_ERROR = "#e74c3c"
     
-    # Elementos de UI Premium
-    icon_finger = ft.Icon("fingerprint", color=COR_TEXT_SEC, size=120)
-    status_title = ft.Text("PRONTO PARA INICIAR", size=24, weight="bold", font_family="Space Grotesk")
-    status_desc = ft.Text("Posicione o dedo indicador no sensor quando solicitado.", color=COR_TEXT_SEC, text_align="center", size=16)
-    progresso = ft.ProgressBar(value=None, visible=False, color=COR_PRIMARY, bgcolor=COR_CARD_HIGH, height=12, border_radius=6)
+    # Elementos de Status (Estilo Diagnóstico)
+    status_hardware = ft.Text("DETECTANDO...", color=COR_TEXT_SEC, size=12, weight="bold")
+    status_captura = ft.Text("AGUARDANDO INÍCIO", color=COR_TEXT_SEC, size=12, weight="bold")
+    status_sync = ft.Text("PENDENTE", color=COR_TEXT_SEC, size=12, weight="bold")
     
-    container_icon = ft.Container(
-        content=icon_finger,
-        width=200, height=200,
-        border_radius=100,
-        bgcolor=COR_CARD_HIGH,
-        alignment=ft.alignment.center,
-        animate_scale=ft.Animation(600, ft.AnimationCurve.EASE_OUT_BACK),
-        shadow=ft.BoxShadow(blur_radius=50, color=COR_PRIMARY + "22")
-    )
-
-    def update_status(text, desc, color=COR_TEXTO, pulse=False):
-        status_title.value = text
-        status_title.color = color
-        status_desc.value = desc
-        if pulse:
-            container_icon.scale = 1.1
-            icon_finger.color = color
-            container_icon.shadow.color = color + "44"
-        else:
-            container_icon.scale = 1.0
-            icon_finger.color = COR_TEXT_SEC
-            container_icon.shadow.color = COR_PRIMARY + "22"
+    log_messages = ft.ListView(expand=True, spacing=5, padding=10)
+    
+    def add_log(msg, color=COR_TEXT_SEC):
+        timestamp = time.strftime("%H:%M:%S")
+        log_messages.controls.append(
+            ft.Text(f"[{timestamp}] {msg}", color=color, size=11, font_family="monospace")
+        )
+        if len(log_messages.controls) > 20:
+            log_messages.controls.pop(0)
         try: page.update()
         except: pass
 
+    def diag_box(label, status_ref, icon_name):
+        return ft.Container(
+            content=ft.Row([
+                ft.Icon(icon_name, color=COR_PRIMARY, size=20),
+                ft.Column([
+                    ft.Text(label, color=COR_TEXT_SEC, size=10, weight="bold"),
+                    status_ref
+                ], spacing=0, expand=True)
+            ], alignment="start", spacing=10),
+            padding=15,
+            bgcolor=COR_CARD_HIGH,
+            border_radius=8,
+            border=ft.border.all(1, "#ffffff10")
+        )
+
     def sync_to_crm():
         try:
-            update_status("SINCRONIZANDO...", "Gravando biometria no servidor CRM...", COR_PRIMARY)
-            resp = requests.post(f"{SITE_URL}/api/biometria-save/{matricula}/", timeout=5)
+            status_sync.value = "SINCRONIZANDO..."
+            status_sync.color = COR_PRIMARY
+            add_log("Iniciando sincronia remota...", COR_PRIMARY)
+            resp = requests.post(f"{SITE_URL}/api/biometria-save/{matricula}/", timeout=8)
             if resp.status_code == 200:
-                update_status("GRAVADO NO CRM", "✅ Digital sincronizada com sucesso no banco de dados.", COR_SUCCESS)
+                status_sync.value = "SINCRONIZADO"
+                status_sync.color = COR_SUCCESS
+                add_log("Sincronia concluída com sucesso no CRM.", COR_SUCCESS)
                 btn_sync.visible = False
             else:
-                update_status("ERRO CRM", "Falha ao gravar no servidor. Tente novamente.", COR_ERROR)
+                status_sync.value = "ERRO API"
+                status_sync.color = COR_ERROR
+                add_log(f"Erro na API CRM: {resp.status_code}", COR_ERROR)
         except Exception as e:
-            update_status("FALHA DE REDE", str(e), COR_ERROR)
+            status_sync.value = "FALHA REDE"
+            status_sync.color = COR_ERROR
+            add_log(f"Falha de rede: {str(e)}", COR_ERROR)
+        page.update()
 
     def iniciar_captura(e=None):
         if not biometria_manager:
-            update_status("HARDWARE AUSENTE", "O scanner de biometria não foi detectado no sistema.", COR_ERROR)
+            status_hardware.value = "DESCONECTADO"
+            status_hardware.color = COR_ERROR
+            add_log("CRÍTICO: Hardware não inicializado ou driver ausente.", COR_ERROR)
             return
         
+        status_hardware.value = "ONLINE"
+        status_hardware.color = COR_SUCCESS
         btn_start.visible = False
-        progresso.visible = True
-        update_status("CAPTURA INICIADA", "🔹 POSICIONE O DEDO NO SENSOR AGORA...", COR_PRIMARY, pulse=True)
+        status_captura.value = "EM CAPTURA"
+        status_captura.color = COR_PRIMARY
+        add_log("Sensor ativado. Aguardando leitura biométrica...", COR_PRIMARY)
         
         def _thread():
             proc = biometria_manager.enroll(matricula)
@@ -182,84 +198,115 @@ def render_cadastro_view(matricula, page, biometria_manager, render_main_content
                 try:
                     stdout, stderr = proc.communicate(timeout=45)
                     if "enroll-completed" in stdout or proc.returncode == 0:
-                        update_status("SUCESSO!", "✅ DIGITAL CAPTURADA LOCALMENTE.", COR_SUCCESS, pulse=True)
+                        status_captura.value = "CONCLUÍDO"
+                        status_captura.color = COR_SUCCESS
+                        add_log("Capture-Completed: Digital armazenada localmente.", COR_SUCCESS)
                         biometria_manager.guardar_arquivo_local(matricula)
                         btn_sync.visible = True
-                        # Auto-sync
                         sync_to_crm()
                     else:
-                        err_msg = "A captura foi interrompida ou falhou."
-                        if "enroll-retry-scan" in stdout: err_msg = "Digital muito rápida ou suja. Tente novamente."
-                        update_status("FALHA NA CAPTURA", f"❌ {err_msg}", COR_ERROR)
+                        status_captura.value = "FALHA"
+                        status_captura.color = COR_ERROR
+                        err_msg = "Scanner-Reset: Tente novamente."
+                        if "enroll-retry-scan" in stdout: err_msg = "Scanned-Too-Fast: Mova o dedo devagar."
+                        add_log(f"Falha: {err_msg}", COR_ERROR)
                         btn_start.visible = True
                 except Exception as ex:
-                    update_status("ERRO DE SISTEMA", str(ex), COR_ERROR)
+                    add_log(f"Exceção Interna: {str(ex)}", COR_ERROR)
                     btn_start.visible = True
                 finally:
                     global BIOMETRIA_BUSY
                     BIOMETRIA_BUSY = False
-                    progresso.visible = False
                     try: page.update()
                     except: pass
             else:
-                update_status("ERRO NO SCANNER", "Não foi possível inicializar o driver fprintd.", COR_ERROR)
-                progresso.visible = False
+                status_captura.value = "ERRO DRIVER"
+                status_captura.color = COR_ERROR
+                add_log("Fprintd-Error: Falha ao invocar processo de captura.", COR_ERROR)
                 btn_start.visible = True
                 page.update()
 
         threading.Thread(target=_thread, daemon=True).start()
 
     btn_start = ft.ElevatedButton(
-        "INICIAR CAPTURA",
+        "ATIVAR SENSOR",
         icon="sensors",
         bgcolor=COR_PRIMARY,
         color="#ffffff",
         on_click=iniciar_captura,
-        height=50,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12))
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
     )
 
     btn_sync = ft.ElevatedButton(
-        "RESERVAR NO CRM",
-        icon="cloud_upload",
+        "RE-SYNC CRM",
+        icon="cloud_sync",
         bgcolor=COR_SUCCESS,
         color="#ffffff",
         visible=False,
         on_click=lambda _: sync_to_crm(),
-        height=50,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12))
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
     )
     
-    btn_back = ft.IconButton(
-        icon="arrow_back",
-        icon_color=COR_TEXT_SEC,
+    btn_back = ft.TextButton(
+        "FECHAR GESTOR",
+        icon="close",
         on_click=lambda _: (setattr(state, 'BIOMETRIA_BUSY', False), page.go("/")),
-        tooltip="Voltar"
     )
 
     content = ft.Container(
         expand=True,
-        padding=40,
+        bgcolor=COR_BG,
+        padding=30,
         content=ft.Column([
-            ft.Row([btn_back, ft.Text("GESTOR DE CAPTURA BIOMÉTRICA", size=14, weight="bold", color=COR_PRIMARY, opacity=0.8)], alignment="spaceBetween"),
-            ft.Divider(height=40, color="transparent"),
-            ft.Text(nome, size=42, font_family="Space Grotesk", weight="black", text_align="center"),
-            ft.Text(f"MATRÍCULA: {matricula}", size=18, color=COR_TEXT_SEC),
-            ft.Divider(height=60, color="transparent"),
-            ft.Column([
-                container_icon,
-                ft.Divider(height=40, color="transparent"),
-                status_title,
-                status_desc,
-                ft.Divider(height=30, color="transparent"),
-                progresso,
-                ft.Divider(height=40, color="transparent"),
-                ft.Row([btn_start, btn_sync], alignment="center", spacing=20)
-            ], horizontal_alignment="center")
-        ], horizontal_alignment="center")
+            ft.Row([
+                ft.Column([
+                    ft.Text("MÓDULO DE CAPTURA BIOMÉTRICA", size=10, weight="bold", color=COR_PRIMARY, letter_spacing=1.5),
+                    ft.Text(nome, size=32, weight="black", font_family="Space Grotesk"),
+                    ft.Text(f"SISTEMA DE IDENTIFICAÇÃO - MATRÍCULA: {matricula}", size=12, color=COR_TEXT_SEC),
+                ], spacing=2),
+                btn_back
+            ], alignment="spaceBetween"),
+            
+            ft.Divider(height=40, color="#ffffff10"),
+            
+            ft.Row([
+                diag_box("HARDWARE SENSOR", status_hardware, "settings_input_component"),
+                diag_box("ESTADO CAPTURA", status_captura, "fingerprint"),
+                diag_box("SINCRONIA CRM", status_sync, "cloud_upload"),
+            ], spacing=15),
+            
+            ft.Divider(height=30, color="transparent"),
+            
+            # Quadro de Logs (Parecido com console de diagnóstico)
+            ft.Container(
+                expand=True,
+                bgcolor="#0a0a0a",
+                border=ft.border.all(1, "#ffffff05"),
+                border_radius=12,
+                padding=10,
+                content=ft.Column([
+                    ft.Row([
+                        ft.Icon("terminal", size=14, color=COR_TEXT_SEC),
+                        ft.Text("CONSOLE DE CAPTURA EM TEMPO REAL", size=11, color=COR_TEXT_SEC, weight="bold"),
+                    ], spacing=10),
+                    ft.Divider(height=10, color="#ffffff05"),
+                    log_messages
+                ])
+            ),
+            
+            ft.Divider(height=30, color="transparent"),
+            
+            ft.Row([
+                btn_start,
+                btn_sync
+            ], alignment="end", spacing=15)
+        ], spacing=0)
     )
     
-    return ft.View(f"/cadastro/{matricula}", [content], bgcolor=COR_BG)
+    # Auto-start
+    page.run_task(lambda: (time.sleep(1), add_log("Sistema pronto. Inicializando hardware..."), iniciar_captura()))
+    
+    return ft.View(f"/cadastro/{matricula}", [content], bgcolor=COR_BG, padding=0)
 
 # Inicialização Global da Biometria
 biometria_manager_global = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
