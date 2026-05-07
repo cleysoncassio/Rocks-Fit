@@ -114,6 +114,7 @@ def main(page: ft.Page):
     os.makedirs("BIOMETRIA_DATA/ALUNOS", exist_ok=True)
 
     def abrir_cadastro_digital(aluno):
+        print(f"DEBUG: Abrindo cadastro para {aluno.get('nome')}")
         nome = aluno.get("nome", "Membro").upper()
         matricula = str(aluno.get("matricula"))
         
@@ -939,9 +940,9 @@ def main(page: ft.Page):
 
         def check_biometria():
             try:
-                # Se o fprintd estiver instalado e acessível
-                subprocess.run(["fprintd-enroll", "--help"], capture_output=True, timeout=1)
-                return True
+                # O comando fprintd-list retorna "found X devices"
+                res = subprocess.run(["fprintd-list", os.getlogin()], capture_output=True, text=True, timeout=2)
+                return "found" in res.stdout.lower()
             except: return False
 
         def test_relay():
