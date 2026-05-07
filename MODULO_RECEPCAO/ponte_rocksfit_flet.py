@@ -1,9 +1,9 @@
 import flet as ft
 import os, sys
 
-# Evitar travamentos do Flet no Linux (Wayland)
+# Evitar travamentos do Flet no Linux (Wayland/X11)
 if sys.platform.startswith("linux"):
-    os.environ["GDK_BACKEND"] = "x11"
+    # os.environ["GDK_BACKEND"] = "x11" # Removido para permitir auto-detecção
     os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
 
 from datetime import datetime, timedelta
@@ -63,6 +63,7 @@ MOCK_HISTORICO = []
 api_app = Flask(__name__)
 manager_global = None
 BIOMETRIA_BUSY = False # Flag para evitar conflito entre Verificação e Cadastro
+page_global = None
 
 @api_app.after_request
 def add_cors_headers(response):
@@ -77,24 +78,13 @@ def api_enroll(matricula):
     if not manager_global:
         return jsonify({"success": False, "error": "Hardware não inicializado"}), 500
     
-    BIOMETRIA_BUSY = True
-    print(f"📡 API: Solicitando captura para {matricula}")
-    proc = manager_global.enroll(matricula)
-    if proc:
-        try:
-            # Espera até 30s
-            stdout, stderr = proc.communicate(timeout=30)
-            if "enroll-completed" in stdout or proc.returncode == 0:
-                manager_global.guardar_arquivo_local(matricula)
-                return jsonify({"success": True, "digital_id": matricula})
-            else:
-                return jsonify({"success": False, "error": stderr or "Falha na captura"}), 400
-        except Exception as e:
-            return jsonify({"success": False, "error": str(e)}), 500
-        finally:
-            BIOMETRIA_BUSY = False
-    BIOMETRIA_BUSY = False
-    return jsonify({"success": False, "error": "Falha ao iniciar scanner"}), 500
+    # Notifica a UI do Flet para abrir o quadro
+    if page_global:
+        # Busca o aluno no cache global
+        aluno = next((a for a in GLOBAL_ALUNOS if str(a.get("matricula")) == str(matricula)), {"matricula": matricula, "nome": "Aluno Externo"})
+        page_global.pubsub.send_all({"type": "open_enroll", "aluno": aluno})
+        
+    return jsonify({"success": True, "message": "Quadro de captura aberto no terminal de recepção."})
 
 def run_api():
     print("🌐 API Bridge iniciada em http://0.0.0.0:8553")
@@ -105,181 +95,373 @@ threading.Thread(target=run_api, daemon=True).start()
 
 import getpass
 
+def trigger_catraca(msg="Liberado"):
+    import socket
+    # Comando de abertura + comando de bip para a controladora RocksFit
+    for pta in [1001, 3000, 5000]:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(1)
+                sock.connect(("192.168.1.100", pta))
+                # Envia comando de liberação
+                sock.sendall(f"lgu\x00{msg}".encode())
+                time.sleep(0.1)
+                # Envia comando de bip sonoro
+                sock.sendall(b"bip\x00")
+                return True
+        except:
+            pass
+    return False
+
 def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content, state):
     global BIOMETRIA_BUSY
-    BIOMETRIA_BUSY = True
+    if BIOMETRIA_BUSY:
+        return
     
+    BIOMETRIA_BUSY = True
     nome = aluno.get("nome", "Membro").upper()
     matricula = str(aluno.get("matricula"))
     
-    COR_BG = "#050505"
-    COR_PRIMARY = "#f27121"
-    COR_CARD = "#141414"
-    COR_CARD_HIGH = "#1e1e1e"
-    COR_TEXTO = "#ffffff"
-    COR_TEXT_SEC = "#888888"
-    COR_SUCCESS = "#2ecc71"
-    COR_ERROR = "#e74c3c"
+    # Cores Industrial RKS
+    COR_GLASS = "#ffffff08"
+    COR_ACCENT = COR_PRIMARY
     
-    # Elementos de Status (Estilo Diagnóstico)
-    status_hardware = ft.Text("DETECTANDO...", color=COR_TEXT_SEC, size=11, weight="bold")
-    status_captura = ft.Text("AGUARDANDO...", color=COR_TEXT_SEC, size=11, weight="bold")
-    status_sync = ft.Text("PENDENTE", color=COR_TEXT_SEC, size=11, weight="bold")
-    
+    status_captura = ft.Text("AGUARDANDO SELEÇÃO", color=COR_TEXT_SEC, size=12, weight="bold")
     log_messages = ft.ListView(expand=True, spacing=3, padding=5)
-    
+
     def add_log(msg, color=COR_TEXT_SEC):
         timestamp = time.strftime("%H:%M:%S")
         log_messages.controls.append(
-            ft.Text(f"[{timestamp}] {msg}", color=color, size=10, font_family="monospace")
+            ft.Text(f"[{timestamp}] {msg}", color=color, size=11, font_family="monospace")
         )
         if len(log_messages.controls) > 15:
             log_messages.controls.pop(0)
-        try: page.update()
-        except: pass
-
-    def diag_mini_box(label, status_ref, icon_name):
-        return ft.Container(
-            content=ft.Row([
-                ft.Icon(icon_name, color=COR_PRIMARY, size=16),
-                ft.Column([
-                    ft.Text(label, color=COR_TEXT_SEC, size=9, weight="bold"),
-                    status_ref
-                ], spacing=0)
-            ], spacing=8),
-            padding=10,
-            bgcolor=COR_CARD_HIGH,
-            border_radius=8,
-            expand=True
-        )
+        page.update()
 
     def sync_to_crm():
         try:
-            status_sync.value = "SYNC..."
-            status_sync.color = COR_PRIMARY
-            add_log("Sincronizando com servidor CRM...", COR_PRIMARY)
+            add_log("Sincronizando com servidor CRM...", COR_ACCENT)
             resp = requests.post(f"{SITE_URL}/api/biometria-save/{matricula}/", timeout=8)
             if resp.status_code == 200:
-                status_sync.value = "OK"
-                status_sync.color = COR_SUCCESS
-                add_log("Sucesso: Digital vinculada no CRM.", COR_SUCCESS)
-                btn_sync.visible = False
+                add_log("✔ Sucesso: Digital vinculada no CRM.", COR_SUCCESS)
             else:
-                status_sync.value = "ERRO"
-                status_sync.color = COR_ERROR
-                add_log(f"Erro CRM: {resp.status_code}", COR_ERROR)
-        except Exception as e:
-            status_sync.value = "FALHA"
-            status_sync.color = COR_ERROR
-            add_log("Falha de rede na sincronia.", COR_ERROR)
+                add_log(f"⚠ Erro CRM: {resp.status_code}", COR_ERROR)
+        except:
+            add_log("✖ Falha de rede na sincronia.", COR_ERROR)
+
+    def process_enroll(finger, label):
+        if not biometria_manager:
+            add_log("Hardware biométrico não configurado.", COR_ERROR)
+            return
+
+        # Verifica se já existe e pergunta qual ação tomar
+        if biometria_manager.check_exists(matricula, finger):
+            def handle_action(action):
+                page.overlay.remove(confirm_dlg)
+                safe_update()
+                
+                if action == "enroll":
+                    _start_enroll_thread(finger, label)
+                elif action == "delete":
+                    if biometria_manager.apagar_digital_local(matricula, finger):
+                        add_log(f"🗑️ Registro do {label} removido.", COR_WARNING)
+                        # Remove da lista local para atualizar UI imediatamente
+                        if finger in enrolled_fingers:
+                            enrolled_fingers.remove(finger)
+                        update_fingers_ui()
+                    else:
+                        add_log("Erro ao remover registro.", COR_ERROR)
+
+            confirm_dlg = ft.AlertDialog(
+                title=ft.Row([ft.Icon(ft.Icons.SETTINGS, color=COR_ACCENT), ft.Text("Gestão de Digital")]),
+                content=ft.Text(f"O {label} já possui um registro. O que deseja fazer?"),
+                actions=[
+                    ft.ElevatedButton("Recadastrar", icon=ft.Icons.REFRESH, on_click=lambda _: handle_action("enroll"), bgcolor="#FF8C00", color="white"),
+                    ft.ElevatedButton("Apagar", icon=ft.Icons.DELETE_FOREVER, on_click=lambda _: handle_action("delete"), bgcolor="#CC0000", color="white"),
+                    ft.TextButton("Cancelar", on_click=lambda _: (page.overlay.remove(confirm_dlg), safe_update()))
+                ],
+                actions_alignment="end"
+            )
+            page.overlay.append(confirm_dlg)
+            confirm_dlg.open = True
+            safe_update()
+        else:
+            _start_enroll_thread(finger, label)
+
+    def _start_enroll_thread(finger, label):
+        status_captura.value = f"CAPTURA ATIVA: {label.upper()}"
+        status_captura.color = COR_ACCENT
+        add_log(f"Posicione o {label} no sensor agora...", COR_ACCENT)
         page.update()
 
-    def iniciar_captura(e=None):
-        if not biometria_manager:
-            status_hardware.value = "OFFLINE"
-            status_hardware.color = COR_ERROR
-            add_log("Erro: Hardware não encontrado.", COR_ERROR)
-            return
-        
-        status_hardware.value = "ONLINE"
-        status_hardware.color = COR_SUCCESS
-        btn_start.visible = False
-        status_captura.value = "CAPTURANDO"
-        status_captura.color = COR_PRIMARY
-        add_log("Sensor ativo. Posicione o dedo...", COR_PRIMARY)
-        
         def _thread():
-            proc = biometria_manager.enroll(matricula)
+            proc = biometria_manager.enroll(matricula, finger)
             if proc:
                 try:
-                    stdout, stderr = proc.communicate(timeout=45)
-                    if "enroll-completed" in stdout or proc.returncode == 0:
-                        status_captura.value = "SUCESSO"
-                        status_captura.color = COR_SUCCESS
-                        add_log("OK: Digital salva localmente.", COR_SUCCESS)
-                        biometria_manager.guardar_arquivo_local(matricula)
-                        btn_sync.visible = True
-                        sync_to_crm()
-                        render_main_content()
-                    else:
-                        status_captura.value = "REPETIR"
-                        status_captura.color = COR_ERROR
-                        add_log("Falha na leitura. Tente novamente.", COR_ERROR)
-                        btn_start.visible = True
-                except Exception as ex:
-                    add_log("Erro crítico no processo.", COR_ERROR)
-                    btn_start.visible = True
+                    # O fprintd-enroll emite várias mensagens durante os toques
+                    while True:
+                        line = proc.stdout.readline()
+                        if not line: break
+                        line = line.strip().lower()
+                        if "enroll-stage-passed" in line:
+                            add_log("✔ Toque capturado. Continue...", COR_SUCCESS)
+                        elif "enroll-retry-scan" in line:
+                            add_log("⚠ Falha no toque. Tente novamente.", COR_WARNING)
+                        elif "enroll-completed" in line:
+                            biometria_manager.guardar_arquivo_local(matricula, finger)
+                            add_log(f"✅ FINALIZADO: {label} cadastrado com sucesso!", COR_SUCCESS)
+                            sync_to_crm()
+                            update_fingers_ui()
+                            render_main_content()
+                            break
+                    
+                    proc.wait(timeout=5)
+                    if proc.returncode != 0 and "enroll-completed" not in status_captura.value:
+                        add_log(f"⚠ Processo interrompido ou falhou (cod {proc.returncode}).", COR_ERROR)
+                except Exception as e:
+                    add_log(f"✖ Erro técnico: {str(e)}", COR_ERROR)
                 finally:
-                    global BIOMETRIA_BUSY
-                    BIOMETRIA_BUSY = False
-                    try: page.update()
-                    except: pass
+                    status_captura.value = "PRONTO PARA NOVA CAPTURA"
+                    status_captura.color = COR_SUCCESS
+                    page.update()
             else:
-                add_log("Falha ao iniciar driver.", COR_ERROR)
-                btn_start.visible = True
-                page.update()
-
+                add_log("Falha ao inicializar driver fprintd.", COR_ERROR)
+        
         threading.Thread(target=_thread, daemon=True).start()
 
-    btn_start = ft.ElevatedButton(
-        "INICIAR", icon="sensors", bgcolor=COR_PRIMARY, color="#ffffff",
-        on_click=iniciar_captura, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
-    )
+    def delete_finger(finger, label):
+        if biometria_manager.apagar_digital_local(matricula, finger):
+            add_log(f"🗑️ Registro do {label} removido.", COR_WARNING)
+            update_fingers_ui()
+            render_main_content()
+        else:
+            add_log("Erro ao remover registro.", COR_ERROR)
 
-    btn_sync = ft.ElevatedButton(
-        "SYNC", icon="cloud_sync", bgcolor=COR_SUCCESS, color="#ffffff",
-        visible=False, on_click=lambda _: sync_to_crm(),
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
-    )
+    def create_finger_box(finger, label, x, y):
+        is_enrolled = finger in biometria_manager.get_enrolled_fingers(matricula)
+        
+        return ft.Container(
+            content=ft.Stack([
+                # Botão Principal
+                ft.Container(
+                    content=ft.Icon(
+                        "fingerprint" if not is_enrolled else "check_circle",
+                        color="#ffffff" if not is_enrolled else COR_SUCCESS, 
+                        size=24
+                    ),
+                    width=54, height=54,
+                    border_radius=27,
+                    bgcolor=COR_CARD_HIGH if not is_enrolled else "#2ecc7122",
+                    border=ft.border.all(2, COR_ACCENT if not is_enrolled else COR_SUCCESS),
+                    animate=ft.Animation(300, "decelerate"),
+                    on_click=lambda _: process_enroll(finger, label),
+                    tooltip=f"Cadastrar {label}",
+                    alignment=ft.alignment.center
+                ),
+                # Botão Deletar
+                ft.IconButton(
+                    icon="cancel", icon_color=COR_ERROR, icon_size=18,
+                    width=24, height=24,
+                    left=38, top=-5,
+                    on_click=lambda _: delete_finger(finger, label),
+                    visible=is_enrolled,
+                    padding=0,
+                    tooltip="Excluir biometria"
+                ),
+                # Label
+                ft.Container(
+                    content=ft.Text(label, size=8, weight="bold", color=COR_TEXTO),
+                    bgcolor="#000000aa",
+                    padding=ft.padding.symmetric(horizontal=6, vertical=2),
+                    border_radius=4,
+                    left=-5, top=58,
+                    width=64,
+                    alignment=ft.alignment.center
+                )
+            ]),
+            left=x,
+            top=y,
+            width=70, height=80
+        )
+
+    FINGERS_MAPPING = [
+        {"id": "left-pinky",   "label": "Mínimo E",   "left": 350, "top": 300},
+        {"id": "left-ring-finger",   "label": "Anelar E",   "left": 402, "top": 264},
+        {"id": "left-middle-finger",    "label": "Médio E",    "left": 440, "top": 251},
+        {"id": "left-index-finger","label": "Indic. E",   "left": 490, "top": 263},
+        {"id": "left-thumb",  "label": "Polegar E",  "left": 544, "top": 358},
+        
+        {"id": "right-thumb",  "label": "Polegar D",  "left": 625, "top": 361},
+        {"id": "right-index-finger","label": "Indic. D",   "left": 687, "top": 265},
+        {"id": "right-middle-finger",    "label": "Médio D",    "left": 774, "top": 266},
+        {"id": "right-ring-finger",   "label": "Anelar D",   "left": 731, "top": 250},
+        {"id": "right-pinky",   "label": "Mínimo D",   "left": 808, "top": 313},
+    ]
+
+    # Pre-busca os dedos cadastrados para evitar 10 acessos ao disco no loop
+    enrolled_fingers = biometria_manager_global.get_enrolled_fingers(aluno['matricula']) if biometria_manager_global else []
+
+    LEFT_HAND_SVG = """<svg viewBox="0 0 260 420" xmlns="http://www.w3.org/2000/svg" width="260" height="420"><defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M 40 260 Q 20 320 30 390 Q 50 420 130 415 Q 200 412 220 390 Q 240 360 235 290 Q 230 250 220 230 L 200 210 L 170 215 L 140 212 L 115 215 L 85 212 L 55 225 Z" fill="none" stroke="#FF8C00" stroke-width="1" opacity="0.4" filter="url(#glow)"/><path d="M 40 225 Q 28 200 22 165 Q 18 140 25 120 Q 30 108 42 110 Q 54 112 58 128 Q 62 148 60 175 Q 58 200 60 225 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 70 220 Q 60 185 58 145 Q 57 110 62 90 Q 67 76 80 76 Q 93 76 97 92 Q 101 112 100 148 Q 98 182 95 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 105 215 Q 97 175 96 130 Q 96 92 100 72 Q 105 58 118 57 Q 131 57 136 72 Q 141 90 140 132 Q 138 175 135 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 145 215 Q 140 178 140 138 Q 141 100 145 82 Q 150 68 162 68 Q 175 68 179 83 Q 183 100 182 138 Q 180 178 175 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 195 260 Q 215 245 228 225 Q 238 208 235 290 Q 232 310 220 310 Q 208 310 200 295 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 195 260 Q 205 240 218 220 Q 230 200 240 195 Q 252 192 255 205 Q 258 220 248 240 Q 237 260 222 275 Q 210 285 200 282 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/></svg>"""
+    RIGHT_HAND_SVG = """<svg viewBox="0 0 260 420" xmlns="http://www.w3.org/2000/svg" width="260" height="420"><defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M 220 260 Q 240 320 230 390 Q 210 420 130 415 Q 60 412 40 390 Q 20 360 25 290 Q 30 250 40 230 L 60 210 L 90 215 L 120 212 L 145 215 L 175 212 L 205 225 Z" fill="none" stroke="#FF8C00" stroke-width="1" opacity="0.4" filter="url(#glow)"/><path d="M 220 225 Q 232 200 238 165 Q 242 140 235 120 Q 230 108 218 110 Q 206 112 202 128 Q 198 148 200 175 Q 202 200 200 225 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 190 220 Q 200 185 202 145 Q 203 110 198 90 Q 193 76 180 76 Q 167 76 163 92 Q 159 112 160 148 Q 162 182 165 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 155 215 Q 163 175 164 130 Q 164 92 160 72 Q 155 58 142 57 Q 129 57 124 72 Q 119 90 120 132 Q 122 175 125 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 115 215 Q 120 178 120 138 Q 119 100 115 82 Q 110 68 98 68 Q 85 68 81 83 Q 77 100 78 138 Q 80 178 85 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 65 260 Q 45 245 32 225 Q 22 208 25 290 Q 28 310 40 310 Q 52 310 60 295 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 65 260 Q 55 240 42 220 Q 30 200 20 195 Q 8 192 5 205 Q 2 220 12 240 Q 23 260 38 275 Q 50 285 60 282 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/></svg>"""
+
+    def finger_button(finger: dict) -> ft.GestureDetector:
+        """Botão circular que pode ser arrastado para calibração de posição."""
+        id_dedo = finger["id"]
+        possuo_digital = id_dedo in enrolled_fingers
+        
+        # Container do botão (Fundo)
+        btn_circle = ft.Container(
+            width=30, height=30,
+            border_radius=15,
+            bgcolor="#151515" if not possuo_digital else "#FF8C0020",
+            border=ft.border.all(1.5, COR_ACCENT if not possuo_digital else "#00FF00"),
+            content=ft.Icon(
+                ft.Icons.FINGERPRINT, 
+                color=COR_ACCENT if not possuo_digital else "#00FF00", 
+                size=16
+            ),
+            shadow=ft.BoxShadow(spread_radius=1, blur_radius=10, color=COR_ACCENT + "40" if not possuo_digital else "#00FF0040")
+        )
+
+        # Label externa para orientação
+        btn_content = ft.Column([
+            btn_circle,
+            ft.Text(finger["label"], size=8, color="#ffffff", weight="bold")
+        ], horizontal_alignment="center", spacing=2)
+
+        def on_pan_update(e: ft.DragUpdateEvent):
+            gd.top = max(0, gd.top + e.delta_y)
+            gd.left = max(0, gd.left + e.delta_x)
+            gd.update()
+            print(f"📍 CALIBRAÇÃO: '{id_dedo}' -> left: {int(gd.left)}, top: {int(gd.top)}")
+
+        gd = ft.GestureDetector(
+            content=btn_content,
+            key=f"finger_{id_dedo}", 
+            left=finger["left"],
+            top=finger["top"],
+            on_pan_update=on_pan_update,
+            on_tap=lambda _: process_enroll(id_dedo, finger["label"]),
+            mouse_cursor=ft.MouseCursor.MOVE
+        )
+        return gd
+
+    # Criação ESTÁTICA para garantir os 10 botões
+    controls_list = [
+        ft.Image(src="media/imagens/rocksfit_hand_schematic.png", width=1200, height=650, fit="contain", opacity=0.9, gapless_playback=True),
+    ]
     
+    finger_controls = {}
+    for f in FINGERS_MAPPING:
+        btn = finger_button(f)
+        finger_controls[f["id"]] = btn
+        controls_list.append(btn)
+
+    hands_stack = ft.Stack(controls_list, width=1200, height=650)
+
+    def update_fingers_ui():
+        """Atualiza apenas o estado visual dos botões existentes, sem recriá-los (EVITA CRASH)"""
+        try:
+            for fid, btn in finger_controls.items():
+                exists = biometria_manager_global.check_exists(matricula, fid)
+                # Navega na árvore: GestureDetector -> Column -> Container
+                circle = btn.content.controls[0]
+                circle.bgcolor = "#151515" if not exists else "#FF8C0020"
+                circle.border = ft.border.all(1.5, COR_ACCENT if not exists else "#00FF00")
+                circle.content.color = COR_ACCENT if not exists else "#00FF00"
+                circle.shadow.color = COR_ACCENT + "40" if not exists else "#00FF0040"
+            
+            hands_stack.update()
+        except Exception as e:
+            print(f"⚠️ Erro ao atualizar UI dedos: {e}")
+
     def fechar_dlg(e):
         global BIOMETRIA_BUSY
         BIOMETRIA_BUSY = False
         dlg.open = False
         page.update()
 
-    btn_close = ft.TextButton("FECHAR", on_click=fechar_dlg)
-
     dlg = ft.AlertDialog(
-        bgcolor=COR_BG,
+        bgcolor="transparent",
+        content_padding=0,
         content=ft.Container(
-            width=480, height=550,
-            padding=10,
+            width=1200, height=850,
+            bgcolor=COR_BG,
+            border_radius=24,
+            border=ft.border.all(1, "#ffffff10"),
+            padding=30,
             content=ft.Column([
+                # Header
                 ft.Row([
                     ft.Column([
-                        ft.Text("GESTOR DE BIOMETRIA", size=10, weight="bold", color=COR_PRIMARY),
-                        ft.Text(nome[:25], size=20, weight="black", font_family="Space Grotesk"),
-                    ], spacing=0),
-                    ft.Text(f"MAT. {matricula}", size=10, color=COR_TEXT_SEC)
+                        ft.Text("MÓDULO DE CADASTRO BIOMÉTRICO", size=12, weight="bold", color=COR_ACCENT),
+                        ft.Text(nome, size=38, weight="black", font_family="Space Grotesk"),
+                    ], spacing=2, expand=True),
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Text("MATRÍCULA", size=10, color=COR_TEXT_SEC, weight="bold"),
+                            ft.Text(matricula, size=24, weight="bold", font_family="monospace", color=COR_ACCENT),
+                        ], spacing=0, horizontal_alignment="center"),
+                        padding=15, bgcolor=COR_CARD, border_radius=12, border=ft.border.all(1, "#ffffff08")
+                    ),
+                    ft.IconButton(ft.Icons.CLOSE, on_click=fechar_dlg, icon_color=COR_TEXT_SEC)
                 ], alignment="spaceBetween"),
-                ft.Divider(height=20, color="#ffffff10"),
+                
+                ft.Divider(height=40, color="#ffffff08"),
+                
+                # Área de interação
                 ft.Row([
-                    diag_mini_box("SENSOR", status_hardware, "settings_input_component"),
-                    diag_mini_box("CAPTURA", status_captura, "fingerprint"),
-                    diag_mini_box("CRM", status_sync, "cloud_upload"),
-                ], spacing=10),
-                ft.Divider(height=20, color="transparent"),
-                ft.Container(
-                    expand=True, bgcolor="#0a0a0a", border_radius=8, padding=10,
-                    border=ft.border.all(1, "#ffffff05"),
-                    content=ft.Column([
-                        ft.Text("LOGS DE SISTEMA", size=9, color=COR_TEXT_SEC, weight="bold"),
-                        ft.Divider(height=10, color="#ffffff05"),
-                        log_messages
-                    ])
-                ),
-                ft.Row([btn_close, ft.Row([btn_sync, btn_start])], alignment="spaceBetween")
-            ])
+                    # Coluna Esquerda: Log e Status
+                    ft.Column([
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Icon("sensors", color=COR_ACCENT, size=20),
+                                    status_captura,
+                                ], spacing=10),
+                                ft.Text("Selecione um dedo para iniciar", size=11, color=COR_TEXT_SEC),
+                            ]),
+                            bgcolor=COR_GLASS, padding=20, border_radius=16, border=ft.border.all(1, "#ffffff05")
+                        ),
+                        ft.Container(height=20), # Espaçador
+                ft.Text("LOG DE OPERAÇÃO", size=10, weight="bold", color=COR_TEXT_SEC),
+                        ft.Container(
+                            expand=True, bgcolor="#000000", border_radius=16, padding=15,
+                            border=ft.border.all(1, "#ffffff05"),
+                            content=log_messages
+                        ),
+                        ft.ElevatedButton(
+                            "CONCLUIR CADASTRO", 
+                            on_click=fechar_dlg,
+                            width=300, height=50,
+                            style=ft.ButtonStyle(
+                                bgcolor=COR_ACCENT, color="#ffffff",
+                                shape=ft.RoundedRectangleBorder(radius=12)
+                            )
+                        )
+                    ], width=350, spacing=10),
+                    
+                    # Coluna Direita: Foto Mãos (COM SCROLL PARA GARANTIR OS 10)
+                    ft.Container(
+                        expand=True,
+                        bgcolor="#080808",
+                        border_radius=20,
+                        border=ft.border.all(1, "#ffffff05"),
+                        content=ft.Row([hands_stack], scroll=ft.ScrollMode.ALWAYS),
+                        alignment=ft.alignment.center
+                    )
+                ], expand=True, spacing=20)
+            ], spacing=10)
         )
     )
     
-    page.dialog = dlg
+    def safe_update():
+        try: page.update()
+        except: pass
+
+    page.overlay.append(dlg)
     dlg.open = True
-    page.update()
-    
-    # Auto-start
-    threading.Thread(target=lambda: (time.sleep(0.5), iniciar_captura()), daemon=True).start()
+    safe_update()
 
 # Inicialização Global da Biometria
 biometria_manager_global = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
@@ -293,7 +475,15 @@ def main(page: ft.Page):
     page.bgcolor = COR_BG
     page.window.width = 1400
     page.window.height = 900
-    
+    page.window.min_width = 1200
+    page.window.min_height = 800
+    page.window.maximizable = True
+    page.window.minimizable = True
+    page.window.resizable = True
+    page.window.title_bar_hidden = True  # Oculta a barra do sistema para o visual premium
+    page.window.title_bar_buttons_hidden = True
+    page.window.center()
+
     # Garantir diretórios de persistência local
     os.makedirs("BIOMETRIA_DATA/ALUNOS", exist_ok=True)
 
@@ -307,9 +497,15 @@ def main(page: ft.Page):
         "current_view": "clientes"
     }
 
+    global page_global
+    page_global = page
+    
     # Sistema de notificação entre abas
     def on_broadcast(msg):
-        if msg == "sync_done":
+        if isinstance(msg, dict) and msg.get("type") == "open_enroll":
+            aluno = msg.get("aluno")
+            abrir_cadastro_digital(aluno, page, biometria_manager_global, render_main_content, state)
+        elif msg == "sync_done":
             state["alunos_data"] = GLOBAL_ALUNOS
             render_alunos()
         elif msg == "new_access":
@@ -372,7 +568,7 @@ def main(page: ft.Page):
             create_section_title("MONITORAMENTO"),
             create_menu_item("Clientes", "people", active=state["current_view"] == "clientes", on_click=lambda _: switch_view("clientes")),
             create_menu_item("Biometria", "fingerprint", active=state["current_view"] == "biometria", on_click=lambda _: switch_view("biometria")),
-            create_menu_item("Monitor Câmera", "videocam", on_click=lambda _: page.launch_url("/monitor", web_window_name="_blank")),
+            create_menu_item("Monitor Câmera", "videocam", on_click=lambda _: page.go("/monitor")),
         ],
         spacing=4
     )
@@ -424,7 +620,7 @@ def main(page: ft.Page):
         border_radius=12,
         padding=ft.padding.symmetric(horizontal=20),
         ink=True,
-        on_click=lambda _: page.launch_url("/monitor", web_window_name="_blank"),
+        on_click=lambda _: page.go("/monitor"),
     )
 
     menu_acesso = ft.Column(
@@ -861,18 +1057,21 @@ def main(page: ft.Page):
         ], expand=True)
 
     def render_main_content():
-        # Atualiza menu ativo no sidebar
+        # Atualiza menu ativo no sidebar com segurança
         for item in menu_monitoramento.controls:
-            if isinstance(item, ft.Container):
-                # O texto está dentro de Row -> Container
-                text_obj = item.content.controls[1]
-                icon_obj = item.content.controls[0]
-                is_active = (text_obj.value == "Clientes" and state["current_view"] == "clientes") or \
-                           (text_obj.value == "Biometria" and state["current_view"] == "biometria")
-                
-                item.bgcolor = COR_CARD if is_active else None
-                icon_obj.color = COR_PRIMARY if is_active else COR_TEXT_SEC
-                text_obj.color = COR_TEXTO if is_active else COR_TEXT_SEC
+            if isinstance(item, ft.Container) and hasattr(item, "content") and isinstance(item.content, ft.Row):
+                try:
+                    # O texto está dentro de Row -> Container
+                    text_obj = item.content.controls[1]
+                    icon_obj = item.content.controls[0]
+                    is_active = (text_obj.value == "Clientes" and state["current_view"] == "clientes") or \
+                               (text_obj.value == "Biometria" and state["current_view"] == "biometria")
+                    
+                    item.bgcolor = COR_CARD if is_active else None
+                    icon_obj.color = COR_PRIMARY if is_active else COR_TEXT_SEC
+                    text_obj.color = COR_TEXTO if is_active else COR_TEXT_SEC
+                except (IndexError, AttributeError):
+                    pass
 
         if state["current_view"] == "clientes":
             center_panel.content = center_content
@@ -1015,13 +1214,12 @@ def main(page: ft.Page):
             except: return False
 
         def test_relay():
-            import socket
-            for pta in [1001, 3000, 5000]:
-                try:
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                        sock.settimeout(2); sock.connect(("192.168.1.100", pta)); sock.sendall(b"lgu\x00Teste Diagnostico"); break
-                except: pass
-            btn_test.text = "COMANDO ENVIADO"; btn_test.disabled = True; page.update()
+            if trigger_catraca("Teste Diagnostico"):
+                btn_test.text = "COMANDO ENVIADO"
+            else:
+                btn_test.text = "FALHA CONEXÃO"
+            btn_test.disabled = True
+            page.update()
 
         status_crm = check_crm()
         status_cat = check_catraca()
@@ -1092,24 +1290,80 @@ def main(page: ft.Page):
         page.update()
 
     # ==========================
+    # BARRA DE TÍTULO CUSTOMIZADA (PREMIUM) - FUNÇÃO GERADORA
+    # ==========================
+    def create_title_bar(title_text="ROCKS FIT - SISTEMA DE RECEPÇÃO"):
+        def close_app(e): page.window.close()
+        def minimize_app(e): page.window.minimized = True
+        def maximize_app(e): 
+            page.window.maximized = not page.window.maximized
+            page.update()
+
+        return ft.Container(
+            content=ft.Row(
+                [
+                    ft.WindowDragArea(
+                        content=ft.Container(
+                            content=ft.Row([
+                                ft.Image(src="assets/rkslogo.png", height=20) if os.path.exists("assets/rkslogo.png") else ft.Icon("fitness_center", color=COR_PRIMARY, size=20),
+                                ft.Text(title_text, size=11, weight="bold", color=COR_TEXT_SEC, font_family="Space Grotesk"),
+                            ], spacing=10),
+                            padding=ft.padding.only(left=20),
+                        ),
+                        expand=True,
+                    ),
+                    ft.Row(
+                        [
+                            ft.IconButton(ft.Icons.REMOVE, icon_size=16, icon_color=COR_TEXT_SEC, on_click=minimize_app),
+                            ft.IconButton(ft.Icons.CROP_SQUARE, icon_size=16, icon_color=COR_TEXT_SEC, on_click=maximize_app),
+                            ft.IconButton(ft.Icons.CLOSE, icon_size=16, icon_color="#e74c3c", on_click=close_app),
+                        ],
+                        spacing=0,
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            ),
+            bgcolor="#0a0a0a",
+            height=32,
+        )
+
+    # ==========================
     # LAYOUT PRINCIPAL
     # ==========================
 
-    layout = ft.Row(
-        [
-            sidebar,
-            center_panel,
-        ],
-        expand=True, spacing=0
+    main_container = ft.Container(
+        content=ft.Row(
+            [
+                sidebar,
+                center_panel,
+            ],
+            expand=True, spacing=0
+        ),
+        expand=True
     )
+
+    # Layouts iniciais (instâncias únicas)
+    layout = ft.Column([create_title_bar(), main_container], expand=True, spacing=0)
+
 
     # ==========================
     # ROTEAMENTO DE TELAS (DASHBOARD vs CÂMERA)
     # ==========================
-    def route_change(route):
+    def route_change(e):
+        # Limpa callbacks de UI da rota anterior para evitar "instabilidade" e erros de memória
+        state["_ui_identificado_cb"] = None
+        state["_ui_aguardando_cb"] = None
+        
+        route = e.route if hasattr(e, "route") else page.route
+        print(f"🛣️ Mudança de rota: {route}")
+        
+        # Evita limpar se já estiver na rota (ajuda na estabilidade do Desktop)
+        if len(page.views) > 0 and page.views[-1].route == route:
+            return
+
         page.views.clear()
         
-        if "/monitor" in page.route:
+        if "/monitor" in route:
             page.title = "Monitor - Rocks Fit"
             surf = "#0e0e0e"
             surf_low = "#131313"
@@ -1340,6 +1594,11 @@ def main(page: ft.Page):
                 try: page.update()
                 except: pass
 
+            state["_ui_identificado_cb"] = _set_identificado
+            state["_ui_aguardando_cb"] = _set_aguardando
+            try: page.update()
+            except: pass
+
             def loop_camera():
                 if "cv2" not in sys.modules:
                     print("⚠️ cv2 não disponível – câmera desativada")
@@ -1474,12 +1733,7 @@ def main(page: ft.Page):
                                     liberado = data.get("status", "") in ["ativo", "liberado"]
                                     _set_identificado(data, liberado)
                                     if liberado:
-                                        import socket
-                                        for pta in [1001, 3000, 5000]:
-                                            try:
-                                                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                                                    sock.settimeout(1); sock.connect(("192.168.1.100", pta)); sock.sendall(b"lgu\x00Liberou Entrada"); break
-                                            except: pass
+                                        trigger_catraca(f"Face: {melhor_aluno['nome']}")
                                     cooldown = 120
                                     threading.Thread(target=lambda: (time.sleep(4), _set_aguardando()), daemon=True).start()
 
@@ -1504,60 +1758,86 @@ def main(page: ft.Page):
                         pass
 
             def loop_digital():
+                global BIOMETRIA_BUSY
                 if not biometria_manager_global: return
-                print("☝️ Loop de biometria digital iniciado")
+                print("☝️ [FPRINT] Loop de biometria digital iniciado")
                 
                 while camera_estado["rodando"]:
-                    # No monitor, verificamos apenas os alunos que têm digital cadastrada localmente
-                    # Para ser eficiente, poderíamos listar arquivos em BIOMETRIA_DATA/ALUNOS/*.finger
+                    if BIOMETRIA_BUSY:
+                        time.sleep(1)
+                        continue
+                    
                     path_digital = "BIOMETRIA_DATA/ALUNOS"
                     if not os.path.exists(path_digital):
                         os.makedirs(path_digital, exist_ok=True)
                     
-                    alunos_com_digital = [f.split(".")[0] for f in os.listdir(path_digital) if f.endswith(".finger")]
+                    # Lista arquivos no formato {matricula}_{dedo}.finger
+                    files = [f for f in os.listdir(path_digital) if f.endswith(".finger")]
                     
-                    if not alunos_com_digital or BIOMETRIA_BUSY:
-                        time.sleep(1)
+                    if not files:
+                        time.sleep(2)
                         continue
-                        
-                    # Aqui está o desafio: o fprintd-verify precisa de um usuário.
-                    # Se não soubermos quem é, teríamos que testar um por um.
-                    # Como workaround para fprintd, vamos tentar verificar contra os 5 últimos que entraram
-                    # ou uma lista pequena. Para um sistema real 1:N, fprintd não é o ideal sem hardware específico.
-                    # Mas vamos implementar a lógica de verificação solicitada.
                     
-                    for mat in alunos_com_digital:
-                        if not camera_estado["rodando"]: break
+                    # Filtra apenas alunos sincronizados para evitar checar registros órfãos
+                    matriculas_validas = [str(a.get("matricula")) for a in state["alunos_data"]]
+                    
+                    biometrias = []
+                    for f in files:
+                        name = f.replace(".finger", "")
+                        if "_" in name:
+                            parts = name.split("_")
+                            mat = parts[0]
+                            if mat in matriculas_validas:
+                                biometrias.append((mat, parts[1]))
+                        else:
+                            mat = name
+                            if mat in matriculas_validas:
+                                biometrias.append((mat, "right-index-finger"))
+
+                    # Otimização: A verificação por fprintd-verify é lenta. 
+                    # Idealmente fprintd deveria gerenciar isso, mas como estamos emulando 1:N
+                    # vamos tentar agrupar por dedo ou reduzir a frequência.
+                    for mat, finger in biometrias:
+                        if not camera_estado["rodando"] or BIOMETRIA_BUSY: break
                         
-                        # Se o aluno for identificado
-                        if biometria_manager_global.verify(mat):
-                            print(f"☝️ Digital correspondente: {mat}")
-                            # Busca dados do aluno
-                            aluno_data = next((a for a in state["alunos_data"] if str(a.get("matricula")) == str(mat)), None)
+                        # Chama a verificação bloqueante (com timeout interno na classe)
+                        if biometria_manager_global.verify(mat, finger):
+                            print(f"✅ [FPRINT] Correspondência: {mat} ({finger})")
+                            aluno_data = next((a for a in state["alunos_data"] if str(a.get("matricula")) == mat), None)
                             if aluno_data:
-                                liberado = aluno_data.get("status", "") in ["ativo", "liberado"]
-                                _set_identificado(aluno_data, liberado)
+                                try:
+                                    # Valida no CRM antes de liberar
+                                    r = requests.get(f"{SITE_URL}/api/catraca-check/{mat}/?token={SYNC_TOKEN}", timeout=3)
+                                    data = r.json() if r.status_code == 200 else aluno_data
+                                except: data = aluno_data
+                                
+                                liberado = data.get("status", "") in ["ativo", "liberado"]
+                                _set_identificado(data, liberado)
                                 if liberado:
-                                    # Abre a catraca
-                                    import socket
-                                    for pta in [1001, 3000, 5000]:
-                                        try:
-                                            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                                                sock.settimeout(1); sock.connect(("192.168.1.100", pta)); sock.sendall(b"lgu\x00Digital Liberada"); break
-                                        except: pass
-                                time.sleep(5) # Cooldown após identificação
+                                    trigger_catraca(f"Digital: {data.get('nome', mat)}")
+                                
+                                time.sleep(4) # Cooldown após sucesso
                                 _set_aguardando()
                                 break
                     
-                    time.sleep(0.5)
+                    time.sleep(0.1) # Breve pausa entre ciclos completos
 
             threading.Thread(target=loop_camera, daemon=True).start()
-            threading.Thread(target=loop_digital, daemon=True).start()
-            page.views.append(ft.View("/monitor", [monitor_layout], bgcolor=surf, padding=0))
+            # Combinamos a barra (nova instância) com o layout do monitor
+            monitor_with_bar = ft.Column([create_title_bar("MONITOR DE ACESSO - ROCKS FIT"), monitor_layout], expand=True, spacing=0)
+            page.views.append(ft.View("/monitor", [monitor_with_bar], bgcolor=surf, padding=0))
         else:
             page.title = "ROCKS FIT - RECEPÇÃO"
-            page.views.append(ft.View("/", [layout], padding=0, bgcolor=COR_BG))
+            # O layout principal também recebe uma barra nova a cada mudança de rota para garantir estabilidade
+            layout_final = ft.Column([create_title_bar(), main_container], expand=True, spacing=0)
+            page.views.append(ft.View("/", [layout_final], padding=0, bgcolor=COR_BG))
+        
         page.update()
+
+    # Vinculamos o estado da sessão atual para que o loop global saiba como atualizar a UI
+    state["_ui_identificado_cb"] = None
+    state["_ui_aguardando_cb"] = None
+    GLOBAL_SESSION_STATES.append(state)
 
     def view_pop(view):
         if "/monitor" in page.route: return
@@ -1565,10 +1845,70 @@ def main(page: ft.Page):
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop
-    sync_crm()
-    page.go(page.route or "/")
+    
+    # Força a primeira renderização manualmente para evitar tela preta
+    route_change(ft.RouteChangeEvent(route=page.route or "/"))
+    
+    # Sincroniza em segundo plano
+    threading.Thread(target=sync_crm, daemon=True).start()
+
+GLOBAL_SESSION_STATES = []
+GLOBAL_LOOP_STARTED = False
+
+def global_loop_digital():
+    if not biometria_manager_global: return
+    print("☝️ [FPRINT] Loop Global de Biometria Iniciado")
+    while True:
+        if BIOMETRIA_BUSY:
+            time.sleep(1); continue
+        
+        # Carrega digitais locais
+        path_digital = "BIOMETRIA_DATA/ALUNOS"
+        if not os.path.exists(path_digital): time.sleep(2); continue
+        files = [f for f in os.listdir(path_digital) if f.endswith(".finger")]
+        if not files: time.sleep(2); continue
+        
+        # Alunos válidos
+        matriculas_validas = [str(a.get("matricula")) for a in GLOBAL_ALUNOS]
+        
+        for f in files:
+            if BIOMETRIA_BUSY: break
+            name = f.replace(".finger", "")
+            mat = name.split("_")[0] if "_" in name else name
+            finger = name.split("_")[1] if "_" in name else "right-index-finger"
+            
+            if mat in matriculas_validas:
+                if biometria_manager_global.verify(mat, finger):
+                    print(f"✅ [FPRINT GLOBAL] Identificado: {mat}")
+                    aluno = next((a for a in GLOBAL_ALUNOS if str(a.get("matricula")) == mat), None)
+                    if aluno:
+                        try:
+                            r = requests.get(f"{SITE_URL}/api/catraca-check/{mat}/?token={SYNC_TOKEN}", timeout=3)
+                            data = r.json() if r.status_code == 200 else aluno
+                        except: data = aluno
+                        
+                        liberado = data.get("status", "") in ["ativo", "liberado"]
+                        
+                        # Notifica todas as sessões ativas
+                        for s_state in GLOBAL_SESSION_STATES:
+                            if s_state.get("_ui_identificado_cb"):
+                                s_state["_ui_identificado_cb"](data, liberado)
+                        
+                        if liberado:
+                            trigger_catraca(f"Digital: {data.get('nome', mat)}")
+                        
+                        time.sleep(5)
+                        for s_state in GLOBAL_SESSION_STATES:
+                            if s_state.get("_ui_aguardando_cb"):
+                                s_state["_ui_aguardando_cb"]()
+                        break
+        time.sleep(0.5)
 
 if __name__ == "__main__":
+    if not GLOBAL_LOOP_STARTED:
+        threading.Thread(target=global_loop_digital, daemon=True).start()
+        GLOBAL_LOOP_STARTED = True
+
     # Força o uso do backend X11 no Linux para evitar conflitos com Wayland
     if sys.platform.startswith("linux"):
         os.environ["GDK_BACKEND"] = "x11"
@@ -1576,7 +1916,6 @@ if __name__ == "__main__":
     print("🚀 Iniciando Módulo de Recepção Rocks-Fit...")
     ft.app(
         target=main, 
-        view=ft.AppView.WEB_BROWSER, 
-        port=8552, 
-        route_url_strategy="path"
+        view=ft.AppView.FLET_APP, 
+        assets_dir="assets"
     )

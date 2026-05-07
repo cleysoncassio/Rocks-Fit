@@ -4,4 +4,6 @@ opencv-python
 pillow
 numpy
 face-recognition
-pywin32
+flask
+flask-cors
+python-dotenv
