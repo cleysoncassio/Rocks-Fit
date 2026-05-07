@@ -70,7 +70,7 @@ def add_cors_headers(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
-@api_app.route('/api/enroll/<matricula>', methods=['GET'])
+@api_app.route('/api/enroll/<matricula>', methods=['GET', 'POST', 'OPTIONS'])
 def api_enroll(matricula):
     if not manager_global:
         return jsonify({"success": False, "error": "Hardware não inicializado"}), 500
