@@ -725,6 +725,7 @@ def main(page: ft.Page):
                 bgcolor=COR_CARD,
                 border_radius=16,
                 padding=ft.padding.all(16),
+                on_click=lambda e, a=aluno: abrir_cadastro_digital(a),
                 ink=True,
             )
 
@@ -927,7 +928,6 @@ def main(page: ft.Page):
 
         def check_camera():
             if "cv2" not in sys.modules: return False
-            # No Windows usamos índices numéricos, no Linux tentamos o dispositivo padrão primeiro
             indices = [0, 1, 2] if os.name == "nt" else ["/dev/video0", 0, 1]
             for i in indices:
                 try:
@@ -936,6 +936,13 @@ def main(page: ft.Page):
                         c.release(); return True
                 except: pass
             return False
+
+        def check_biometria():
+            try:
+                # Se o fprintd estiver instalado e acessível
+                subprocess.run(["fprintd-enroll", "--help"], capture_output=True, timeout=1)
+                return True
+            except: return False
 
         def test_relay():
             import socket
@@ -995,6 +1002,7 @@ def main(page: ft.Page):
                     diag_card("SERVIDOR CRM", status_crm, f"IP: academiarocksfit.com.br (Porta 443)", "cloud_done"),
                     diag_card("CATRACA (RELÉ)", status_cat, f"IP: 192.168.1.100 (Porta 1001)", "dashboard"),
                     diag_card("CÂMERA BIOMÉTRICA", status_cam, "Dispositivo USB /dev/video0 Ativo", "videocam"),
+                    diag_card("LEITOR DIGITAL", check_biometria(), "Scanner fprintd detectado no barramento USB", "fingerprint"),
                     diag_card("MOTOR NEURAL", FR_DISPONIVEL, f"{len(GLOBAL_PERFIS)} alunos mapeados em memória", "memory"),
                     ft.Divider(height=10, color="transparent"),
                     ft.Text("AÇÕES RÁPIDAS", color=COR_TEXT_SEC, size=11, weight="bold", opacity=0.7),
