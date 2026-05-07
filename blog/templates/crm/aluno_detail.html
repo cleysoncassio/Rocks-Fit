@@ -466,6 +466,15 @@
             }, 'image/jpeg', 0.9);
         }
 
+        const BRIDGE_URL = "http://127.0.0.1:8553";
+
+        async function checkBridge() {
+            try {
+                const resp = await fetch(`${BRIDGE_URL}/api/enroll/test`, { method: 'OPTIONS' });
+                return true;
+            } catch (e) { return false; }
+        }
+
         async function captureFromSoftware(matricula) {
             const btn = document.getElementById('btn-capture-software');
             const btnText = document.getElementById('capture-btn-text');
@@ -475,14 +484,26 @@
             if (!btn || !btnText || !status || !input) return;
 
             btn.disabled = true;
-            btnText.innerText = "AGUARDANDO SENSOR...";
-            status.innerText = "Posicione o dedo no leitor agora";
+            btnText.innerText = "CONECTANDO...";
+            status.innerText = "Verificando ponte local...";
             status.classList.remove('text-success', 'text-error');
             status.classList.add('text-primary');
 
+            const isOnline = await checkBridge();
+            if (!isOnline) {
+                status.innerText = "❌ PONTE OFF-LINE. Abra o Módulo de Recepção.";
+                status.classList.replace('text-primary', 'text-error');
+                btnText.innerText = "TENTAR NOVAMENTE";
+                btn.disabled = false;
+                return;
+            }
+
+            btnText.innerText = "AGUARDANDO SENSOR...";
+            status.innerText = "Posicione o dedo no leitor agora";
+
             try {
-                const response = await fetch(`http://localhost:8553/api/enroll/${matricula}`, {
-                    method: 'GET',
+                const response = await fetch(`${BRIDGE_URL}/api/enroll/${matricula}`, {
+                    method: 'POST',
                     mode: 'cors'
                 });
                 
@@ -490,20 +511,17 @@
                 
                 if (data.success) {
                     status.innerText = "✅ CAPTURADO COM SUCESSO!";
-                    status.classList.remove('text-primary');
-                    status.classList.add('text-success');
+                    status.classList.replace('text-primary', 'text-success');
                     input.value = data.digital_id;
                     btnText.innerText = "CAPTURAR NOVAMENTE";
                 } else {
                     status.innerText = "❌ ERRO: " + (data.error || "Falha");
-                    status.classList.remove('text-primary');
-                    status.classList.add('text-error');
+                    status.classList.replace('text-primary', 'text-error');
                     btnText.innerText = "TENTAR NOVAMENTE";
                 }
             } catch (err) {
-                status.innerText = "❌ SOFTWARE NÃO DETECTADO (RODE A PONTE LOCAL)";
-                status.classList.remove('text-primary');
-                status.classList.add('text-error');
+                status.innerText = "❌ FALHA NA COMUNICAÇÃO";
+                status.classList.replace('text-primary', 'text-error');
                 btnText.innerText = "TENTAR NOVAMENTE";
             } finally {
                 btn.disabled = false;

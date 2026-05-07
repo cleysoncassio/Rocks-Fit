@@ -97,7 +97,16 @@
 </div>
 
 <script>
-    const BRIDGE_URL = "http://localhost:8553";
+    const BRIDGE_URL = "http://127.0.0.1:8553";
+
+    async function checkBridge() {
+        try {
+            const resp = await fetch(`${BRIDGE_URL}/api/enroll/test`, { method: 'OPTIONS' });
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
 
     async function captureFromSoftware(matricula, nome) {
         const modal = document.getElementById('modal-biometria');
@@ -107,9 +116,22 @@
         const confirmBtn = document.getElementById('btn-confirm-capture');
 
         modal.classList.remove('hidden');
-        title.innerText = "Preparando...";
-        msg.innerText = `Conectando ao software local para ${nome}`;
+        title.innerText = "Conectando...";
+        msg.innerText = "Verificando ponte local...";
         spinner.classList.remove('hidden');
+
+        // Check connectivity first
+        const isOnline = await checkBridge();
+        if (!isOnline) {
+            title.innerText = "Ponte Off-line";
+            title.classList.add('text-red-500');
+            msg.innerText = "O software de recepção não foi detectado. Certifique-se que o Módulo de Recepção está aberto no computador.";
+            spinner.classList.add('hidden');
+            return;
+        }
+
+        title.innerText = "Preparando...";
+        msg.innerText = `Posicione o dedo no sensor para ${nome}`;
 
         try {
             const response = await fetch(`${BRIDGE_URL}/api/enroll/${matricula}`, {
@@ -119,9 +141,10 @@
             
             const data = await response.json();
             
-            if (response.ok) {
+            if (response.ok && data.success) {
                 title.innerText = "Digital Capturada!";
                 msg.innerText = "O registro foi salvo com sucesso no módulo local.";
+                title.classList.remove('text-red-500');
                 title.classList.add('text-green-500');
                 spinner.classList.add('hidden');
                 confirmBtn.classList.remove('hidden');

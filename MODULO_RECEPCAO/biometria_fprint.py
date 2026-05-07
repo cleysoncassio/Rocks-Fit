@@ -35,10 +35,9 @@ class BiometriaFPrint:
         """
         Verifica se a digital no sensor pertence ao aluno.
         """
-        user = f"student_{matricula}"
         try:
             result = subprocess.run(
-                ["fprintd-verify", "-u", user],
+                ["fprintd-verify"],
                 capture_output=True,
                 text=True,
                 timeout=10

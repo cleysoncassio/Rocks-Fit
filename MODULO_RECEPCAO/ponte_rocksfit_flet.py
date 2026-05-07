@@ -91,8 +91,8 @@ def api_enroll(matricula):
     return jsonify({"success": False, "error": "Falha ao iniciar scanner"}), 500
 
 def run_api():
-    print("🌐 API Bridge iniciada em http://localhost:8553")
-    api_app.run(port=8553, debug=False, threaded=True)
+    print("🌐 API Bridge iniciada em http://0.0.0.0:8553")
+    api_app.run(host='0.0.0.0', port=8553, debug=False, threaded=True)
 
 threading.Thread(target=run_api, daemon=True).start()
 
@@ -1095,6 +1095,7 @@ def main(page: ft.Page):
                 border=ft.border.all(1, "#ffffff10"),
                 clip_behavior=ft.ClipBehavior.HARD_EDGE,
             )
+            
             
             left_col = ft.Column(
                 [titulo, subtitulo, cam_container],
