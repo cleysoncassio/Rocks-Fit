@@ -62,6 +62,7 @@ MOCK_HISTORICO = []
 # --- API BRIDGE PARA O CRM (FLASK) ---
 api_app = Flask(__name__)
 manager_global = None
+BIOMETRIA_BUSY = False # Flag para evitar conflito entre Verificação e Cadastro
 
 @api_app.after_request
 def add_cors_headers(response):
@@ -72,9 +73,11 @@ def add_cors_headers(response):
 
 @api_app.route('/api/enroll/<matricula>', methods=['GET', 'POST', 'OPTIONS'])
 def api_enroll(matricula):
+    global BIOMETRIA_BUSY
     if not manager_global:
         return jsonify({"success": False, "error": "Hardware não inicializado"}), 500
     
+    BIOMETRIA_BUSY = True
     print(f"📡 API: Solicitando captura para {matricula}")
     proc = manager_global.enroll(matricula)
     if proc:
@@ -88,6 +91,9 @@ def api_enroll(matricula):
                 return jsonify({"success": False, "error": stderr or "Falha na captura"}), 400
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
+        finally:
+            BIOMETRIA_BUSY = False
+    BIOMETRIA_BUSY = False
     return jsonify({"success": False, "error": "Falha ao iniciar scanner"}), 500
 
 def run_api():
@@ -100,6 +106,8 @@ threading.Thread(target=run_api, daemon=True).start()
 import getpass
 
 def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content):
+    global BIOMETRIA_BUSY
+    BIOMETRIA_BUSY = True
     print(f"DEBUG: Abrindo cadastro para {aluno.get('nome')}")
     COR_BG = "#050505"
     COR_PRIMARY = "#f27121"
@@ -168,6 +176,8 @@ def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content):
                 except Exception as ex:
                     update_status("ERRO DE SISTEMA", str(ex), COR_ERROR)
                 finally:
+                    global BIOMETRIA_BUSY
+                    BIOMETRIA_BUSY = False
                     progresso.visible = False
                     btn_close.text = "FINALIZAR"
                     try: page.update()
@@ -189,7 +199,13 @@ def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content):
         ink=True
     )
     
-    btn_close = ft.TextButton("CANCELAR", on_click=lambda _: (setattr(dlg, 'open', False), page.update()))
+    def fechar_dlg(e):
+        global BIOMETRIA_BUSY
+        BIOMETRIA_BUSY = False
+        dlg.open = False
+        page.update()
+
+    btn_close = ft.TextButton("CANCELAR", on_click=fechar_dlg)
 
     dlg = ft.AlertDialog(
         bgcolor="#050505",
@@ -220,9 +236,16 @@ def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content):
     page.dialog = dlg
     dlg.open = True
     page.update()
+    
+    # Ativação Automática: Inicia o scanner assim que a janela abre
+    print(f"⚡ Ativação automática do sensor para {nome}")
+    iniciar_captura(None)
+
+# Inicialização Global da Biometria
+biometria_manager_global = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
+manager_global = biometria_manager_global
 
 def main(page: ft.Page):
-    global manager_global
     page.title = "ROCKS FIT - RECEPÇÃO"
     page.padding = 0
     page.spacing = 0
@@ -230,10 +253,9 @@ def main(page: ft.Page):
     page.bgcolor = COR_BG
     page.window.width = 1400
     page.window.height = 900
-
-    biometria_manager = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
-    manager_global = biometria_manager
     
+    # Garantir diretórios de persistência local
+    os.makedirs("BIOMETRIA_DATA/ALUNOS", exist_ok=True)
 
     # Estado Local da Sessão
     state = {
@@ -733,7 +755,7 @@ def main(page: ft.Page):
                 bgcolor=COR_CARD,
                 border_radius=16,
                 padding=ft.padding.all(16),
-                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager, render_main_content),
+                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content),
                 ink=True,
             )
 
@@ -1454,8 +1476,8 @@ def main(page: ft.Page):
                     
                     alunos_com_digital = [f.split(".")[0] for f in os.listdir(path_digital) if f.endswith(".finger")]
                     
-                    if not alunos_com_digital:
-                        time.sleep(5)
+                    if not alunos_com_digital or BIOMETRIA_BUSY:
+                        time.sleep(1)
                         continue
                         
                     # Aqui está o desafio: o fprintd-verify precisa de um usuário.
