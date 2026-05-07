@@ -105,16 +105,12 @@ threading.Thread(target=run_api, daemon=True).start()
 
 import getpass
 
-def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content):
-    matricula = str(aluno.get("matricula"))
-    page.go(f"/cadastro/{matricula}")
-
-def render_cadastro_view(matricula, page, biometria_manager, render_main_content, state):
+def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content, state):
     global BIOMETRIA_BUSY
     BIOMETRIA_BUSY = True
     
-    aluno = next((a for a in state["alunos_data"] if str(a.get("matricula")) == str(matricula)), {"nome": "ALUNO"})
     nome = aluno.get("nome", "Membro").upper()
+    matricula = str(aluno.get("matricula"))
     
     COR_BG = "#050505"
     COR_PRIMARY = "#f27121"
@@ -126,71 +122,71 @@ def render_cadastro_view(matricula, page, biometria_manager, render_main_content
     COR_ERROR = "#e74c3c"
     
     # Elementos de Status (Estilo Diagnóstico)
-    status_hardware = ft.Text("DETECTANDO...", color=COR_TEXT_SEC, size=12, weight="bold")
-    status_captura = ft.Text("AGUARDANDO INÍCIO", color=COR_TEXT_SEC, size=12, weight="bold")
-    status_sync = ft.Text("PENDENTE", color=COR_TEXT_SEC, size=12, weight="bold")
+    status_hardware = ft.Text("DETECTANDO...", color=COR_TEXT_SEC, size=11, weight="bold")
+    status_captura = ft.Text("AGUARDANDO...", color=COR_TEXT_SEC, size=11, weight="bold")
+    status_sync = ft.Text("PENDENTE", color=COR_TEXT_SEC, size=11, weight="bold")
     
-    log_messages = ft.ListView(expand=True, spacing=5, padding=10)
+    log_messages = ft.ListView(expand=True, spacing=3, padding=5)
     
     def add_log(msg, color=COR_TEXT_SEC):
         timestamp = time.strftime("%H:%M:%S")
         log_messages.controls.append(
-            ft.Text(f"[{timestamp}] {msg}", color=color, size=11, font_family="monospace")
+            ft.Text(f"[{timestamp}] {msg}", color=color, size=10, font_family="monospace")
         )
-        if len(log_messages.controls) > 20:
+        if len(log_messages.controls) > 15:
             log_messages.controls.pop(0)
         try: page.update()
         except: pass
 
-    def diag_box(label, status_ref, icon_name):
+    def diag_mini_box(label, status_ref, icon_name):
         return ft.Container(
             content=ft.Row([
-                ft.Icon(icon_name, color=COR_PRIMARY, size=20),
+                ft.Icon(icon_name, color=COR_PRIMARY, size=16),
                 ft.Column([
-                    ft.Text(label, color=COR_TEXT_SEC, size=10, weight="bold"),
+                    ft.Text(label, color=COR_TEXT_SEC, size=9, weight="bold"),
                     status_ref
-                ], spacing=0, expand=True)
-            ], alignment="start", spacing=10),
-            padding=15,
+                ], spacing=0)
+            ], spacing=8),
+            padding=10,
             bgcolor=COR_CARD_HIGH,
             border_radius=8,
-            border=ft.border.all(1, "#ffffff10")
+            expand=True
         )
 
     def sync_to_crm():
         try:
-            status_sync.value = "SINCRONIZANDO..."
+            status_sync.value = "SYNC..."
             status_sync.color = COR_PRIMARY
-            add_log("Iniciando sincronia remota...", COR_PRIMARY)
+            add_log("Sincronizando com servidor CRM...", COR_PRIMARY)
             resp = requests.post(f"{SITE_URL}/api/biometria-save/{matricula}/", timeout=8)
             if resp.status_code == 200:
-                status_sync.value = "SINCRONIZADO"
+                status_sync.value = "OK"
                 status_sync.color = COR_SUCCESS
-                add_log("Sincronia concluída com sucesso no CRM.", COR_SUCCESS)
+                add_log("Sucesso: Digital vinculada no CRM.", COR_SUCCESS)
                 btn_sync.visible = False
             else:
-                status_sync.value = "ERRO API"
+                status_sync.value = "ERRO"
                 status_sync.color = COR_ERROR
-                add_log(f"Erro na API CRM: {resp.status_code}", COR_ERROR)
+                add_log(f"Erro CRM: {resp.status_code}", COR_ERROR)
         except Exception as e:
-            status_sync.value = "FALHA REDE"
+            status_sync.value = "FALHA"
             status_sync.color = COR_ERROR
-            add_log(f"Falha de rede: {str(e)}", COR_ERROR)
+            add_log("Falha de rede na sincronia.", COR_ERROR)
         page.update()
 
     def iniciar_captura(e=None):
         if not biometria_manager:
-            status_hardware.value = "DESCONECTADO"
+            status_hardware.value = "OFFLINE"
             status_hardware.color = COR_ERROR
-            add_log("CRÍTICO: Hardware não inicializado ou driver ausente.", COR_ERROR)
+            add_log("Erro: Hardware não encontrado.", COR_ERROR)
             return
         
         status_hardware.value = "ONLINE"
         status_hardware.color = COR_SUCCESS
         btn_start.visible = False
-        status_captura.value = "EM CAPTURA"
+        status_captura.value = "CAPTURANDO"
         status_captura.color = COR_PRIMARY
-        add_log("Sensor ativado. Aguardando leitura biométrica...", COR_PRIMARY)
+        add_log("Sensor ativo. Posicione o dedo...", COR_PRIMARY)
         
         def _thread():
             proc = biometria_manager.enroll(matricula)
@@ -198,21 +194,20 @@ def render_cadastro_view(matricula, page, biometria_manager, render_main_content
                 try:
                     stdout, stderr = proc.communicate(timeout=45)
                     if "enroll-completed" in stdout or proc.returncode == 0:
-                        status_captura.value = "CONCLUÍDO"
+                        status_captura.value = "SUCESSO"
                         status_captura.color = COR_SUCCESS
-                        add_log("Capture-Completed: Digital armazenada localmente.", COR_SUCCESS)
+                        add_log("OK: Digital salva localmente.", COR_SUCCESS)
                         biometria_manager.guardar_arquivo_local(matricula)
                         btn_sync.visible = True
                         sync_to_crm()
+                        render_main_content()
                     else:
-                        status_captura.value = "FALHA"
+                        status_captura.value = "REPETIR"
                         status_captura.color = COR_ERROR
-                        err_msg = "Scanner-Reset: Tente novamente."
-                        if "enroll-retry-scan" in stdout: err_msg = "Scanned-Too-Fast: Mova o dedo devagar."
-                        add_log(f"Falha: {err_msg}", COR_ERROR)
+                        add_log("Falha na leitura. Tente novamente.", COR_ERROR)
                         btn_start.visible = True
                 except Exception as ex:
-                    add_log(f"Exceção Interna: {str(ex)}", COR_ERROR)
+                    add_log("Erro crítico no processo.", COR_ERROR)
                     btn_start.visible = True
                 finally:
                     global BIOMETRIA_BUSY
@@ -220,93 +215,71 @@ def render_cadastro_view(matricula, page, biometria_manager, render_main_content
                     try: page.update()
                     except: pass
             else:
-                status_captura.value = "ERRO DRIVER"
-                status_captura.color = COR_ERROR
-                add_log("Fprintd-Error: Falha ao invocar processo de captura.", COR_ERROR)
+                add_log("Falha ao iniciar driver.", COR_ERROR)
                 btn_start.visible = True
                 page.update()
 
         threading.Thread(target=_thread, daemon=True).start()
 
     btn_start = ft.ElevatedButton(
-        "ATIVAR SENSOR",
-        icon="sensors",
-        bgcolor=COR_PRIMARY,
-        color="#ffffff",
-        on_click=iniciar_captura,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
+        "INICIAR", icon="sensors", bgcolor=COR_PRIMARY, color="#ffffff",
+        on_click=iniciar_captura, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
     )
 
     btn_sync = ft.ElevatedButton(
-        "RE-SYNC CRM",
-        icon="cloud_sync",
-        bgcolor=COR_SUCCESS,
-        color="#ffffff",
-        visible=False,
-        on_click=lambda _: sync_to_crm(),
+        "SYNC", icon="cloud_sync", bgcolor=COR_SUCCESS, color="#ffffff",
+        visible=False, on_click=lambda _: sync_to_crm(),
         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
     )
     
-    btn_back = ft.TextButton(
-        "FECHAR GESTOR",
-        icon="close",
-        on_click=lambda _: (setattr(state, 'BIOMETRIA_BUSY', False), page.go("/")),
-    )
+    def fechar_dlg(e):
+        global BIOMETRIA_BUSY
+        BIOMETRIA_BUSY = False
+        dlg.open = False
+        page.update()
 
-    content = ft.Container(
-        expand=True,
+    btn_close = ft.TextButton("FECHAR", on_click=fechar_dlg)
+
+    dlg = ft.AlertDialog(
         bgcolor=COR_BG,
-        padding=30,
-        content=ft.Column([
-            ft.Row([
-                ft.Column([
-                    ft.Text("MÓDULO DE CAPTURA BIOMÉTRICA", size=10, weight="bold", color=COR_PRIMARY, letter_spacing=1.5),
-                    ft.Text(nome, size=32, weight="black", font_family="Space Grotesk"),
-                    ft.Text(f"SISTEMA DE IDENTIFICAÇÃO - MATRÍCULA: {matricula}", size=12, color=COR_TEXT_SEC),
-                ], spacing=2),
-                btn_back
-            ], alignment="spaceBetween"),
-            
-            ft.Divider(height=40, color="#ffffff10"),
-            
-            ft.Row([
-                diag_box("HARDWARE SENSOR", status_hardware, "settings_input_component"),
-                diag_box("ESTADO CAPTURA", status_captura, "fingerprint"),
-                diag_box("SINCRONIA CRM", status_sync, "cloud_upload"),
-            ], spacing=15),
-            
-            ft.Divider(height=30, color="transparent"),
-            
-            # Quadro de Logs (Parecido com console de diagnóstico)
-            ft.Container(
-                expand=True,
-                bgcolor="#0a0a0a",
-                border=ft.border.all(1, "#ffffff05"),
-                border_radius=12,
-                padding=10,
-                content=ft.Column([
-                    ft.Row([
-                        ft.Icon("terminal", size=14, color=COR_TEXT_SEC),
-                        ft.Text("CONSOLE DE CAPTURA EM TEMPO REAL", size=11, color=COR_TEXT_SEC, weight="bold"),
-                    ], spacing=10),
-                    ft.Divider(height=10, color="#ffffff05"),
-                    log_messages
-                ])
-            ),
-            
-            ft.Divider(height=30, color="transparent"),
-            
-            ft.Row([
-                btn_start,
-                btn_sync
-            ], alignment="end", spacing=15)
-        ], spacing=0)
+        content=ft.Container(
+            width=480, height=550,
+            padding=10,
+            content=ft.Column([
+                ft.Row([
+                    ft.Column([
+                        ft.Text("GESTOR DE BIOMETRIA", size=10, weight="bold", color=COR_PRIMARY),
+                        ft.Text(nome[:25], size=20, weight="black", font_family="Space Grotesk"),
+                    ], spacing=0),
+                    ft.Text(f"MAT. {matricula}", size=10, color=COR_TEXT_SEC)
+                ], alignment="spaceBetween"),
+                ft.Divider(height=20, color="#ffffff10"),
+                ft.Row([
+                    diag_mini_box("SENSOR", status_hardware, "settings_input_component"),
+                    diag_mini_box("CAPTURA", status_captura, "fingerprint"),
+                    diag_mini_box("CRM", status_sync, "cloud_upload"),
+                ], spacing=10),
+                ft.Divider(height=20, color="transparent"),
+                ft.Container(
+                    expand=True, bgcolor="#0a0a0a", border_radius=8, padding=10,
+                    border=ft.border.all(1, "#ffffff05"),
+                    content=ft.Column([
+                        ft.Text("LOGS DE SISTEMA", size=9, color=COR_TEXT_SEC, weight="bold"),
+                        ft.Divider(height=10, color="#ffffff05"),
+                        log_messages
+                    ])
+                ),
+                ft.Row([btn_close, ft.Row([btn_sync, btn_start])], alignment="spaceBetween")
+            ])
+        )
     )
+    
+    page.dialog = dlg
+    dlg.open = True
+    page.update()
     
     # Auto-start
-    page.run_task(lambda: (time.sleep(1), add_log("Sistema pronto. Inicializando hardware..."), iniciar_captura()))
-    
-    return ft.View(f"/cadastro/{matricula}", [content], bgcolor=COR_BG, padding=0)
+    threading.Thread(target=lambda: (time.sleep(0.5), iniciar_captura()), daemon=True).start()
 
 # Inicialização Global da Biometria
 biometria_manager_global = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
@@ -803,7 +776,7 @@ def main(page: ft.Page):
                 icon="fingerprint",
                 icon_color=COR_PRIMARY,
                 tooltip="Cadastrar Digital",
-                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content)
+                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state)
             )
 
             # Card do aluno
@@ -822,7 +795,7 @@ def main(page: ft.Page):
                 bgcolor=COR_CARD,
                 border_radius=16,
                 padding=ft.padding.all(16),
-                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content),
+                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state),
                 ink=True,
             )
 
@@ -861,7 +834,7 @@ def main(page: ft.Page):
                         icon="sensors",
                         bgcolor=COR_CARD_HIGH,
                         color=COR_PRIMARY,
-                        on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content)
+                        on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state)
                     )
                 ], alignment="spaceBetween"),
                 padding=15, bgcolor=COR_CARD, border_radius=12,
@@ -1581,9 +1554,6 @@ def main(page: ft.Page):
             threading.Thread(target=loop_camera, daemon=True).start()
             threading.Thread(target=loop_digital, daemon=True).start()
             page.views.append(ft.View("/monitor", [monitor_layout], bgcolor=surf, padding=0))
-        elif "/cadastro/" in page.route:
-            matricula = page.route.split("/")[-1]
-            page.views.append(render_cadastro_view(matricula, page, biometria_manager_global, render_main_content, state))
         else:
             page.title = "ROCKS FIT - RECEPÇÃO"
             page.views.append(ft.View("/", [layout], padding=0, bgcolor=COR_BG))
