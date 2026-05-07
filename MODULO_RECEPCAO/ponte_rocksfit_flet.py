@@ -756,7 +756,7 @@ def main(page: ft.Page):
                 icon="fingerprint",
                 icon_color=COR_PRIMARY,
                 tooltip="Cadastrar Digital",
-                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager, render_main_content)
+                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content)
             )
 
             # Card do aluno
@@ -814,7 +814,7 @@ def main(page: ft.Page):
                         icon="sensors",
                         bgcolor=COR_CARD_HIGH,
                         color=COR_PRIMARY,
-                        on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager, render_main_content)
+                        on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content)
                     )
                 ], alignment="spaceBetween"),
                 padding=15, bgcolor=COR_CARD, border_radius=12,
@@ -1484,7 +1484,7 @@ def main(page: ft.Page):
                         pass
 
             def loop_digital():
-                if not biometria_manager: return
+                if not biometria_manager_global: return
                 print("☝️ Loop de biometria digital iniciado")
                 
                 while camera_estado["rodando"]:
@@ -1510,7 +1510,7 @@ def main(page: ft.Page):
                         if not camera_estado["rodando"]: break
                         
                         # Se o aluno for identificado
-                        if biometria_manager.verify(mat):
+                        if biometria_manager_global.verify(mat):
                             print(f"☝️ Digital correspondente: {mat}")
                             # Busca dados do aluno
                             aluno_data = next((a for a in state["alunos_data"] if str(a.get("matricula")) == str(mat)), None)
