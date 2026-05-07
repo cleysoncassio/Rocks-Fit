@@ -12,6 +12,7 @@ import requests
 import threading
 import time
 import base64
+from flask import Flask, jsonify, request
 try:
     import cv2
     import numpy as np
@@ -58,7 +59,46 @@ MOCK_ALUNOS = []
 MOCK_HISTORICO = []
 
 
+# --- API BRIDGE PARA O CRM (FLASK) ---
+api_app = Flask(__name__)
+manager_global = None
+
+@api_app.after_request
+def add_cors_headers(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+@api_app.route('/api/enroll/<matricula>', methods=['GET'])
+def api_enroll(matricula):
+    if not manager_global:
+        return jsonify({"success": False, "error": "Hardware não inicializado"}), 500
+    
+    print(f"📡 API: Solicitando captura para {matricula}")
+    proc = manager_global.enroll(matricula)
+    if proc:
+        try:
+            # Espera até 30s
+            stdout, stderr = proc.communicate(timeout=30)
+            if "enroll-completed" in stdout or proc.returncode == 0:
+                manager_global.guardar_arquivo_local(matricula)
+                return jsonify({"success": True, "digital_id": matricula})
+            else:
+                return jsonify({"success": False, "error": stderr or "Falha na captura"}), 400
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+    return jsonify({"success": False, "error": "Falha ao iniciar scanner"}), 500
+
+def run_api():
+    print("🌐 API Bridge iniciada em http://localhost:8553")
+    api_app.run(port=8553, debug=False, threaded=True)
+
+threading.Thread(target=run_api, daemon=True).start()
+
+
 def main(page: ft.Page):
+    global manager_global
     page.title = "ROCKS FIT - RECEPÇÃO"
     page.padding = 0
     page.spacing = 0
@@ -68,6 +108,7 @@ def main(page: ft.Page):
     page.window.height = 900
 
     biometria_manager = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
+    manager_global = biometria_manager
 
     # Estado Local da Sessão
     state = {

@@ -370,7 +370,13 @@
                 
                 <div class="space-y-4 text-center">
                     <label class="text-[9px] font-black text-neutral-500 uppercase tracking-[0.4em]">Protocolo ID Catraca</label>
-                    <input type="text" name="digital_id" class="w-40 bg-surface-container-low border-none rounded-2xl py-6 font-black font-headline text-5xl text-primary focus:ring-1 focus:ring-primary outline-none transition-all text-center mx-auto block" placeholder="0" value="{{ aluno.digital|default:'' }}" required>
+                    <input type="text" name="digital_id" id="digital_id_input" class="w-40 bg-surface-container-low border-none rounded-2xl py-6 font-black font-headline text-5xl text-primary focus:ring-1 focus:ring-primary outline-none transition-all text-center mx-auto block" placeholder="0" value="{{ aluno.digital|default:'' }}" required>
+                    
+                    <button type="button" id="btn-capture-software" onclick="captureFromSoftware('{{ aluno.matricula }}')" class="w-full bg-surface-container-highest text-primary border border-primary/20 py-4 rounded-2xl font-black font-headline text-[9px] uppercase tracking-[0.3em] hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-3 mt-4">
+                        <span class="material-symbols-outlined text-lg">sensors</span> 
+                        <span id="capture-btn-text">Capturar via Software</span>
+                    </button>
+                    <div id="capture-status" class="text-[8px] font-bold uppercase tracking-widest text-neutral-500 mt-2 h-4"></div>
                 </div>
 
                 <div class="pt-8">
@@ -458,6 +464,50 @@
                 stopCamera();
                 document.getElementById('upload-form').submit();
             }, 'image/jpeg', 0.9);
+        }
+
+        async function captureFromSoftware(matricula) {
+            const btn = document.getElementById('btn-capture-software');
+            const btnText = document.getElementById('capture-btn-text');
+            const status = document.getElementById('capture-status');
+            const input = document.getElementById('digital_id_input');
+
+            if (!btn || !btnText || !status || !input) return;
+
+            btn.disabled = true;
+            btnText.innerText = "AGUARDANDO SENSOR...";
+            status.innerText = "Posicione o dedo no leitor agora";
+            status.classList.remove('text-success', 'text-error');
+            status.classList.add('text-primary');
+
+            try {
+                const response = await fetch(`http://localhost:8553/api/enroll/${matricula}`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.innerText = "✅ CAPTURADO COM SUCESSO!";
+                    status.classList.remove('text-primary');
+                    status.classList.add('text-success');
+                    input.value = data.digital_id;
+                    btnText.innerText = "CAPTURAR NOVAMENTE";
+                } else {
+                    status.innerText = "❌ ERRO: " + (data.error || "Falha");
+                    status.classList.remove('text-primary');
+                    status.classList.add('text-error');
+                    btnText.innerText = "TENTAR NOVAMENTE";
+                }
+            } catch (err) {
+                status.innerText = "❌ SOFTWARE NÃO DETECTADO (RODE A PONTE LOCAL)";
+                status.classList.remove('text-primary');
+                status.classList.add('text-error');
+                btnText.innerText = "TENTAR NOVAMENTE";
+            } finally {
+                btn.disabled = false;
+            }
         }
     </script>
 </body>

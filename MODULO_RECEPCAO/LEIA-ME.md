@@ -68,6 +68,7 @@ O sistema abrirá uma janela do navegador (Dashboard) e você poderá gerenciar 
 
 - **Câmera não detectada:** Verifique se nenhuma outra aplicação (como Zoom ou Meet) está usando a câmera.
 - **Erro de Conexão CRM:** Verifique se o computador tem acesso à internet e se o token no arquivo `.py` está correto.
+- **Biometria não funciona no CRM:** Certifique-se de que o `ponte_rocksfit_flet.py` está rodando. O CRM web se comunica com ele através da porta `8553`.
 - **Tela Preta:** O sistema usa o Flet. Se a interface não carregar, tente abrir no navegador através do endereço `http://127.0.0.1:8552`.
 
 ---
