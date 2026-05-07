@@ -1293,11 +1293,24 @@ def main(page: ft.Page):
     # BARRA DE TÍTULO CUSTOMIZADA (PREMIUM) - FUNÇÃO GERADORA
     # ==========================
     def create_title_bar(title_text="ROCKS FIT - SISTEMA DE RECEPÇÃO"):
-        def close_app(e): page.window.close()
-        def minimize_app(e): page.window.minimized = True
+        def close_app(e):
+            camera_estado["rodando"] = False
+            time.sleep(0.5)
+            try:
+                page.window.close()
+            except:
+                import sys
+                sys.exit(0)
+
+        def minimize_app(e): 
+            try: page.window.minimized = True
+            except: pass
+
         def maximize_app(e): 
-            page.window.maximized = not page.window.maximized
-            page.update()
+            try:
+                page.window.maximized = not page.window.maximized
+                page.update()
+            except: pass
 
         return ft.Container(
             content=ft.Row(
@@ -1744,9 +1757,10 @@ def main(page: ft.Page):
                             try:
                                 _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
                                 img_cam.src_base64 = base64.b64encode(buffer).decode('utf-8')
-                                page.update()
+                                # Update super seguro no loop de vídeo
+                                try: page.update()
+                                except: pass
                             except Exception:
-                                # Se der erro no update, a aba pode ter sido fechada
                                 pass
                         time.sleep(0.01)
                 except Exception as e: print("Erro na câmera Flet:", e)
