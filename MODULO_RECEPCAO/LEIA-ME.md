@@ -12,6 +12,7 @@ Antes de começar, você precisará ter instalado em seu Windows:
 3. **Dependências do Face Recognition** (Opcional, mas recomendado para biometria neural):
    - Instale o [CMake](https://cmake.org/download/).
    - Instale as "Ferramentas de Compilação do C++" no Visual Studio.
+4. **Git para Windows** (Recomendado para evitar erros de biblioteca): [Download Git](https://git-scm.com/download/win)
 
 ---
 
@@ -70,6 +71,14 @@ O sistema abrirá uma janela do navegador (Dashboard) e você poderá gerenciar 
 - **Erro de Conexão CRM:** Verifique se o computador tem acesso à internet e se o token no arquivo `.py` está correto.
 - **Biometria não funciona no CRM:** Certifique-se de que o `ponte_rocksfit_flet.py` está rodando. O CRM web se comunica com ele através da porta `8553`.
 - **Tela Preta:** O sistema usa o Flet. Se a interface não carregar, tente abrir no navegador através do endereço `http://127.0.0.1:8552`.
+- **Erro "Please install face_recognition_models":** Ocorre no Windows sem Git. Com o ambiente virtual ativado, execute:
+  ```bash
+  pip install face-recognition-models
+  ```
+  *Se o erro persistir, force a reinstalação:*
+  ```bash
+  pip install --force-reinstall face-recognition-models
+  ```
 
 ---
 *Desenvolvido para Rocks-Fit – Gestão Inteligente de Academias.*

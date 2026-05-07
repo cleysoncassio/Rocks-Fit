@@ -20,12 +20,15 @@ except ImportError:
     pass
 
 try:
+    # O face_recognition_models é uma dependência pesada que às vezes falha no Windows sem Git.
+    # Tentamos importar os modelos primeiro para evitar o sys.exit(1) interno do face_recognition.
+    import face_recognition_models
     import face_recognition as fr
     FR_DISPONIVEL = True
     print("✅ face_recognition carregado – reconhecimento neural ativo")
-except ImportError:
+except (ImportError, SystemExit):
     FR_DISPONIVEL = False
-    print("⚠️ face_recognition não disponível – usando ORB")
+    print("⚠️ face_recognition ou modelos não disponíveis – usando fallback ORB")
 
 try:
     from biometria_fprint import BiometriaFPrint

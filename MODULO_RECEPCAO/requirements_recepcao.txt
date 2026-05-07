@@ -4,6 +4,7 @@ opencv-python
 pillow
 numpy
 face-recognition
+face-recognition-models
 flask
 flask-cors
 python-dotenv
