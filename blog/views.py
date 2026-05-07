@@ -1873,3 +1873,22 @@ def crm_ia_action(request, action_id):
     return redirect('crm_ia_dashboard')
 
 
+@csrf_exempt
+def api_biometria_save(request, matricula):
+    """API para o módulo de recepção salvar a digital do aluno no CRM"""
+    if request.method == 'POST':
+        try:
+            # Busca o aluno pela matrícula
+            aluno = Aluno.objects.filter(matricula=matricula).first()
+            if not aluno:
+                return JsonResponse({"success": False, "error": "Aluno não encontrado"}, status=404)
+            
+            # No fprintd usamos a própria matrícula como ID da digital
+            aluno.digital = matricula
+            aluno.save()
+            
+            return JsonResponse({"success": True, "message": f"Biometria de {aluno.nome_completo} vinculada."})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+    
+    return JsonResponse({"success": False, "error": "Método não permitido"}, status=405)

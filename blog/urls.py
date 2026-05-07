@@ -21,6 +21,7 @@ urlpatterns = [
     path("api/aluno-list-full/", views.aluno_list_full_api, name="aluno_list_full"),
     path("api/aluno-update-data/", views.aluno_update_data_api, name="aluno_update_data"),
     path("api/dev/simular-pagamento/", views.dev_simular_pagamento, name="dev_simular_pagamento"),
+    path("api/biometria-save/<str:matricula>/", views.api_biometria_save, name="api_biometria_save"),
     path("webhook/whatsapp/", views.whatsapp_webhook, name="whatsapp_webhook_blackhole"),
 
     # API para o App do Aluno
