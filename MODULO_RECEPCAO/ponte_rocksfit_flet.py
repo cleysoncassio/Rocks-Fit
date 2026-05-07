@@ -109,6 +109,9 @@ def main(page: ft.Page):
 
     biometria_manager = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
     manager_global = biometria_manager
+    
+    # Garantir diretórios de persistência local
+    os.makedirs("CONTROLE_ACESSO/ALUNOS", exist_ok=True)
 
     # Estado Local da Sessão
     state = {
@@ -116,7 +119,8 @@ def main(page: ft.Page):
         "historico": GLOBAL_HISTORICO if GLOBAL_HISTORICO else [],
         "camera_on": False,
         "monitor_ativo": True,
-        "alunos_perfis": GLOBAL_PERFIS
+        "alunos_perfis": GLOBAL_PERFIS,
+        "current_view": "clientes"
     }
 
     # Sistema de notificação entre abas
@@ -174,11 +178,17 @@ def main(page: ft.Page):
         return ft.Text(text, color=COR_TEXT_SEC, size=11, weight=ft.FontWeight.BOLD, opacity=0.7)
 
     # Menu Monitoramento
+    def switch_view(view_name):
+        state["current_view"] = view_name
+        render_main_content()
+        page.update()
+
     menu_monitoramento = ft.Column(
         [
             create_section_title("MONITORAMENTO"),
-            create_menu_item("Clientes", "people", active=True),
-            create_menu_item("Monitor Câmera", "videocam"),
+            create_menu_item("Clientes", "people", active=state["current_view"] == "clientes", on_click=lambda _: switch_view("clientes")),
+            create_menu_item("Biometria", "fingerprint", active=state["current_view"] == "biometria", on_click=lambda _: switch_view("biometria")),
+            create_menu_item("Monitor Câmera", "videocam", on_click=lambda _: page.launch_url("/monitor", web_window_name="_blank")),
         ],
         spacing=4
     )
@@ -682,6 +692,84 @@ def main(page: ft.Page):
         dlg.open = True
         page.update()
 
+    def render_biometria_view():
+        biometria_col = ft.ListView(expand=True, spacing=8, padding=ft.padding.only(top=10))
+        
+        # Filtra alunos que não têm digital (segundo o cache local)
+        path_digital = "CONTROLE_ACESSO/ALUNOS"
+        os.makedirs(path_digital, exist_ok=True)
+        digital_locais = [f.split(".")[0] for f in os.listdir(path_digital) if f.endswith(".finger")]
+        
+        alunos_pendentes = [a for a in state["alunos_data"] if str(a.get("matricula")) not in digital_locais]
+        alunos_cadastrados = [a for a in state["alunos_data"] if str(a.get("matricula")) in digital_locais]
+        
+        def create_biometria_item(aluno, cadastrado=False):
+            nome = str(aluno.get("nome", "ALUNO"))
+            mat = str(aluno.get("matricula", "N/D"))
+            
+            return ft.Container(
+                content=ft.Row([
+                    ft.Row([
+                        ft.Icon("fingerprint", color=COR_SUCCESS if cadastrado else COR_WARNING),
+                        ft.Column([
+                            ft.Text(nome, color=COR_TEXTO, size=14, weight="bold"),
+                            ft.Text(f"Matrícula: {mat}", color=COR_TEXT_SEC, size=12),
+                        ], spacing=2)
+                    ], spacing=15),
+                    ft.ElevatedButton(
+                        "RECADASTRE" if cadastrado else "CADASTRAR AGORA",
+                        icon="sensors",
+                        bgcolor=COR_CARD_HIGH,
+                        color=COR_PRIMARY,
+                        on_click=lambda e, a=aluno: abrir_cadastro_digital(a)
+                    )
+                ], alignment="spaceBetween"),
+                padding=15, bgcolor=COR_CARD, border_radius=12,
+                border=ft.border.all(1, COR_SUCCESS + "40" if cadastrado else COR_WARNING + "40")
+            )
+
+        biometria_col.controls.append(create_section_title("PENDENTES DE BIOMETRIA"))
+        if not alunos_pendentes:
+            biometria_col.controls.append(ft.Text("Todos os alunos sincronizados possuem biometria local.", color=COR_TEXT_SEC, size=13))
+        else:
+            for a in alunos_pendentes:
+                biometria_col.controls.append(create_biometria_item(a, False))
+        
+        biometria_col.controls.append(ft.Divider(height=30, color="transparent"))
+        biometria_col.controls.append(create_section_title("BIOMETRIAS CADASTRADAS LOCALMENTE"))
+        for a in alunos_cadastrados:
+            biometria_col.controls.append(create_biometria_item(a, True))
+            
+        return ft.Column([
+            ft.Text("GESTOR DE BIOMETRIA", size=24, weight="bold", font_family="Space Grotesk"),
+            ft.Text("Gerencie as digitais salvas localmente neste módulo.", color=COR_TEXT_SEC, size=13),
+            ft.Divider(height=20, color=COR_CARD_HIGH),
+            biometria_col
+        ], expand=True)
+
+    def render_main_content():
+        # Atualiza menu ativo no sidebar
+        for item in menu_monitoramento.controls:
+            if isinstance(item, ft.Container):
+                # O texto está dentro de Row -> Container
+                text_obj = item.content.controls[1]
+                icon_obj = item.content.controls[0]
+                is_active = (text_obj.value == "Clientes" and state["current_view"] == "clientes") or \
+                           (text_obj.value == "Biometria" and state["current_view"] == "biometria")
+                
+                item.bgcolor = COR_CARD if is_active else None
+                icon_obj.color = COR_PRIMARY if is_active else COR_TEXT_SEC
+                text_obj.color = COR_TEXTO if is_active else COR_TEXT_SEC
+
+        if state["current_view"] == "clientes":
+            center_panel.content = center_content
+            render_alunos()
+        else:
+            center_panel.content = render_biometria_view()
+        
+        try: page.update()
+        except: pass
+
     center_content = ft.Column(
         [
             top_bar,
@@ -699,6 +787,9 @@ def main(page: ft.Page):
         padding=ft.padding.all(30),
         content=center_content,
     )
+    
+    # Inicializa o conteúdo principal
+    render_main_content()
 
     # ==========================
     # MODAL DE HISTÓRICO E LOTAÇÃO
