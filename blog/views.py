@@ -1408,6 +1408,36 @@ def crm_aluno_detail(request, aluno_id):
 
     # --- AUTO-SYNC: Garantir que o acesso esteja sincronizado com o último pagamento ---
     ultimo_pago = pagamentos.filter(status='pago').first()
+    return render(request, "crm/aluno_detail.html", {
+        "aluno": aluno,
+        "pagamentos": pagamentos,
+        "total_pago": total_investido,
+        "debitos": debitos,
+        "rockspoints": rockspoints,
+        "planos": planos,
+        "acesso": acesso
+    })
+
+@login_required
+def crm_biometria_list(request):
+    """Gestão Centralizada de Biometria Digital"""
+    if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:
+        messages.error(request, "Acesso Negado.")
+        return redirect('crm_dashboard')
+    
+    from blog.models import Aluno
+    # Buscar alunos, priorizando os que não têm digital
+    alunos = Aluno.objects.all().order_by('digital', 'nome_completo')
+    
+    # Filtro simples
+    q = request.GET.get('q')
+    if q:
+        alunos = alunos.filter(nome_completo__icontains=q) | alunos.filter(matricula__icontains=q) | alunos.filter(cpf__icontains=q)
+
+    return render(request, "crm/biometria.html", {
+        "alunos": alunos,
+        "q": q
+    })
     if ultimo_pago and ultimo_pago.plano:
         from blog.models import ControleAcesso
         from datetime import date, timedelta

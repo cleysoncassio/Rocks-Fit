@@ -33,6 +33,7 @@ urlpatterns = [
     path("crm/config/", views.crm_config, name="crm_config"),
     path("crm/gerencial/", views.crm_dash_gerencial, name="crm_dash_gerencial"),
     path('crm/alunos/', views.crm_alunos_list, name='crm_alunos_list'),
+    path('crm/biometria/', views.crm_biometria_list, name='crm_biometria_list'),
     path('crm/aluno/novo/', views.crm_aluno_create, name='crm_aluno_create'),
     path('crm/aluno/<int:aluno_id>/', views.crm_aluno_detail, name='crm_aluno_detail'),
     path('crm/aluno/<int:aluno_id>/edit/', views.crm_aluno_edit, name='crm_aluno_edit'),
