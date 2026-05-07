@@ -129,7 +129,7 @@ def main(page: ft.Page):
             border_radius=75,
             bgcolor=COR_CARD_HIGH,
             alignment=ft.alignment.center,
-            animate_scale=ft.animation.Animation(600, ft.AnimationCurve.EASE_OUT_BACK),
+            animate_scale=ft.Animation(600, ft.AnimationCurve.EASE_OUT_BACK),
             shadow=ft.BoxShadow(blur_radius=30, color=COR_PRIMARY + "22")
         )
 
