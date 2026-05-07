@@ -1,10 +1,13 @@
 import flet as ft
 import os, sys
 
-# Evitar travamentos do Flet no Linux (Wayland/X11)
+# Evitar travamentos do Flet no Linux (Wayland/X11) e tela preta
 if sys.platform.startswith("linux"):
-    # os.environ["GDK_BACKEND"] = "x11" # Removido para permitir auto-detecção
+    os.environ["GDK_BACKEND"] = "x11"
     os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
+    os.environ["FLET_WS_MAX_MESSAGE_SIZE"] = "8000000"
+    # Forçar renderização de software se necessário
+    os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
 
 from datetime import datetime, timedelta
 import random
@@ -259,7 +262,7 @@ def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content, 
                     animate=ft.Animation(300, "decelerate"),
                     on_click=lambda _: process_enroll(finger, label),
                     tooltip=f"Cadastrar {label}",
-                    alignment=ft.alignment.center
+                    alignment=ft.Alignment(0, 0)
                 ),
                 # Botão Deletar
                 ft.IconButton(
@@ -279,7 +282,7 @@ def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content, 
                     border_radius=4,
                     left=-5, top=58,
                     width=64,
-                    alignment=ft.alignment.center
+                    alignment=ft.Alignment(0, 0)
                 )
             ]),
             left=x,
@@ -451,7 +454,7 @@ def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content, 
                         border_radius=20,
                         border=ft.border.all(1, "#ffffff05"),
                         content=ft.Row([hands_stack], scroll=ft.ScrollMode.ALWAYS),
-                        alignment=ft.alignment.center
+                        alignment=ft.Alignment(0, 0)
                     )
                 ], expand=True, spacing=20)
             ], spacing=10)
@@ -900,7 +903,7 @@ def main(page: ft.Page):
                         ft.ProgressRing(color=COR_PRIMARY),
                         ft.Text("Sincronizando contatos...", color=COR_TEXT_SEC)
                     ], horizontal_alignment="center"),
-                    padding=50, alignment=ft.alignment.center
+                    padding=50, alignment=ft.Alignment(0, 0)
                 )
             )
             try: page.update()
@@ -911,7 +914,7 @@ def main(page: ft.Page):
             lista_alunos_col.controls.append(
                 ft.Container(
                     content=ft.Text("Nenhum aluno encontrado ou ativo no CRM.", color=COR_TEXT_SEC),
-                    padding=50, alignment=ft.alignment.center
+                    padding=50, alignment=ft.Alignment(0, 0)
                 )
             )
             try: page.update()
@@ -1277,7 +1280,7 @@ def main(page: ft.Page):
                     diag_card("MOTOR NEURAL", FR_DISPONIVEL, f"{len(GLOBAL_PERFIS)} alunos mapeados em memória", "memory"),
                     ft.Divider(height=10, color="transparent"),
                     ft.Text("AÇÕES RÁPIDAS", color=COR_TEXT_SEC, size=11, weight="bold", opacity=0.7),
-                    ft.Container(content=btn_test, alignment=ft.alignment.center)
+                    ft.Container(content=btn_test, alignment=ft.Alignment(0, 0))
                 ], spacing=10, scroll=ft.ScrollMode.ADAPTIVE)
             ),
             actions=[ft.TextButton("FECHAR", on_click=lambda _: (setattr(dlg, 'open', False), page.update()))],
@@ -1430,7 +1433,7 @@ def main(page: ft.Page):
                     [
                         img_cam_wrapper,
                         cam_overlay,
-                        ft.Container(content=badge_cam_status, alignment=ft.alignment.bottom_center),
+                        ft.Container(content=badge_cam_status, alignment=ft.Alignment(0, 1)),
                     ],
                     expand=True,
                 ),
@@ -1931,8 +1934,10 @@ if __name__ == "__main__":
         os.environ["GDK_BACKEND"] = "x11"
         
     print("🚀 Iniciando Módulo de Recepção Rocks-Fit...")
+    print("🌐 Dashboard Flet disponível em: http://localhost:8552")
     ft.app(
         target=main, 
         view=ft.AppView.FLET_APP, 
+        port=8552,
         assets_dir="assets"
     )

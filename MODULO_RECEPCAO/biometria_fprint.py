@@ -13,6 +13,11 @@ class BiometriaFPrint:
             "left-thumb", "left-index-finger", "left-middle-finger", "left-ring-finger", "left-pinky",
             "right-thumb", "right-index-finger", "right-middle-finger", "right-ring-finger", "right-pinky"
         ]
+        # Verifica se o fprintd está instalado no sistema
+        import shutil
+        self.driver_disponivel = shutil.which("fprintd-enroll") is not None
+        if not self.driver_disponivel:
+            print("⚠️ [FPRINT] Driver fprintd não encontrado no sistema.")
 
     def enroll(self, matricula, finger="right-index-finger"):
         """
@@ -22,6 +27,10 @@ class BiometriaFPrint:
         current_user = getpass.getuser()
         print(f"🎬 [FPRINT] Iniciando captura: {finger} para Aluno {matricula}")
         
+        if not self.driver_disponivel:
+            print("❌ [FPRINT] Abortando: Driver fprintd não disponível.")
+            return None
+
         try:
             # Tenta limpar registros prévios do sistema para este dedo
             subprocess.run(["fprintd-delete", "-f", finger, current_user], capture_output=True, timeout=2)
@@ -50,6 +59,10 @@ class BiometriaFPrint:
         """
         import getpass
         current_user = getpass.getuser()
+        
+        if not self.driver_disponivel:
+            return False
+
         try:
             # Timeout curto para não travar a aplicação se o sensor falhar
             result = subprocess.run(
