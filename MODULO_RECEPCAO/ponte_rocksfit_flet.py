@@ -26,6 +26,12 @@ except ImportError:
     FR_DISPONIVEL = False
     print("⚠️ face_recognition não disponível – usando ORB")
 
+try:
+    from biometria_fprint import BiometriaFPrint
+    FPRINT_DISPONIVEL = True
+except ImportError:
+    FPRINT_DISPONIVEL = False
+
 # --- CONFIGURAÇÕES ---
 SITE_URL = "https://academiarocksfit.com.br"
 SYNC_TOKEN = "rocksfit@2024"
@@ -60,6 +66,8 @@ def main(page: ft.Page):
     page.bgcolor = COR_BG
     page.window.width = 1400
     page.window.height = 900
+
+    biometria_manager = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
 
     # Estado Local da Sessão
     state = {
@@ -528,6 +536,14 @@ def main(page: ft.Page):
             # Badge de status
             badge = get_status_badge(status, dias)
 
+            # Botão de Digital
+            btn_digital = ft.IconButton(
+                icon="fingerprint",
+                icon_color=COR_PRIMARY,
+                tooltip="Cadastrar Digital",
+                on_click=lambda e, a=aluno: abrir_cadastro_digital(a)
+            )
+
             # Card do aluno
             card = ft.Container(
                 content=ft.Row(
@@ -536,7 +552,7 @@ def main(page: ft.Page):
                             [avatar_com_indicador, info],
                             spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER
                         ),
-                        badge,
+                        ft.Row([badge, btn_digital], spacing=8),
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER
@@ -551,6 +567,79 @@ def main(page: ft.Page):
 
         if page.views:
             page.update()
+
+    def abrir_cadastro_digital(aluno):
+        nome = aluno.get("nome", "Aluno")
+        matricula = aluno.get("matricula")
+        
+        status_text = ft.Text("Pronto para capturar. Clique no botão abaixo.", color=COR_TEXTO)
+        progresso = ft.ProgressBar(value=0, visible=False, color=COR_PRIMARY)
+        
+        def iniciar_captura(e):
+            if not biometria_manager:
+                status_text.value = "Hardware de biometria não detectado."
+                status_text.color = COR_ERROR
+                page.update()
+                return
+            
+            status_text.value = "🔹 POSICIONE O DEDO NO SENSOR..."
+            status_text.color = COR_PRIMARY
+            progresso.visible = True
+            btn_start.disabled = True
+            page.update()
+            
+            def _thread():
+                proc = biometria_manager.enroll(matricula)
+                if proc:
+                    # Espera o processo terminar ou timeout
+                    try:
+                        stdout, stderr = proc.communicate(timeout=30)
+                        if "enroll-completed" in stdout or proc.returncode == 0:
+                            status_text.value = "✅ DIGITAL CAPTURADA COM SUCESSO!"
+                            status_text.color = COR_SUCCESS
+                            biometria_manager.guardar_arquivo_local(matricula)
+                        else:
+                            status_text.value = f"❌ Falha: {stderr or 'Erro desconhecido'}"
+                            status_text.color = COR_ERROR
+                    except Exception as ex:
+                        status_text.value = f"❌ Erro: {ex}"
+                        status_text.color = COR_ERROR
+                    finally:
+                        progresso.visible = False
+                        btn_start.disabled = False
+                        try: page.update()
+                        except: pass
+                else:
+                    status_text.value = "❌ Falha ao iniciar o scanner."
+                    status_text.color = COR_ERROR
+                    progresso.visible = False
+                    btn_start.disabled = False
+                    page.update()
+
+            threading.Thread(target=_thread, daemon=True).start()
+
+        btn_start = ft.ElevatedButton("INICIAR CAPTURA", on_click=iniciar_captura, bgcolor=COR_PRIMARY, color="#ffffff")
+        
+        dlg = ft.AlertDialog(
+            title=ft.Text(f"CADASTRO DIGITAL: {nome.upper()}", weight="bold"),
+            content=ft.Container(
+                width=400, height=200,
+                content=ft.Column([
+                    ft.Text(f"Matrícula: {matricula}", color=COR_TEXT_SEC),
+                    ft.Divider(),
+                    status_text,
+                    progresso,
+                ], horizontal_alignment="center", spacing=20)
+            ),
+            actions=[
+                btn_start,
+                ft.TextButton("FECHAR", on_click=lambda _: (setattr(dlg, 'open', False), page.update()))
+            ],
+            bgcolor=COR_BG
+        )
+        page.overlay.append(dlg)
+        dlg.open = True
+        page.update()
 
     center_content = ft.Column(
         [
@@ -1161,7 +1250,56 @@ def main(page: ft.Page):
                     except:
                         pass
 
+            def loop_digital():
+                if not biometria_manager: return
+                print("☝️ Loop de biometria digital iniciado")
+                
+                while camera_estado["rodando"]:
+                    # No monitor, verificamos apenas os alunos que têm digital cadastrada localmente
+                    # Para ser eficiente, poderíamos listar arquivos em CONTROLE_ACESSO/ALUNOS/*.finger
+                    path_digital = "CONTROLE_ACESSO/ALUNOS"
+                    if not os.path.exists(path_digital):
+                        os.makedirs(path_digital, exist_ok=True)
+                    
+                    alunos_com_digital = [f.split(".")[0] for f in os.listdir(path_digital) if f.endswith(".finger")]
+                    
+                    if not alunos_com_digital:
+                        time.sleep(5)
+                        continue
+                        
+                    # Aqui está o desafio: o fprintd-verify precisa de um usuário.
+                    # Se não soubermos quem é, teríamos que testar um por um.
+                    # Como workaround para fprintd, vamos tentar verificar contra os 5 últimos que entraram
+                    # ou uma lista pequena. Para um sistema real 1:N, fprintd não é o ideal sem hardware específico.
+                    # Mas vamos implementar a lógica de verificação solicitada.
+                    
+                    for mat in alunos_com_digital:
+                        if not camera_estado["rodando"]: break
+                        
+                        # Se o aluno for identificado
+                        if biometria_manager.verify(mat):
+                            print(f"☝️ Digital correspondente: {mat}")
+                            # Busca dados do aluno
+                            aluno_data = next((a for a in state["alunos_data"] if str(a.get("matricula")) == str(mat)), None)
+                            if aluno_data:
+                                liberado = aluno_data.get("status", "") in ["ativo", "liberado"]
+                                _set_identificado(aluno_data, liberado)
+                                if liberado:
+                                    # Abre a catraca
+                                    import socket
+                                    for pta in [1001, 3000, 5000]:
+                                        try:
+                                            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                                                sock.settimeout(1); sock.connect(("192.168.1.100", pta)); sock.sendall(b"lgu\x00Digital Liberada"); break
+                                        except: pass
+                                time.sleep(5) # Cooldown após identificação
+                                _set_aguardando()
+                                break
+                    
+                    time.sleep(0.5)
+
             threading.Thread(target=loop_camera, daemon=True).start()
+            threading.Thread(target=loop_digital, daemon=True).start()
             page.views.append(ft.View("/monitor", [monitor_layout], bgcolor=surf, padding=0))
         else:
             page.title = "ROCKS FIT - RECEPÇÃO"
