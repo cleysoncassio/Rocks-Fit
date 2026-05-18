@@ -33,7 +33,7 @@ python -m venv .venv
 Com o ambiente virtual ativado, instale as dependências necessárias:
 
 ```bash
-pip install -r requirements_recepcao.txt
+pip install -r requirements.txt
 ```
 
 *Nota: Se a instalação do `face-recognition` falhar, o sistema ainda funcionará usando o motor reserva (ORB), mas a precisão será menor.*

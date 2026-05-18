@@ -502,7 +502,7 @@
             status.innerText = "Posicione o dedo no leitor agora";
 
             try {
-                const response = await fetch(`${BRIDGE_URL}/api/enroll/${matricula}`, {
+                const response = await fetch(`${BRIDGE_URL}/api/enroll/${matricula}?token={{ catraca_sync_token }}`, {
                     method: 'POST',
                     mode: 'cors'
                 });

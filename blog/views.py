@@ -555,9 +555,18 @@ def catraca_sync_api(request):
 
 def catraca_check_api(request, id_tag):
     """
-    Endpoint usado pela Ponte Local para validar um aluno específico (via Matrícula/TAG).
     Retorna foto, nome e dias restantes para o monitor.
     """
+    from .models import AcessoLog, GymSetting
+    
+    def enviar_whatsapp_academia(aluno, motivo):
+        """Simula o envio de mensagem para o WhatsApp da Academia (Staff)"""
+        gs = GymSetting.objects.first()
+        if gs and gs.whatsapp_notificacao:
+            # Em produção aqui chamaria uma API como WPPConnect ou Evolution API
+            msg_final = f"🚨 *ALERTA DE ACESSO NEGADO*\nAluno: {aluno.nome_completo}\nMatrícula: {aluno.matricula}\nMotivo: {motivo}\nMensagem: 'Estou com problemas no meu acesso, pode verificar por favor?'"
+            print(f"📱 [WHATSAPP API] Notificação enviada para {gs.whatsapp_notificacao}: {msg_final}")
+            
     from django.conf import settings
     token = request.GET.get('token') or request.POST.get('token')
     if token != getattr(settings, 'CATRACA_SYNC_TOKEN', None):
@@ -585,7 +594,9 @@ def catraca_check_api(request, id_tag):
     # 4. MONITORAMENTO DE STATUS CRM (Administrativo)
     from .models import GymSetting
     gym_settings = GymSetting.objects.first()
-    whatsapp_link = f"https://wa.me/{gym_settings.whatsapp_notificacao}" if gym_settings and gym_settings.whatsapp_notificacao else "#"
+    import urllib.parse
+    msg_help = "Estou com problemas no meu acesso, pode verificar por favor?"
+    whatsapp_link = f"https://wa.me/{gym_settings.whatsapp_notificacao}?text={urllib.parse.quote(msg_help)}" if gym_settings and gym_settings.whatsapp_notificacao else "#"
     
     msg_entrada = gym_settings.msg_entrada if gym_settings else "Bom treino!"
     msg_saida = gym_settings.msg_saida if gym_settings else "Bom descanso!"
@@ -596,6 +607,10 @@ def catraca_check_api(request, id_tag):
         if aluno.is_convenio:
             msg_custom = gym_settings.msg_erro_wellhub if gym_settings else "Erro no convênio corporativo."
             
+        # LOG DE TENTATIVA NEGADA
+        AcessoLog.objects.create(aluno=aluno, tipo='NEGADO')
+        enviar_whatsapp_academia(aluno, "Cadastro Suspenso/Inativo")
+        
         return JsonResponse({
             'status': 'bloqueado', 'nome': aluno.nome_completo,
             'foto_url': foto_url, 'status_borda': 'vermelho',
@@ -642,12 +657,18 @@ def catraca_check_api(request, id_tag):
     if dias_restantes < 0:
         acesso.status_catraca = 'bloqueado'
         acesso.save()
+        
+        # LOG DE TENTATIVA NEGADA
+        AcessoLog.objects.create(aluno=aluno, tipo='NEGADO')
+        enviar_whatsapp_academia(aluno, "Plano Vencido")
+        
         return JsonResponse({
             'nome': aluno.nome_completo, 'matricula': aluno.matricula,
             'vencimento': acesso.data_vencimento.strftime('%d/%m/%Y'),
             'dias_restantes': dias_restantes, 'foto_url': foto_url,
             'status': 'vencido', 'status_borda': 'vermelho',
-            'mensagem': 'Plano vencido. Procure a recepção.'
+            'mensagem': 'Plano vencido. Procure a recepção.',
+            'whatsapp_action': whatsapp_link
         }, status=403)
 
     # 4. LÓGICA DE ENTRADA/SAÍDA E FLUXO
@@ -1440,6 +1461,7 @@ def crm_aluno_detail(request, aluno_id):
                 acesso = ac
     # -----------------------------------------------------------------------------------
 
+    from django.conf import settings
     from blog.models import GymSetting
     gym_settings = GymSetting.objects.first()
 
@@ -1454,6 +1476,7 @@ def crm_aluno_detail(request, aluno_id):
         'planos': planos,
         'ultimo_pago': ultimo_pago,
         'gym_settings': gym_settings,
+        'catraca_sync_token': getattr(settings, 'CATRACA_SYNC_TOKEN', 'Rocksfit@2024'),
     }
     return render(request, 'crm/aluno_detail.html', context)
 
@@ -1473,9 +1496,11 @@ def crm_biometria_list(request):
     if q:
         alunos = alunos.filter(nome_completo__icontains=q) | alunos.filter(matricula__icontains=q) | alunos.filter(cpf__icontains=q)
 
+    from django.conf import settings
     return render(request, "crm/biometria.html", {
         "alunos": alunos,
-        "q": q
+        "q": q,
+        "catraca_sync_token": getattr(settings, 'CATRACA_SYNC_TOKEN', 'Rocksfit@2024'),
     })
 
 @login_required

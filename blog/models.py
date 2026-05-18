@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from pgvector.django import VectorField
 from ordered_model.models import OrderedModel
 
 
@@ -256,6 +257,7 @@ class Aluno(models.Model):
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Último Valor Pago")
     is_convenio = models.BooleanField(default=False, verbose_name="É Convênio? (Wellhub/TotalPass)")
     foto = models.ImageField(upload_to="alunos/fotos/", blank=True, null=True, verbose_name="Foto (Reconhecimento Facial)")
+    facial_embedding = models.JSONField(blank=True, null=True, verbose_name="Embedding Facial (ArcFace)")
     digital = models.TextField(blank=True, null=True, verbose_name="Digital (Template Biométrico)")
     data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
     
@@ -484,6 +486,34 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 import json
 import os
+from deepface import DeepFace
+import numpy as np
+
+@receiver(post_save, sender=Aluno)
+def gerar_embedding_facial(sender, instance, created, **kwargs):
+    """Gera o embedding facial automaticamente ao salvar/alterar a foto do aluno."""
+    if os.environ.get('SKIP_SIGNALS'):
+        return
+    if instance.foto and not instance.facial_embedding:
+        try:
+            # Caminho físico da imagem
+            img_path = instance.foto.path
+            
+            # Extrai embedding usando ArcFace
+            results = DeepFace.represent(
+                img_path=img_path,
+                model_name="ArcFace",
+                enforce_detection=False,
+                detector_backend="retinaface"
+            )
+            
+            if results:
+                embedding = results[0]["embedding"]
+                # Atualiza usando update() para não disparar o signal novamente em loop
+                Aluno.objects.filter(id=instance.id).update(facial_embedding=embedding)
+                print(f"✅ [DEEPFACE] Embedding gerado para: {instance.nome_completo}")
+        except Exception as e:
+            print(f"❌ [DEEPFACE] Erro ao gerar embedding para {instance.nome_completo}: {e}")
 
 _sync_in_progress = False
 
@@ -648,7 +678,7 @@ class AcaoIA(models.Model):
 class AcessoLog(models.Model):
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='acessos', verbose_name="Aluno")
     data_hora = models.DateTimeField(auto_now_add=True, verbose_name="Data/Hora")
-    tipo = models.CharField(max_length=10, choices=[('ENTRADA', 'Entrada'), ('SAIDA', 'Saída')], default='ENTRADA')
+    tipo = models.CharField(max_length=10, choices=[('ENTRADA', 'Entrada'), ('SAIDA', 'Saída'), ('NEGADO', 'Acesso Negado')], default='ENTRADA')
 
     def __str__(self):
         return f"{self.aluno.nome_completo} - {self.tipo} em {self.data_hora}"

@@ -1,75 +1,633 @@
-import flet as ft
-import os, sys
+# -*- coding: utf-8 -*-
+import os
+import sys
+import time
 
-# Evitar travamentos do Flet no Linux (Wayland/X11) e tela preta
+# Carrega dotenv bem no início para que as variáveis afetem as configurações do Flet
+try:
+    from dotenv import load_dotenv
+    load_dotenv() # Carrega .env se existir
+except:
+    pass
+
+# --- CONFIGURAÇÕES DE AMBIENTE (FLET 0.85 & ESTABILIDADE) ---
+# Desativa acessibilidade que causa crashes em loops de identificação rápida
+os.environ["FLET_DISABLE_ACCESSIBILITY"] = os.getenv("FLET_DISABLE_ACCESSIBILITY", "1")
+os.environ["FLET_FORCE_WEBVIEW_ACCESSIBILITY"] = os.getenv("FLET_FORCE_WEBVIEW_ACCESSIBILITY", "0")
+# Aumenta o buffer de mensagens WebSocket para suportar frames de vídeo e fotos em alta resolução
+os.environ["FLET_WS_MAX_MESSAGE_SIZE"] = os.getenv("FLET_WS_MAX_MESSAGE_SIZE", "8000000")
+
+# Otimização de renderização para Linux (Harden Industrial)
 if sys.platform.startswith("linux"):
-    os.environ["GDK_BACKEND"] = "x11"
-    os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
-    os.environ["FLET_WS_MAX_MESSAGE_SIZE"] = "8000000"
-    # Forçar renderização de software se necessário
-    os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
+    # Permite customizar via .env, padrão "0" (hardware render) ou "1" (software render se der tela preta)
+    os.environ["FLET_FORCE_SOFTWARE_RENDER"] = os.getenv("FLET_FORCE_SOFTWARE_RENDER", "0")
 
+import flet as ft
 from datetime import datetime, timedelta
 import random
 import requests
 import threading
-import time
+import qrcode
+import io
 import base64
+import json
+import subprocess
+
+# --- POLYFILL PARA ICONES DESCONTINUADOS OU FALTANTES ---
+print("Applying Icon Polyfill...")
+for icon_name in ["FINGERPRINT", "LOCK_OPEN", "CLOSE", "REFRESH", "REMOVE", "CROP_SQUARE", "PEOPLE", "VIDEOCAM", "SYNC", "HISTORY", "TROUBLESHOOT", "SETTINGS", "CLOUD_DONE", "CHECK_CIRCLE", "SEARCH", "CALENDAR_MONTH", "PERSON", "LOCK", "ANALYTICS", "MEMORY", "ERROR", "REPLAY"]:
+    if not hasattr(ft.icons, icon_name):
+        setattr(ft.icons, icon_name, icon_name.lower())
+print("Polyfill Applied.")
+
 from flask import Flask, jsonify, request
+
 try:
     import cv2
     import numpy as np
 except ImportError:
     pass
 
-try:
-    # O face_recognition_models é uma dependência pesada que às vezes falha no Windows sem Git.
-    # Tentamos importar os modelos primeiro para evitar o sys.exit(1) interno do face_recognition.
-    import face_recognition_models
-    import face_recognition as fr
-    FR_DISPONIVEL = True
-    print("✅ face_recognition carregado – reconhecimento neural ativo")
-except (ImportError, SystemExit):
-    FR_DISPONIVEL = False
-    print("⚠️ face_recognition ou modelos não disponíveis – usando fallback ORB")
+def nuclear_cleanup():
+    """Limpeza agressiva de hardware e processos para destravar o sistema."""
+    me = os.getpid()
+    try:
+        # Limpa drivers e processos de hardware (APENAS LINUX)
+        if sys.platform.startswith("linux"):
+            subprocess.run(["pkill", "-9", "fprintd"], capture_output=True)
+            subprocess.run(["pkill", "-9", "fprintd-verify"], capture_output=True)
+            subprocess.run(["pkill", "-9", "fprintd-enroll"], capture_output=True)
+            
+            # Força o reinício do serviço para resetar o barramento USB do sensor
+            # No Linux, pkill -9 fprintd já faz o serviço ser reiniciado pelo systemd se configurado.
+            # Removemos o sudo para evitar prompts de senha que travam o startup.
+            try: subprocess.run(["pkill", "-9", "fprintd"], capture_output=True)
+            except: pass
+            
+            # Limpa APENAS os daemons biométricos para evitar travar o barramento
+            subprocess.run(["pkill", "-9", "fprintd-verify"], capture_output=True)
+            subprocess.run(["pkill", "-9", "fprintd-enroll"], capture_output=True)
+            subprocess.run(["pkill", "-9", "fprintd"], capture_output=True)
+
+            # Libera dispositivos de vídeo travados (Apenas processos do usuário atual)
+            try:
+                # Busca PIDs de processos do usuário que estão usando /dev/video*
+                res = subprocess.run("lsof -t /dev/video*", shell=True, capture_output=True, text=True)
+                pids = res.stdout.strip().split()
+                for pid in pids:
+                    if pid != str(me):
+                        subprocess.run(["kill", "-9", pid], capture_output=True)
+            except: pass
+            
+            print("☢️ [NUCLEAR] Barramento biométrico, câmeras e processos zumbis limpos (Linux).")
+        else:
+            # No Windows, a limpeza é menos agressiva para evitar matar processos do sistema
+            # O Flet gerencia bem suas janelas no Windows
+            print("☢️ [NUCLEAR] Modo Windows: Limpeza de hardware simplificada.")
+    except Exception as e:
+        print(f"⚠️ [NUCLEAR] Falha na limpeza: {e}")
 
 try:
-    from biometria_fprint import BiometriaFPrint
-    FPRINT_DISPONIVEL = True
-except ImportError:
-    FPRINT_DISPONIVEL = False
+    # DeepFace API Status - Aumentado timeout para 2s para evitar falso negativo em carga
+    resp_check = requests.get("http://localhost:8000/api/biometria/verificar/", timeout=2.0)
+    DEEPFACE_ONLINE = (resp_check.status_code == 200)
+except:
+    DEEPFACE_ONLINE = False
+
+print(f"🚀 [SISTEMA] Arquitetura Industrial: {'DeepFace API Online' if DEEPFACE_ONLINE else 'DeepFace API Offline (Usando Fallback Local)'}")
 
 # --- CONFIGURAÇÕES ---
-SITE_URL = "https://academiarocksfit.com.br"
-SYNC_TOKEN = "rocksfit@2024"
-COR_BG = "#050505"
+try:
+    from dotenv import load_dotenv
+    load_dotenv() # Carrega .env se existir
+except ImportError:
+    pass
+
+SITE_URL = os.getenv("SITE_URL", "https://academiarocksfit.com.br")
+SYNC_TOKEN = os.getenv("SYNC_TOKEN", "Rocksfit@2024")
+COR_BG = "#0a0a0a" 
 COR_PRIMARY = "#f27121"
-COR_CARD = "#121212"
-COR_CARD_HIGH = "#1e1e1e"
+COR_CARD = "#1a1a1a"
+COR_CARD_HIGH = "#252525"
 COR_TEXTO = "#ffffff"
-COR_TEXT_SEC = "#888888"
+COR_TEXT_SEC = "#b0b0b0" # Aumentando contraste do texto secundário
 COR_SUCCESS = "#2ecc71"
 COR_WARNING = "#f39c12"
 COR_ERROR = "#e74c3c"
 
+try:
+    # A biometria fprintd é apenas para Linux
+    if sys.platform.startswith("linux"):
+        from biometria_fprint import BiometriaFPrint
+        FPRINT_DISPONIVEL = True
+        biometria_manager_global = BiometriaFPrint(SITE_URL, SYNC_TOKEN)
+    else:
+        FPRINT_DISPONIVEL = False
+        biometria_manager_global = None
+except ImportError:
+    FPRINT_DISPONIVEL = False
+    biometria_manager_global = None
+
+# --- MAPA DE DEDOS (Global para evitar recriação) ---
+FINGERS_MAPPING = [
+    {"id": "left-little-finger",   "label": "Mínimo E",   "left": 106, "top": 263},
+    {"id": "left-ring-finger",   "label": "Anelar E",   "left": 158, "top": 219},
+    {"id": "left-middle-finger",    "label": "Médio E",    "left": 212, "top": 208},
+    {"id": "left-index-finger","label": "Indic. E",   "left": 273, "top": 221},
+    {"id": "left-thumb",  "label": "Polegar E",  "left": 343, "top": 305},
+    
+    {"id": "right-thumb",  "label": "Polegar D",  "left": 442, "top": 306},
+    {"id": "right-index-finger","label": "Indic. D",   "left": 515, "top": 224},
+    {"id": "right-middle-finger",    "label": "Médio D",    "left": 580, "top": 212},
+    {"id": "right-ring-finger",   "label": "Anelar D",   "left": 626, "top": 226},
+    {"id": "right-little-finger",   "label": "Mínimo D",   "left": 677, "top": 265},
+]
+
 # --- ESTADO GLOBAL (Compartilhado entre abas/sessões) ---
 GLOBAL_ALUNOS = []
+GLOBAL_EMBEDDINGS_CACHE = {}
 GLOBAL_PERFIS = {}
 GLOBAL_HISTORICO = []
-FR_LOCK = threading.Lock()
+BIOMETRIA_BUSY = False
+PAUSE_BIOMETRIA = False 
+ENROLLMENT_ACTIVE = False
+BIOMETRIA_MAPPING_CACHE = {} 
+
+# --- SISTEMA DE VISÃO (GLOBAL & INDUSTRIAL) ---
+try:
+    FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+except:
+    FACE_CASCADE = None
 SYNC_LOCK = threading.Lock()
 CAM_LOCK = threading.Lock()
+VISION_LOCK = threading.Lock()
+INFERENCE_LOCK = threading.Lock()
+GLOBAL_FRAME_COUNT = 0
+LAST_INFERENCE_DATA = {"status": "idle", "mat": None}
+UI_LOCK = threading.Lock()
+PAGE_LOCK = threading.RLock()
+MATCH_PROCESSING_LOCK = threading.Lock()
+GLOBAL_FRAME_BASE64 = ""
+GLOBAL_LAST_FACES = []
+NEURAL_WORKER_BUSY = False
+GLOBAL_FACE_STREAK = {"mat": None, "count": 0}
+IS_PROCESSING_MATCH = False
+GLOBAL_PRIORITY_MATRICULA = None 
+current_face_streak = {"mat": None, "count": 0}
+
+# --- PERSISTÊNCIA DE CONFIGURAÇÕES ---
+CONFIG_FILE = "BIOMETRIA_DATA/config.json"
+DEFAULT_CONFIG = {
+    "face_threshold": 0.45,
+    "face_streak": 3,
+    "face_fusion_threshold": 0.38,
+    "face_frame_skip": 3,
+    "face_model": "hog",
+    "face_scale": 0.5,
+    "catraca_ip": "169.254.37.150",
+    "catraca_porta": 3000,
+    "catraca_sentido_entrada": 0,
+    "catraca_sentido_saida": 1,
+    "camera_enabled": True,
+    "fprint_timeout": 30,
+    "fprint_retries": 3,
+    "cooldown_facial": 30
+}
+
+def load_settings():
+    os.makedirs("BIOMETRIA_DATA", exist_ok=True)
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                return {**DEFAULT_CONFIG, **json.load(f)}
+        except: return DEFAULT_CONFIG
+    return DEFAULT_CONFIG
+
+def save_settings(config):
+    try:
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=4)
+    except: pass
+
+def sync_ponte_catraca(key, value):
+    """Sincroniza alterações de IP/Porta com o script ponte_catraca.py"""
+    try:
+        ponte_file = "ponte_catraca.py"
+        import os
+        if not os.path.exists(ponte_file): return
+            
+        with open(ponte_file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            
+        new_lines = []
+        target = "CATRACA_IP =" if key == "catraca_ip" else "CATRACA_PORTA ="
+        new_val = f'"{value}"' if key == "catraca_ip" else f"{value}"
+        
+        for line in lines:
+            if line.strip().startswith(target):
+                new_lines.append(f"{target} {new_val} \n")
+            else:
+                new_lines.append(line)
+                
+        with open(ponte_file, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+        print(f"🔄 [SYNC] {ponte_file} atualizado: {key} -> {value}")
+    except Exception as e:
+        print(f"⚠️ [SYNC] Erro ao sincronizar ponte_catraca.py: {e}")
+
+CONFIG = load_settings()
+
+# Variáveis globais baseadas na CONFIG (para acesso rápido)
+FACE_STRICT_THRESHOLD = CONFIG["face_threshold"]
+FACE_FUSION_THRESHOLD = CONFIG["face_fusion_threshold"]
+FACE_STREAK_REQUIRED = CONFIG["face_streak"]
+FACE_MODEL = CONFIG.get("face_model", "hog")
+FACE_SCALE = CONFIG.get("face_scale", 0.5)
+
+def update_global_from_config():
+    global FACE_STRICT_THRESHOLD, FACE_FUSION_THRESHOLD, FACE_STREAK_REQUIRED, FACE_MODEL, FACE_SCALE
+    FACE_STRICT_THRESHOLD = CONFIG["face_threshold"]
+    FACE_FUSION_THRESHOLD = CONFIG["face_fusion_threshold"]
+    FACE_STREAK_REQUIRED = CONFIG["face_streak"]
+    FACE_MODEL = CONFIG.get("face_model", "hog")
+    FACE_SCALE = CONFIG.get("face_scale", 0.5)
+
+# Controle de vazão de updates para evitar saturação do motor Flutter no Linux
+LAST_UPDATE_TIME = 0
+UI_LOCK = threading.Lock()
+# Variáveis de Estado Global
+last_access_info = None
+last_id_time = 0
+PAUSE_BIOMETRIA = False
+
+# Flag global para sinalizar se a engine Flutter ainda está viva
+_ENGINE_ALIVE = True
+
+def safe_update(page):
+    """Atualização segura da UI com proteção contra crash de engine por sessão"""
+    if not page: return
+    if not hasattr(page, "_engine_alive"):
+        page._engine_alive = True
+    
+    if not page._engine_alive:
+        return
+
+    with PAGE_LOCK:
+        try:
+            page.update()
+        except BaseException as e:
+            err = str(e).lower()
+            # Se a engine sumiu ou o loop fechou, marcamos como morta para parar loops de thread
+            if "engine" in err or "messenger" in err or "view" in err or "thread" in err or "loop" in err or "session" in err:
+                page._engine_alive = False
+            else:
+                pass
+
+def rocksfit_core_update(page, control=None):
+    """Garante atualização segura em ambiente multi-thread."""
+    safe_update(page)
+
+import sqlite3
+
+# --- ARQUITETURA OFFLINE-FIRST (DATABASE LOCAL) ---
+DB_PATH = "BIOMETRIA_DATA/rocksfit_local.db"
+
+def init_local_db():
+    """Inicializa o banco de dados local para operação offline."""
+    os.makedirs("BIOMETRIA_DATA", exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    # Tabela de Alunos (Cache do CRM)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS alunos (
+            matricula TEXT PRIMARY KEY,
+            nome TEXT,
+            status TEXT,
+            foto_url TEXT,
+            vencimento TEXT,
+            dias_restantes INTEGER,
+            finger_mapping TEXT, -- JSON com os dedos cadastrados
+            last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    # Tabela de Digitais (Mapeamento Dedo -> Aluno)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS biometria_map (
+            finger_id TEXT,
+            matricula TEXT,
+            PRIMARY KEY (finger_id, matricula)
+        )
+    ''')
+
+    # MIGRAÇÃO: Adiciona colunas se não existirem
+    try:
+        cursor.execute("ALTER TABLE alunos ADD COLUMN vencimento TEXT")
+    except: pass
+    try:
+        cursor.execute("ALTER TABLE alunos ADD COLUMN dias_restantes INTEGER")
+    except: pass
+    # Tabela de Logs de Acesso (Buffer para upload posterior)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS logs_acesso (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            matricula TEXT,
+            timestamp DATETIME DEFAULT (datetime('now', 'localtime')),
+            metodo TEXT,
+            sentido TEXT,
+            sincronizado INTEGER DEFAULT 0
+        )
+    ''')
+    
+    # --- CAMADA DE MIGRAÇÃO (JSON -> SQLITE) ---
+    cursor.execute("SELECT count(*) FROM biometria_map")
+    if cursor.fetchone()[0] == 0:
+        print("🚚 [MIGRAÇÃO] Importando mapeamentos legados para SQLite...")
+        PATH_B = "BIOMETRIA_DATA/ALUNOS"
+        if os.path.exists(PATH_B):
+            for f in os.listdir(PATH_B):
+                if f.endswith(".finger"):
+                    try:
+                        if "_" in f:
+                            mat, resto = f.split("_", 1)
+                            dedo = resto.replace(".finger", "")
+                        else:
+                            mat = f.replace(".finger", "")
+                            dedo = "right-index-finger"
+                        cursor.execute("INSERT OR IGNORE INTO biometria_map (finger_id, matricula) VALUES (?, ?)", (dedo, str(mat)))
+                    except: pass
+    
+    conn.commit()
+    conn.close()
+    print("🗄️ [DB] Banco de dados local inicializado/sincronizado.")
+
+def salvar_aluno_local(aluno):
+    """Persiste ou atualiza um aluno no banco offline."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO alunos (matricula, nome, status, foto_url, vencimento, dias_restantes)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (str(aluno.get("matricula")), aluno.get("nome"), aluno.get("status"), aluno.get("foto_url"), aluno.get("vencimento"), aluno.get("dias_restantes")))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"⚠️ [DB] Erro ao salvar aluno: {e}")
+
+def carregar_cache_local():
+    """Carrega dados do SQLite e embeddings faciais (.npy) offline para a memória para performance máxima."""
+    global GLOBAL_ALUNOS, BIOMETRIA_MAPPING_CACHE, GLOBAL_EMBEDDINGS_CACHE
+    try:
+        init_local_db()
+        
+        # --- OTIMIZAÇÃO INDUSTRIAL: AUTO-SINCRONIZAÇÃO OFFLINE (JSON -> SQLITE) ---
+        sync_file = "ALUNOS_SYNC.json"
+        if os.path.exists(sync_file):
+            try:
+                with open(sync_file, "r", encoding="utf-8") as sf:
+                    sync_data = json.load(sf)
+                if isinstance(sync_data, list) and len(sync_data) > 0:
+                    conn_sync = sqlite3.connect(DB_PATH)
+                    cur_sync = conn_sync.cursor()
+                    for item in sync_data:
+                        cur_sync.execute('''
+                            INSERT OR REPLACE INTO alunos (matricula, nome, status, foto_url, vencimento, dias_restantes)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (
+                            str(item.get("matricula")),
+                            item.get("nome"),
+                            item.get("status"),
+                            item.get("foto_url"),
+                            item.get("vencimento"),
+                            item.get("dias_restantes", 0)
+                        ))
+                    conn_sync.commit()
+                    conn_sync.close()
+            except Exception as ex_sync:
+                print(f"⚠️ [DB] Falha ao sincronizar ALUNOS_SYNC.json com SQLite: {ex_sync}")
+        
+        # Carrega os dados atualizados do SQLite para o cache em memória
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Carrega Alunos
+        cursor.execute("SELECT * FROM alunos")
+        rows = cursor.fetchall()
+        GLOBAL_ALUNOS = [dict(r) for r in rows]
+        
+        # Carrega Mapeamento Biométrico
+        cursor.execute("SELECT * FROM biometria_map")
+        map_rows = cursor.fetchall()
+        BIOMETRIA_MAPPING_CACHE = {}
+        for r in map_rows:
+            f_id = r["finger_id"]
+            if f_id not in BIOMETRIA_MAPPING_CACHE: BIOMETRIA_MAPPING_CACHE[f_id] = []
+            BIOMETRIA_MAPPING_CACHE[f_id].append(str(r["matricula"]))
+            
+        conn.close()
+        
+        # OTIMIZAÇÃO INDUSTRIAL: Carrega os templates faciais (.npy) em memória
+        GLOBAL_EMBEDDINGS_CACHE = {}
+        faces_dir = "BIOMETRIA_DATA/faces"
+        if os.path.exists(faces_dir):
+            import numpy as np
+            for f in os.listdir(faces_dir):
+                if f.endswith(".npy"):
+                    matricula = f.replace(".npy", "")
+                    try:
+                        GLOBAL_EMBEDDINGS_CACHE[str(matricula)] = np.load(os.path.join(faces_dir, f))
+                    except: pass
+        print(f"📦 [CACHE] {len(GLOBAL_ALUNOS)} alunos, {len(map_rows)} mapeamentos digitais e {len(GLOBAL_EMBEDDINGS_CACHE)} templates faciais (.npy) carregados em memória.")
+        
+        def prewarm_deepface():
+            try:
+                print("🧠 [VISION PRE-WARM] Pré-carregando DeepFace/ArcFace em segundo plano...")
+                from deepface import DeepFace
+                import numpy as np
+                dummy_frame = np.zeros((100, 100, 3), dtype=np.uint8)
+                DeepFace.represent(
+                    img_path=dummy_frame,
+                    model_name="ArcFace",
+                    enforce_detection=False,
+                    detector_backend="skip"
+                )
+                print("🧠 [VISION PRE-WARM] DeepFace/ArcFace carregado com sucesso em memória e pronto para uso instantâneo!")
+            except Exception as e:
+                print(f"⚠️ [VISION PRE-WARM] Falha ao pré-carregar DeepFace: {e}")
+        
+        threading.Thread(target=prewarm_deepface, daemon=True).start()
+    except Exception as e:
+        print(f"⚠️ [CACHE] Falha ao carregar banco local: {e}")
+
+def atualizar_mapping_local(matricula, finger_id, acao="ADD"):
+    """Sincroniza o mapeamento de digital no banco local."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        if acao == "ADD":
+            cursor.execute("INSERT OR REPLACE INTO biometria_map (finger_id, matricula) VALUES (?, ?)", (finger_id, str(matricula)))
+        else:
+            cursor.execute("DELETE FROM biometria_map WHERE finger_id = ? AND matricula = ?", (finger_id, str(matricula)))
+        conn.commit()
+        conn.close()
+        # Recarrega cache em memória
+        carregar_cache_local()
+    except Exception as e:
+        print(f"⚠️ [DB] Erro ao atualizar mapping: {e}")
+
+def registrar_acesso_local(matricula, metodo, sentido):
+    """Loga o acesso localmente para auditoria e sincronização futura (Industrial)"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        # Forçamos o uso de datetime('now', 'localtime') para garantir precisão industrial
+        cursor.execute('''
+            INSERT INTO logs_acesso (matricula, metodo, sentido, timestamp)
+            VALUES (?, ?, ?, datetime('now', 'localtime'))
+        ''', (str(matricula), metodo, sentido))
+        conn.commit()
+        conn.close()
+        print(f"📝 [LOG] Acesso registrado localmente (SQLite): {matricula}")
+    except Exception as e:
+        print(f"⚠️ [LOG] Falha ao registrar acesso local: {e}")
+
+def salvar_cache_local():
+    """Fallback: Salva também em JSON, mas prioriza SQLite."""
+    global GLOBAL_ALUNOS
+    try:
+        # Salva no SQLite
+        for aluno in GLOBAL_ALUNOS:
+            salvar_aluno_local(aluno)
+    except: pass
 
 # Dados iniciais vazios (serão preenchidos pelo CRM)
 MOCK_ALUNOS = []
 MOCK_HISTORICO = []
 
+def atualizar_cache_digital(matricula, dedo, acao="ADD"):
+    """Sincroniza o mapeamento de digital no banco local e na memória."""
+    global BIOMETRIA_MAPPING_CACHE
+    
+    # Persistência em SQLite (Nova Arquitetura)
+    atualizar_mapping_local(matricula, dedo, acao)
+    
+    # Sincronização em tempo real da memória (Garante reconhecimento imediato)
+    if acao == "ADD":
+        if dedo not in BIOMETRIA_MAPPING_CACHE:
+            BIOMETRIA_MAPPING_CACHE[dedo] = []
+        if matricula not in BIOMETRIA_MAPPING_CACHE[dedo]:
+            BIOMETRIA_MAPPING_CACHE[dedo].append(matricula)
+    elif acao == "DEL":
+        if dedo in BIOMETRIA_MAPPING_CACHE and matricula in BIOMETRIA_MAPPING_CACHE[dedo]:
+            BIOMETRIA_MAPPING_CACHE[dedo].remove(matricula)
+            if not BIOMETRIA_MAPPING_CACHE[dedo]: del BIOMETRIA_MAPPING_CACHE[dedo]
+
+    # Logs para auditoria local
+    print(f"📊 [DB] Mapeamento atualizado: {matricula} | {dedo} | Ação: {acao}")
+
+def safe_pubsub_send(msg):
+    global page_global
+    if page_global:
+        try:
+            page_global.pubsub.send_all(msg)
+        except Exception:
+            pass
+
+def trigger_catraca(direcao="ENTRADA"):
+    """Dispara o relé da catraca via socket industrial com lógica de retentativa"""
+    ip = CONFIG.get("catraca_ip", "169.254.37.150")
+    porta = int(CONFIG.get("catraca_porta", 1001))
+    
+    # Lógica de Rotação Baseada em Configuração
+    if direcao == "ENTRADA":
+        cmd_code = CONFIG.get("catraca_sentido_entrada", 0)
+        msg = "Liberou Entrada"
+    elif direcao == "SAIDA":
+        cmd_code = CONFIG.get("catraca_sentido_saida", 1)
+        msg = "Liberou Saida"
+    else:
+        cmd_code = 0
+        msg = "Liberou Geral"
+
+    # Estratégia de Retentativa Industrial
+    for attempt in range(3):
+        try:
+            import socket
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(5.0)
+                s.connect((ip, porta))
+                
+                # Wake-up sequence (mcg) - Importante para despertar a placa Toletus
+                s.sendall(b"mcg")
+                time.sleep(0.1)
+
+                # Payload Toletus: lgu + Byte Nulo (ou cmd_code) + Mensagem
+                payload = b"lgu" + bytes([cmd_code]) + msg.encode('cp1252')
+                s.sendall(payload)
+                print(f"🔓 [HARDWARE] Comando {direcao} enviado com sucesso para {ip}:{porta}")
+                safe_pubsub_send({"type": "hw_status", "hw": "catraca", "online": True})
+                return True
+        except Exception as e:
+            safe_pubsub_send({"type": "hw_status", "hw": "catraca", "online": False})
+            print(f"⚠️ [HARDWARE] Falha na tentativa {attempt+1}/3: {e}")
+            time.sleep(0.5)
+    
+    safe_pubsub_send({"type": "hw_status", "hw": "catraca", "online": False})
+    print(f"❌ [HARDWARE] Falha crítica ao disparar catraca após 3 tentativas.")
+    return False
+
+def registrar_acesso_crm(matricula, metodo="DIGITAL"):
+    """Tenta registrar o histórico no CRM via múltiplos endpoints"""
+    endpoints = [
+        f"{SITE_URL}/api/catraca-check/{matricula}/?token={SYNC_TOKEN}&log=1&metodo={metodo}",
+        f"{SITE_URL}/api/catraca-log/{matricula}/?token={SYNC_TOKEN}&metodo={metodo}",
+        f"{SITE_URL}/api/catraca-history-save/?matricula={matricula}&metodo={metodo}&token={SYNC_TOKEN}"
+    ]
+    for url in endpoints:
+        try:
+            r = requests.get(url, timeout=5)
+            if r.status_code == 200:
+                print(f"✅ [CRM] Histórico remoto atualizado ({metodo})")
+                return True
+        except: pass
+    return False
+
+# --- MONITORAMENTO REMOTO (INTEGRAÇÃO CRM) ---
+def loop_monitoramento_remoto():
+    """Vigia o CRM para liberar a catraca via comandos do site (Polling)"""
+    print("📡 [INTEGRAÇÃO] Monitoramento remoto do CRM ativo.")
+    POLLING_URL = f"{SITE_URL}/api/catraca-polling/?token={SYNC_TOKEN}"
+    
+    while True:
+        try:
+            # Pergunta ao site se há algum comando de liberação pendente
+            response = requests.get(POLLING_URL, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                # O CRM envia uma lista em 'liberacoes'
+                liberacoes = data.get("liberacoes", [])
+                for lib in liberacoes:
+                    print(f"🚀 [CRM] Liberação remota para: {lib.get('nome')}!")
+                    trigger_catraca(direcao="ENTRADA")
+            
+        except Exception as e:
+            # Erros de rede são comuns no polling, apenas ignoramos para não travar
+            pass
+        
+        time.sleep(2) # Verifica a cada 2 segundos
+
+# Inicia o monitoramento em segundo plano
+threading.Thread(target=loop_monitoramento_remoto, daemon=True).start()
 
 # --- API BRIDGE PARA O CRM (FLASK) ---
 api_app = Flask(__name__)
 manager_global = None
 BIOMETRIA_BUSY = False # Flag para evitar conflito entre Verificação e Cadastro
 page_global = None
+GLOBAL_LOOP_STARTED = False
+GLOBAL_SESSION_STATES = []
+GLOBAL_PRIORITY_MATRICULA = None
 
 @api_app.after_request
 def add_cors_headers(response):
@@ -78,7 +636,22 @@ def add_cors_headers(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
+def requires_token(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if request.method == 'OPTIONS':
+            return f(*args, **kwargs)
+        token = request.args.get('token') or request.headers.get('Authorization')
+        if token and token.startswith('Token '):
+            token = token.split(' ')[1]
+        if token != SYNC_TOKEN:
+            return jsonify({"success": False, "error": "Acesso não autorizado. Token inválido."}), 401
+        return f(*args, **kwargs)
+    return decorated
+
 @api_app.route('/api/enroll/<matricula>', methods=['GET', 'POST', 'OPTIONS'])
+@requires_token
 def api_enroll(matricula):
     global BIOMETRIA_BUSY
     if not manager_global:
@@ -88,407 +661,689 @@ def api_enroll(matricula):
     if page_global:
         # Busca o aluno no cache global
         aluno = next((a for a in GLOBAL_ALUNOS if str(a.get("matricula")) == str(matricula)), {"matricula": matricula, "nome": "Aluno Externo"})
-        page_global.pubsub.send_all({"type": "open_enroll", "aluno": aluno})
+        safe_pubsub_send({"type": "open_enroll", "aluno": aluno})
         
     return jsonify({"success": True, "message": "Quadro de captura aberto no terminal de recepção."})
 
+@api_app.route('/api/liberar', methods=['GET', 'POST', 'OPTIONS'])
+@requires_token
+def api_liberar_geral():
+    success = trigger_catraca("ENTRADA")
+    return jsonify({"success": success, "message": "Comando enviado para a catraca"})
+
+@api_app.route('/api/liberar-entrada', methods=['GET', 'POST', 'OPTIONS'])
+@requires_token
+def api_liberar_entrada():
+    success = trigger_catraca("ENTRADA")
+    return jsonify({"success": success, "message": "Entrada liberada"})
+
+@api_app.route('/api/liberar-saida', methods=['GET', 'POST', 'OPTIONS'])
+@requires_token
+def api_liberar_saida():
+    success = trigger_catraca("SAIDA")
+    return jsonify({"success": success, "message": "Saida liberada"})
+
+# Definição do servidor de ponte CRM (Inicia apenas no bloco main)
 def run_api():
     print("🌐 API Bridge iniciada em http://0.0.0.0:8553")
     api_app.run(host='0.0.0.0', port=8553, debug=False, threaded=True)
 
-threading.Thread(target=run_api, daemon=True).start()
 
+def is_liberado(status):
+    """Verifica se o status recebido é considerado liberado/ativo de forma resiliente"""
+    if not status: return False
+    s = str(status).lower().strip()
+    return s in ["ativo", "liberado", "pago", "ok", "true", "1", "yes", "sim"]
 
-import getpass
+def detectar_sentido_acesso(matricula, metodo="DIGITAL"):
+    """
+    Verifica se o aluno está entrando ou saindo baseado no log do dia (Toggle Inteligente)
+    Implementa carência inteligente: 3 segundos para Digital/Biometria e configurável (30s) para Facial.
+    Retorna: (sentido, allowed)
+    """
+    try:
+        hoje = datetime.now().strftime("%Y-%m-%d")
+        log_path = os.path.join("BIOMETRIA_DATA/LOGS", f"ACESSOS_{hoje}.csv")
+        if not os.path.exists(log_path): 
+            return "ENTRADA", True
+        
+        count = 0
+        mat_str = str(matricula).strip().upper()
+        ultimo_acesso = None
+        
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            for line in lines[1:]: # Pula cabeçalho
+                parts = line.strip().split(";")
+                if len(parts) >= 3:
+                    if parts[2].strip().upper() == mat_str:
+                        count += 1
+                        try:
+                            # Tenta ler a data e hora do log (Data;Hora;...)
+                            dt_str = f"{parts[0]} {parts[1]}"
+                            ultimo_acesso = datetime.strptime(dt_str, "%d/%m/%Y %H:%M:%S")
+                        except: pass
+        
+        # Carência inteligente baseada no método de identificação
+        cooldown = 3 if metodo == "DIGITAL" else CONFIG.get("cooldown_facial", 30)
+        if ultimo_acesso:
+            delta = (datetime.now() - ultimo_acesso).total_seconds()
+            if delta < cooldown:
+                print(f"⏳ [FLUXO] Matrícula {mat_str} reconhecida muito rápido via {metodo} ({delta:.1f}s). Ignorando.")
+                return "ENTRADA" if count % 2 == 0 else "SAÍDA", False
 
-def trigger_catraca(msg="Liberado"):
-    import socket
-    # Comando de abertura + comando de bip para a controladora RocksFit
-    for pta in [1001, 3000, 5000]:
+        # Se o contador é ímpar, o próximo estado é SAÍDA
+        sentido = "SAÍDA" if count % 2 != 0 else "ENTRADA"
+        print(f"📊 [FLUXO] Matrícula {mat_str} possui {count} registros hoje. Definido como: {sentido}")
+        return sentido, True
+    except Exception as e:
+        print(f"⚠️ [FLUXO] Erro ao detectar sentido: {e}")
+        return "ENTRADA", True
+
+def log_acesso_local(aluno, metodo, status, sentido="ENTRADA"):
+    try:
+        hoje = datetime.now().strftime("%Y-%m-%d")
+        os.makedirs("BIOMETRIA_DATA/LOGS", exist_ok=True)
+        log_path = os.path.join("BIOMETRIA_DATA/LOGS", f"ACESSOS_{hoje}.csv")
+        file_exists = os.path.isfile(log_path)
+        agora = datetime.now(); data_str = agora.strftime("%d/%m/%Y"); hora_str = agora.strftime("%H:%M:%S")
+        with open(log_path, "a", encoding="utf-8") as f:
+            if not file_exists: f.write("Data;Hora;Matricula;Nome;Metodo;Status;Sentido\n")
+            f.write(f"{data_str};{hora_str};{aluno.get('matricula')};{aluno.get('nome')};{metodo};{status};{sentido}\n")
+    except: pass
+def auto_calibrate_threshold(page, lbl_face_thr, lbl_face_streak, lbl_face_skip, lbl_face_scale, slider_thr, slider_streak, slider_skip, slider_scale, update_config_fn):
+    """
+    Autorregulagem Inteligente – Rocks-Fit
+    Captura um frame, mede o brilho e calibra TODO o motor neural:
+    - face_threshold  → Sensibilidade
+    - face_streak     → Ciclos de confirmação
+    - face_frame_skip → Velocidade de análise
+    - face_scale      → Resolução de análise
+    """
+
+    def _calibrar():
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.settimeout(1)
-                sock.connect(("192.168.1.100", pta))
-                # Envia comando de liberação
-                sock.sendall(f"lgu\x00{msg}".encode())
-                time.sleep(0.1)
-                # Envia comando de bip sonoro
-                sock.sendall(b"bip\x00")
-                return True
-        except:
-            pass
-    return False
+            frame = None
+            shared_path = "BIOMETRIA_DATA/shared_frame.jpg"
+            if os.path.exists(shared_path):
+                try:
+                    frame = cv2.imread(shared_path)
+                except: pass
+            
+            if frame is None:
+                cap = None
+                for dev_idx in [0, 2, 4, 1, 3]:
+                    try:
+                        temp = cv2.VideoCapture(dev_idx)
+                        if temp and temp.isOpened():
+                            cap = temp; break
+                        if temp: temp.release()
+                    except: pass
 
-def abrir_cadastro_digital(aluno, page, biometria_manager, render_main_content, state):
-    global BIOMETRIA_BUSY
-    if BIOMETRIA_BUSY:
-        return
+                if not cap:
+                    print("⚠️ [CALIB] Câmera não disponível.")
+                    return
+
+                for _ in range(8):
+                    cap.read()
+                    time.sleep(0.04)
+
+                ret, frame = cap.read()
+                cap.release()
+
+            if frame is None: return
+
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            brightness = float(np.mean(hsv[:, :, 2]))
+
+            # Matriz de Calibração Industrial
+            if brightness < 60:
+                new_thr, new_streak, new_skip, new_scale = 0.45, 1, 2, 0.60
+                perfil = "🌑 ESCURO"
+            elif brightness < 110:
+                new_thr, new_streak, new_skip, new_scale = 0.50, 1, 3, 0.50
+                perfil = "🌥️ MEIA-LUZ"
+            elif brightness < 170:
+                new_thr, new_streak, new_skip, new_scale = 0.52, 1, 4, 0.50
+                perfil = "☀️ BOM"
+            elif brightness < 220:
+                new_thr, new_streak, new_skip, new_scale = 0.55, 1, 5, 0.45
+                perfil = "🌟 MUITO CLARO"
+            else:
+                new_thr, new_streak, new_skip, new_scale = 0.58, 1, 6, 0.40
+                perfil = "💡 SUPEREXPOSTO"
+
+            print(f"🔆 [CALIB] {perfil} ({brightness:.0f}/255)")
+            
+            # Aplica no motor
+            update_config_fn("face_threshold", new_thr)
+            update_config_fn("face_streak", new_streak)
+            update_config_fn("face_frame_skip", new_skip)
+            update_config_fn("face_scale", new_scale)
+
+            # Atualiza UI
+            try:
+                with PAGE_LOCK:
+                    if lbl_face_thr: lbl_face_thr.value = f"Sensibilidade (Threshold): {new_thr}"
+                    if lbl_face_streak: lbl_face_streak.value = f"Ciclos de Confirmação (Streak): {new_streak}"
+                    if lbl_face_skip: lbl_face_skip.value = f"Frequência de Análise (Frames): {new_skip}"
+                    if lbl_face_scale: lbl_face_scale.value = f"Escala de Análise: {int(new_scale*100)}%"
+                    
+                    if slider_thr: slider_thr.value = new_thr
+                    if slider_streak: slider_streak.value = float(new_streak)
+                    if slider_skip: slider_skip.value = float(new_skip)
+                    if slider_scale: slider_scale.value = new_scale
+                    
+                    safe_update(page)
+            except: pass
+
+        except Exception as ex:
+            print(f"❌ [CALIB] Erro: {ex}")
+
+    threading.Thread(target=_calibrar, daemon=True).start()
+
+def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_content, state):
+    """Módulo Industrial de Captura Biográfica (ESTABILIDADE MÁXIMA - FIXED DASHBOARD)"""
+    global BIOMETRIA_BUSY, PAUSE_BIOMETRIA, ENROLLMENT_ACTIVE
+    if ENROLLMENT_ACTIVE: return # Evita reentrância/cliques duplos
+    ENROLLMENT_ACTIVE = True
+    finger_units = {} 
     
-    BIOMETRIA_BUSY = True
-    nome = aluno.get("nome", "Membro").upper()
-    matricula = str(aluno.get("matricula"))
-    
-    # Cores Industrial RKS
-    COR_GLASS = "#ffffff08"
     COR_ACCENT = COR_PRIMARY
     
-    status_captura = ft.Text("AGUARDANDO SELEÇÃO", color=COR_TEXT_SEC, size=12, weight="bold")
-    log_messages = ft.ListView(expand=True, spacing=3, padding=5)
-
-    def add_log(msg, color=COR_TEXT_SEC):
-        timestamp = time.strftime("%H:%M:%S")
-        log_messages.controls.append(
-            ft.Text(f"[{timestamp}] {msg}", color=color, size=11, font_family="monospace")
-        )
-        if len(log_messages.controls) > 15:
-            log_messages.controls.pop(0)
-        page.update()
-
-    def sync_to_crm():
+    if BIOMETRIA_BUSY or not PAUSE_BIOMETRIA:
+        print("🛑 [FPRINT] Solicitando parada do loop para cadastro...")
+        PAUSE_BIOMETRIA = True
         try:
-            add_log("Sincronizando com servidor CRM...", COR_ACCENT)
-            resp = requests.post(f"{SITE_URL}/api/biometria-save/{matricula}/", timeout=8)
-            if resp.status_code == 200:
-                add_log("✔ Sucesso: Digital vinculada no CRM.", COR_SUCCESS)
-            else:
-                add_log(f"⚠ Erro CRM: {resp.status_code}", COR_ERROR)
-        except:
-            add_log("✖ Falha de rede na sincronia.", COR_ERROR)
+            with open("BIOMETRIA_DATA/scanner_status.json", "w") as f:
+                json.dump({"status": "ENROLLING", "timestamp": time.time()}, f)
+        except: pass
+        if biometria_manager: 
+            biometria_manager.pause()
+        # Tempo curto para o hardware estabilizar
+        time.sleep(0.5)
+        
+    try:
+        # Garante estado atômico de cadastro
+        BIOMETRIA_BUSY = True
+        PAUSE_BIOMETRIA = True
+        ENROLLMENT_ACTIVE = True 
+        nome = aluno.get("nome", "Membro").upper()
+        matricula = str(aluno.get("matricula"))
+        
+        status_captura = ft.Text("AGUARDANDO SELEÇÃO", color="#ffffff", size=12, weight="bold")
+        sw_calib = ft.Switch(label="AJUSTAR POSIÇÕES", value=False, active_color=COR_PRIMARY)
+        log_messages = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=5)
 
-    def process_enroll(finger, label):
-        if not biometria_manager:
-            add_log("Hardware biométrico não configurado.", COR_ERROR)
-            return
-
-        # Verifica se já existe e pergunta qual ação tomar
-        if biometria_manager.check_exists(matricula, finger):
-            def handle_action(action):
-                page.overlay.remove(confirm_dlg)
-                safe_update()
-                
-                if action == "enroll":
-                    _start_enroll_thread(finger, label)
-                elif action == "delete":
-                    if biometria_manager.apagar_digital_local(matricula, finger):
-                        add_log(f"🗑️ Registro do {label} removido.", COR_WARNING)
-                        # Remove da lista local para atualizar UI imediatamente
-                        if finger in enrolled_fingers:
-                            enrolled_fingers.remove(finger)
-                        update_fingers_ui()
-                    else:
-                        add_log("Erro ao remover registro.", COR_ERROR)
-
-            confirm_dlg = ft.AlertDialog(
-                title=ft.Row([ft.Icon(ft.Icons.SETTINGS, color=COR_ACCENT), ft.Text("Gestão de Digital")]),
-                content=ft.Text(f"O {label} já possui um registro. O que deseja fazer?"),
-                actions=[
-                    ft.ElevatedButton("Recadastrar", icon=ft.Icons.REFRESH, on_click=lambda _: handle_action("enroll"), bgcolor="#FF8C00", color="white"),
-                    ft.ElevatedButton("Apagar", icon=ft.Icons.DELETE_FOREVER, on_click=lambda _: handle_action("delete"), bgcolor="#CC0000", color="white"),
-                    ft.TextButton("Cancelar", on_click=lambda _: (page.overlay.remove(confirm_dlg), safe_update()))
-                ],
-                actions_alignment="end"
+        def add_log(msg, color=COR_TEXT_SEC):
+            timestamp = time.strftime("%H:%M:%S")
+            print(f"📝 [LOG] {msg}")
+            log_messages.controls.append(
+                ft.Row([
+                    ft.Text(f"[{timestamp}]", color="#444444", size=9, weight="bold"),
+                    ft.Text(f" {msg}", color=color, size=11, weight="w600", expand=True)
+                ], spacing=5)
             )
-            page.overlay.append(confirm_dlg)
-            confirm_dlg.open = True
-            safe_update()
-        else:
-            _start_enroll_thread(finger, label)
-
-    def _start_enroll_thread(finger, label):
-        status_captura.value = f"CAPTURA ATIVA: {label.upper()}"
-        status_captura.color = COR_ACCENT
-        add_log(f"Posicione o {label} no sensor agora...", COR_ACCENT)
-        page.update()
-
-        def _thread():
-            proc = biometria_manager.enroll(matricula, finger)
-            if proc:
-                try:
-                    # O fprintd-enroll emite várias mensagens durante os toques
-                    while True:
-                        line = proc.stdout.readline()
-                        if not line: break
-                        line = line.strip().lower()
-                        if "enroll-stage-passed" in line:
-                            add_log("✔ Toque capturado. Continue...", COR_SUCCESS)
-                        elif "enroll-retry-scan" in line:
-                            add_log("⚠ Falha no toque. Tente novamente.", COR_WARNING)
-                        elif "enroll-completed" in line:
-                            biometria_manager.guardar_arquivo_local(matricula, finger)
-                            add_log(f"✅ FINALIZADO: {label} cadastrado com sucesso!", COR_SUCCESS)
-                            sync_to_crm()
-                            update_fingers_ui()
-                            render_main_content()
-                            break
-                    
-                    proc.wait(timeout=5)
-                    if proc.returncode != 0 and "enroll-completed" not in status_captura.value:
-                        add_log(f"⚠ Processo interrompido ou falhou (cod {proc.returncode}).", COR_ERROR)
-                except Exception as e:
-                    add_log(f"✖ Erro técnico: {str(e)}", COR_ERROR)
-                finally:
-                    status_captura.value = "PRONTO PARA NOVA CAPTURA"
-                    status_captura.color = COR_SUCCESS
-                    page.update()
-            else:
-                add_log("Falha ao inicializar driver fprintd.", COR_ERROR)
-        
-        threading.Thread(target=_thread, daemon=True).start()
-
-    def delete_finger(finger, label):
-        if biometria_manager.apagar_digital_local(matricula, finger):
-            add_log(f"🗑️ Registro do {label} removido.", COR_WARNING)
-            update_fingers_ui()
-            render_main_content()
-        else:
-            add_log("Erro ao remover registro.", COR_ERROR)
-
-    def create_finger_box(finger, label, x, y):
-        is_enrolled = finger in biometria_manager.get_enrolled_fingers(matricula)
-        
-        return ft.Container(
-            content=ft.Stack([
-                # Botão Principal
-                ft.Container(
-                    content=ft.Icon(
-                        "fingerprint" if not is_enrolled else "check_circle",
-                        color="#ffffff" if not is_enrolled else COR_SUCCESS, 
-                        size=24
-                    ),
-                    width=54, height=54,
-                    border_radius=27,
-                    bgcolor=COR_CARD_HIGH if not is_enrolled else "#2ecc7122",
-                    border=ft.border.all(2, COR_ACCENT if not is_enrolled else COR_SUCCESS),
-                    animate=ft.Animation(300, "decelerate"),
-                    on_click=lambda _: process_enroll(finger, label),
-                    tooltip=f"Cadastrar {label}",
-                    alignment=ft.Alignment(0, 0)
-                ),
-                # Botão Deletar
-                ft.IconButton(
-                    icon="cancel", icon_color=COR_ERROR, icon_size=18,
-                    width=24, height=24,
-                    left=38, top=-5,
-                    on_click=lambda _: delete_finger(finger, label),
-                    visible=is_enrolled,
-                    padding=0,
-                    tooltip="Excluir biometria"
-                ),
-                # Label
-                ft.Container(
-                    content=ft.Text(label, size=8, weight="bold", color=COR_TEXTO),
-                    bgcolor="#000000aa",
-                    padding=ft.padding.symmetric(horizontal=6, vertical=2),
-                    border_radius=4,
-                    left=-5, top=58,
-                    width=64,
-                    alignment=ft.Alignment(0, 0)
-                )
-            ]),
-            left=x,
-            top=y,
-            width=70, height=80
-        )
-
-    FINGERS_MAPPING = [
-        {"id": "left-pinky",   "label": "Mínimo E",   "left": 350, "top": 300},
-        {"id": "left-ring-finger",   "label": "Anelar E",   "left": 402, "top": 264},
-        {"id": "left-middle-finger",    "label": "Médio E",    "left": 440, "top": 251},
-        {"id": "left-index-finger","label": "Indic. E",   "left": 490, "top": 263},
-        {"id": "left-thumb",  "label": "Polegar E",  "left": 544, "top": 358},
-        
-        {"id": "right-thumb",  "label": "Polegar D",  "left": 625, "top": 361},
-        {"id": "right-index-finger","label": "Indic. D",   "left": 687, "top": 265},
-        {"id": "right-middle-finger",    "label": "Médio D",    "left": 774, "top": 266},
-        {"id": "right-ring-finger",   "label": "Anelar D",   "left": 731, "top": 250},
-        {"id": "right-pinky",   "label": "Mínimo D",   "left": 808, "top": 313},
-    ]
-
-    # Pre-busca os dedos cadastrados para evitar 10 acessos ao disco no loop
-    enrolled_fingers = biometria_manager_global.get_enrolled_fingers(aluno['matricula']) if biometria_manager_global else []
-
-    LEFT_HAND_SVG = """<svg viewBox="0 0 260 420" xmlns="http://www.w3.org/2000/svg" width="260" height="420"><defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M 40 260 Q 20 320 30 390 Q 50 420 130 415 Q 200 412 220 390 Q 240 360 235 290 Q 230 250 220 230 L 200 210 L 170 215 L 140 212 L 115 215 L 85 212 L 55 225 Z" fill="none" stroke="#FF8C00" stroke-width="1" opacity="0.4" filter="url(#glow)"/><path d="M 40 225 Q 28 200 22 165 Q 18 140 25 120 Q 30 108 42 110 Q 54 112 58 128 Q 62 148 60 175 Q 58 200 60 225 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 70 220 Q 60 185 58 145 Q 57 110 62 90 Q 67 76 80 76 Q 93 76 97 92 Q 101 112 100 148 Q 98 182 95 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 105 215 Q 97 175 96 130 Q 96 92 100 72 Q 105 58 118 57 Q 131 57 136 72 Q 141 90 140 132 Q 138 175 135 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 145 215 Q 140 178 140 138 Q 141 100 145 82 Q 150 68 162 68 Q 175 68 179 83 Q 183 100 182 138 Q 180 178 175 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 195 260 Q 215 245 228 225 Q 238 208 235 290 Q 232 310 220 310 Q 208 310 200 295 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 195 260 Q 205 240 218 220 Q 230 200 240 195 Q 252 192 255 205 Q 258 220 248 240 Q 237 260 222 275 Q 210 285 200 282 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/></svg>"""
-    RIGHT_HAND_SVG = """<svg viewBox="0 0 260 420" xmlns="http://www.w3.org/2000/svg" width="260" height="420"><defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M 220 260 Q 240 320 230 390 Q 210 420 130 415 Q 60 412 40 390 Q 20 360 25 290 Q 30 250 40 230 L 60 210 L 90 215 L 120 212 L 145 215 L 175 212 L 205 225 Z" fill="none" stroke="#FF8C00" stroke-width="1" opacity="0.4" filter="url(#glow)"/><path d="M 220 225 Q 232 200 238 165 Q 242 140 235 120 Q 230 108 218 110 Q 206 112 202 128 Q 198 148 200 175 Q 202 200 200 225 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 190 220 Q 200 185 202 145 Q 203 110 198 90 Q 193 76 180 76 Q 167 76 163 92 Q 159 112 160 148 Q 162 182 165 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 155 215 Q 163 175 164 130 Q 164 92 160 72 Q 155 58 142 57 Q 129 57 124 72 Q 119 90 120 132 Q 122 175 125 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 115 215 Q 120 178 120 138 Q 119 100 115 82 Q 110 68 98 68 Q 85 68 81 83 Q 77 100 78 138 Q 80 178 85 215 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 65 260 Q 45 245 32 225 Q 22 208 25 290 Q 28 310 40 310 Q 52 310 60 295 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/><path d="M 65 260 Q 55 240 42 220 Q 30 200 20 195 Q 8 192 5 205 Q 2 220 12 240 Q 23 260 38 275 Q 50 285 60 282 Z" fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/></svg>"""
-
-    def finger_button(finger: dict) -> ft.GestureDetector:
-        """Botão circular que pode ser arrastado para calibração de posição."""
-        id_dedo = finger["id"]
-        possuo_digital = id_dedo in enrolled_fingers
-        
-        # Container do botão (Fundo)
-        btn_circle = ft.Container(
-            width=30, height=30,
-            border_radius=15,
-            bgcolor="#151515" if not possuo_digital else "#FF8C0020",
-            border=ft.border.all(1.5, COR_ACCENT if not possuo_digital else "#00FF00"),
-            content=ft.Icon(
-                ft.Icons.FINGERPRINT, 
-                color=COR_ACCENT if not possuo_digital else "#00FF00", 
-                size=16
-            ),
-            shadow=ft.BoxShadow(spread_radius=1, blur_radius=10, color=COR_ACCENT + "40" if not possuo_digital else "#00FF0040")
-        )
-
-        # Label externa para orientação
-        btn_content = ft.Column([
-            btn_circle,
-            ft.Text(finger["label"], size=8, color="#ffffff", weight="bold")
-        ], horizontal_alignment="center", spacing=2)
-
-        def on_pan_update(e: ft.DragUpdateEvent):
-            gd.top = max(0, gd.top + e.delta_y)
-            gd.left = max(0, gd.left + e.delta_x)
-            gd.update()
-            print(f"📍 CALIBRAÇÃO: '{id_dedo}' -> left: {int(gd.left)}, top: {int(gd.top)}")
-
-        gd = ft.GestureDetector(
-            content=btn_content,
-            key=f"finger_{id_dedo}", 
-            left=finger["left"],
-            top=finger["top"],
-            on_pan_update=on_pan_update,
-            on_tap=lambda _: process_enroll(id_dedo, finger["label"]),
-            mouse_cursor=ft.MouseCursor.MOVE
-        )
-        return gd
-
-    # Criação ESTÁTICA para garantir os 10 botões
-    controls_list = [
-        ft.Image(src="media/imagens/rocksfit_hand_schematic.png", width=1200, height=650, fit="contain", opacity=0.9, gapless_playback=True),
-    ]
-    
-    finger_controls = {}
-    for f in FINGERS_MAPPING:
-        btn = finger_button(f)
-        finger_controls[f["id"]] = btn
-        controls_list.append(btn)
-
-    hands_stack = ft.Stack(controls_list, width=1200, height=650)
-
-    def update_fingers_ui():
-        """Atualiza apenas o estado visual dos botões existentes, sem recriá-los (EVITA CRASH)"""
-        try:
-            for fid, btn in finger_controls.items():
-                exists = biometria_manager_global.check_exists(matricula, fid)
-                # Navega na árvore: GestureDetector -> Column -> Container
-                circle = btn.content.controls[0]
-                circle.bgcolor = "#151515" if not exists else "#FF8C0020"
-                circle.border = ft.border.all(1.5, COR_ACCENT if not exists else "#00FF00")
-                circle.content.color = COR_ACCENT if not exists else "#00FF00"
-                circle.shadow.color = COR_ACCENT + "40" if not exists else "#00FF0040"
+            if len(log_messages.controls) > 30: log_messages.controls.pop(0)
             
-            hands_stack.update()
-        except Exception as e:
-            print(f"⚠️ Erro ao atualizar UI dedos: {e}")
+            # ATUALIZAÇÃO AGRESSIVA DE LOG
+            try:
+                log_messages.update()
+                safe_update(page)
+            except: pass
 
-    def fechar_dlg(e):
-        global BIOMETRIA_BUSY
-        BIOMETRIA_BUSY = False
-        dlg.open = False
-        page.update()
+        def fechar_dlg(_=None):
+            global BIOMETRIA_BUSY, PAUSE_BIOMETRIA, ENROLLMENT_ACTIVE
+            
+            BIOMETRIA_BUSY = False
+            PAUSE_BIOMETRIA = False
+            ENROLLMENT_ACTIVE = False
+            state["close_enroll"] = None # Limpa referência de fechamento
+            
+            # Limpa referência de fechamento externo
+            state["close_enroll"] = None
+            
+            if biometria_manager: 
+                biometria_manager.resume()
+                biometria_manager.stop_all()
+            
+            with UI_LOCK:
+                if "enroll_layer" in state:
+                    state["enroll_layer"].visible = False
+                    state["enroll_layer"].content = None
+                render_main_content()
+                page.update()
+            
+            print("🔄 [FPRINT] Voltando ao dashboard principal...")
 
-    dlg = ft.AlertDialog(
-        bgcolor="transparent",
-        content_padding=0,
-        content=ft.Container(
-            width=1200, height=850,
-            bgcolor=COR_BG,
-            border_radius=24,
-            border=ft.border.all(1, "#ffffff10"),
-            padding=30,
-            content=ft.Column([
-                # Header
-                ft.Row([
-                    ft.Column([
-                        ft.Text("MÓDULO DE CADASTRO BIOMÉTRICO", size=12, weight="bold", color=COR_ACCENT),
-                        ft.Text(nome, size=38, weight="black", font_family="Space Grotesk"),
-                    ], spacing=2, expand=True),
-                    ft.Container(
-                        content=ft.Column([
-                            ft.Text("MATRÍCULA", size=10, color=COR_TEXT_SEC, weight="bold"),
-                            ft.Text(matricula, size=24, weight="bold", font_family="monospace", color=COR_ACCENT),
-                        ], spacing=0, horizontal_alignment="center"),
-                        padding=15, bgcolor=COR_CARD, border_radius=12, border=ft.border.all(1, "#ffffff08")
-                    ),
-                    ft.IconButton(ft.Icons.CLOSE, on_click=fechar_dlg, icon_color=COR_TEXT_SEC)
-                ], alignment="spaceBetween"),
-                
-                ft.Divider(height=40, color="#ffffff08"),
-                
-                # Área de interação
-                ft.Row([
-                    # Coluna Esquerda: Log e Status
-                    ft.Column([
+        # Disponibiliza o fechamento para o menu lateral
+        state["close_enroll"] = fechar_dlg
+
+        # DASHBOARD PREMIUM (CYBER-INDUSTRIAL)
+        main_layout = ft.Container(
+            expand=True, bgcolor="#050505", border_radius=20, padding=10,
+            content=ft.Row([
+                # Mapa de Captura (Esquerda)
+                ft.Container(
+                    expand=75, bgcolor="#000000", border_radius=15,
+                    alignment=ft.Alignment(0, 0),
+                    content=ft.Container(
+                        expand=True,
+                        aspect_ratio=1.0, # Proporção quadrada para preencher o quadro sem bordas pretas
+                        alignment=ft.Alignment(0, 0),
+                        border=ft.Border(ft.BorderSide(2, COR_PRIMARY), ft.BorderSide(2, COR_PRIMARY), ft.BorderSide(2, COR_PRIMARY), ft.BorderSide(2, COR_PRIMARY)), # Quadro ajustado à imagem
+                        border_radius=15,
+                        padding=2,
+                        content=ft.Stack(
+                            expand=True,
+                            controls=[
+                                ft.Image(
+                                    src="media/imagens/biometric_hand_premium.png", 
+                                    fit="cover", 
+                                    opacity=0.9,
+                                    border_radius=12
+                                ),
+                            ]
+                        )
+                    )
+                ),
+                # Painel de Controle (Direita)
+                ft.Container(
+                    expand=25, bgcolor="#0a0a0a", border_radius=15, padding=20,
+                    border=ft.Border(ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05")),
+                    content=ft.Column([
+                        ft.Text(nome, size=20, weight="bold", color=COR_PRIMARY, overflow="ellipsis"),
+                        ft.Text(f"MATRÍCULA: {matricula}", size=11, color=COR_TEXT_SEC),
+                        ft.Divider(height=15, color="#ffffff10"),
                         ft.Container(
                             content=ft.Column([
-                                ft.Row([
-                                    ft.Icon("sensors", color=COR_ACCENT, size=20),
-                                    status_captura,
-                                ], spacing=10),
-                                ft.Text("Selecione um dedo para iniciar", size=11, color=COR_TEXT_SEC),
+                                ft.Text("STATUS DO SENSOR", size=9, weight="bold", color="#888888"),
+                                ft.Row([ft.Icon("wifi", color=COR_PRIMARY, size=16), status_captura], spacing=10),
                             ]),
-                            bgcolor=COR_GLASS, padding=20, border_radius=16, border=ft.border.all(1, "#ffffff05")
+                            bgcolor="#1a1a1a", padding=12, border_radius=12,
+                            border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"))
                         ),
-                        ft.Container(height=20), # Espaçador
-                ft.Text("LOG DE OPERAÇÃO", size=10, weight="bold", color=COR_TEXT_SEC),
                         ft.Container(
-                            expand=True, bgcolor="#000000", border_radius=16, padding=15,
-                            border=ft.border.all(1, "#ffffff05"),
-                            content=log_messages
+                            content=ft.Column([
+                                ft.Text("CONFIGURAÇÃO DE INTERFACE", size=9, weight="bold", color="#888888"),
+                                sw_calib,
+                            ]),
+                            bgcolor="#1a1a1a", padding=12, border_radius=12,
+                            border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"))
                         ),
-                        ft.ElevatedButton(
-                            "CONCLUIR CADASTRO", 
-                            on_click=fechar_dlg,
-                            width=300, height=50,
-                            style=ft.ButtonStyle(
-                                bgcolor=COR_ACCENT, color="#ffffff",
-                                shape=ft.RoundedRectangleBorder(radius=12)
+                        ft.Row([
+                            ft.Text("LOG DE OPERAÇÕES", size=10, weight="bold", color=COR_TEXT_SEC),
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        ft.Container(
+                            expand=True, bgcolor="#000000", border_radius=12, padding=10, 
+                            content=log_messages, border=ft.Border(ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05")),
+                        ),
+                        ft.Column([
+                            ft.ElevatedButton(
+                                "RESETAR POSIÇÕES", 
+                                icon="restore", 
+                                on_click=lambda _: reset_coords(), 
+                                width=300, height=40, 
+                                style=ft.ButtonStyle(bgcolor="#442222", color="white", shape=ft.RoundedRectangleBorder(radius=8))
+                            ),
+                            ft.ElevatedButton(
+                                "CONCLUIR CADASTRO", 
+                                icon="check_circle", 
+                                on_click=lambda _: fechar_dlg(None), 
+                                width=300, height=50, 
+                                style=ft.ButtonStyle(bgcolor=COR_PRIMARY, color="white", shape=ft.RoundedRectangleBorder(radius=10))
                             )
-                        )
-                    ], width=350, spacing=10),
-                    
-                    # Coluna Direita: Foto Mãos (COM SCROLL PARA GARANTIR OS 10)
-                    ft.Container(
-                        expand=True,
-                        bgcolor="#080808",
-                        border_radius=20,
-                        border=ft.border.all(1, "#ffffff05"),
-                        content=ft.Row([hands_stack], scroll=ft.ScrollMode.ALWAYS),
-                        alignment=ft.Alignment(0, 0)
-                    )
-                ], expand=True, spacing=20)
+                        ], spacing=10)
+                    ], spacing=10)
+                )
             ], spacing=10)
         )
-    )
-    
-    def safe_update():
-        try: page.update()
-        except: pass
 
-    page.overlay.append(dlg)
-    dlg.open = True
-    safe_update()
+        hand_stack = main_layout.content.controls[0].content.content
+        
+        # SISTEMA DE COORDENADAS PERSISTENTE
+        PATH_COORDS = "BIOMETRIA_DATA/config_coords.json"
+        
+        def load_custom_coords():
+            default = [
+                {"id": "left-little-finger", "pos": [80, 241], "lbl": "Mínimo E"},
+                {"id": "left-ring-finger", "pos": [145, 190], "lbl": "Anelar E"},
+                {"id": "left-middle-finger", "pos": [201, 172], "lbl": "Médio E"},
+                {"id": "left-index-finger", "pos": [268, 171], "lbl": "Indicador E"},
+                {"id": "left-thumb", "pos": [371, 280], "lbl": "Polegar E"},
+                {"id": "right-thumb", "pos": [457, 283], "lbl": "Polegar D"},
+                {"id": "right-index-finger", "pos": [540, 182], "lbl": "Indicador D"},
+                {"id": "right-middle-finger", "pos": [623, 166], "lbl": "Médio D"},
+                {"id": "right-ring-finger", "pos": [676, 188], "lbl": "Anelar D"},
+                {"id": "right-little-finger", "pos": [724, 229], "lbl": "Mínimo D"},
+            ]
+            if os.path.exists(PATH_COORDS):
+                try:
+                    with open(PATH_COORDS, "r") as f:
+                        saved = json.load(f)
+                        # Mescla com labels padrões
+                        for d in default:
+                            if d["id"] in saved: d["pos"] = saved[d["id"]]
+                        return default
+                except: return default
+            return default
 
-# Inicialização Global da Biometria
-biometria_manager_global = BiometriaFPrint(SITE_URL, SYNC_TOKEN) if FPRINT_DISPONIVEL else None
-manager_global = biometria_manager_global
+        dedos_config = load_custom_coords()
+
+        def save_coords():
+            try:
+                data = {d["id"]: d["pos"] for d in dedos_config}
+                os.makedirs("BIOMETRIA_DATA", exist_ok=True)
+                with open(PATH_COORDS, "w") as f:
+                    json.dump(data, f)
+                add_log("💾 POSIÇÕES SALVAS NO DISCO", COR_SUCCESS)
+            except Exception as e:
+                add_log(f"Erro ao salvar: {e}", COR_ERROR)
+
+        def reset_coords():
+            if os.path.exists(PATH_COORDS):
+                try: os.remove(PATH_COORDS)
+                except: pass
+            nonlocal dedos_config
+            dedos_config = load_custom_coords()
+            update_fingers_ui()
+            add_log("♻️ POSIÇÕES RESETADAS PARA O PADRÃO", COR_SUCCESS)
+
+        def move_finger(e: ft.DragUpdateEvent, f_id):
+            if not sw_calib.value: return # Travado - Impede movimento acidental
+            
+            # Cálculo de escala lógica baseado no AspectRatio 1:1
+            p_w = page.width if page.width else 1200
+            p_h = page.height if page.height else 800
+            avail_w = (p_w - 30) * 0.75
+            avail_h = p_h - 20
+            
+            # Fator de escala para sistema lógico 1000x1000
+            scale = min(avail_w / 1000, avail_h / 1000)
+
+            for d in dedos_config:
+                if d["id"] == f_id:
+                    # Atualiza coordenadas lógicas (0-1000)
+                    d["pos"][0] = max(0, min(1000, d["pos"][0] + e.delta_x / scale))
+                    d["pos"][1] = max(0, min(1000, d["pos"][1] + e.delta_y / scale))
+                    
+                    # Atualiza o controle visual diretamente para não quebrar a sessão de Pan (drag)
+                    px, py = d["pos"]
+                    unit = finger_units[f_id]
+                    unit.left = px * scale
+                    unit.top = py * scale
+                    try: unit.update()
+                    except: pass
+                    break
+
+        def log_coords():
+            save_coords() # Salva no arquivo
+            add_log("📍 COORDENADAS ATUALIZADAS", COR_ACCENT)
+
+        def update_fingers_ui():
+            # Reutiliza os controles existentes para evitar cintilação e perda de estado
+            enrolled = biometria_manager.get_enrolled_fingers(matricula) if biometria_manager else []
+            
+            p_w = page.width if page.width else 1200
+            p_h = page.height if page.height else 800
+            # Usamos a mesma lógica de porcentagem do layout 1:1
+            avail_w = (p_w - 30) * 0.75
+            avail_h = p_h - 20
+            scale = min(avail_w / 1000, avail_h / 1000)
+
+            # Se o stack estiver vazio ou apenas com a imagem, inicializa os dedos
+            if len(hand_stack.controls) <= 1:
+                hand_stack.controls = [hand_stack.controls[0]] # Garante que a imagem está lá
+                for d in dedos_config:
+                    f_id = d["id"]
+                    # Criação inicial do controle (GestureDetector)
+                    unit = ft.GestureDetector(
+                        content=ft.Stack([
+                            ft.Container( # btn_finger_base
+                                content=ft.Column([
+                                    ft.Container(
+                                        width=52, height=52, border_radius=26, 
+                                        alignment=ft.Alignment(0, 0),
+                                        content=ft.Icon("fingerprint", size=28)
+                                    ),
+                                    ft.Container(
+                                        content=ft.Text(d["lbl"], size=9, weight="bold", color="white"),
+                                        bgcolor="#000000dd", padding=ft.Padding(left=8, right=8, top=2, bottom=2), border_radius=4
+                                    )
+                                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
+                                on_click=lambda _, id_d=f_id, lbl_d=d["lbl"]: _execute_enroll(id_d, lbl_d),
+                            ),
+                            ft.Container( # btn_del_base
+                                content=ft.Icon("close", size=10, color="white"),
+                                width=18, height=18, border_radius=9, bgcolor=COR_ERROR,
+                                border=ft.Border(ft.BorderSide(1, "white"), ft.BorderSide(1, "white"), ft.BorderSide(1, "white"), ft.BorderSide(1, "white")),
+                                left=32, top=-3
+                            )
+                        ], width=70, height=80),
+                        on_pan_update=lambda e, f_id=f_id: move_finger(e, f_id),
+                    )
+                    finger_units[f_id] = unit
+                    hand_stack.controls.append(unit)
+
+            # Atualização cirúrgica de propriedades
+            for d in dedos_config:
+                f_id = d["id"]
+                is_on = f_id in enrolled
+                unit = finger_units[f_id]
+                
+                # Atualiza Posição (Lógica 1000x1000)
+                unit.left = d["pos"][0] * scale
+                unit.top = d["pos"][1] * scale
+                
+                # Acessa os componentes internos para atualizar status (cor/visibilidade)
+                # unit (GestureDetector) -> Stack -> [Container(Finger), Container(Del)]
+                stack = unit.content
+                btn_finger_cont = stack.controls[0]
+                btn_del_cont = stack.controls[1]
+                
+                # Atualiza visual do círculo da digital
+                circle = btn_finger_cont.content.controls[0]
+                icon = circle.content
+                circle.bgcolor = COR_SUCCESS if is_on else "#1a1a1a"
+                circle.border = ft.Border(ft.BorderSide(2, COR_SUCCESS if is_on else "#444444"), ft.BorderSide(2, COR_SUCCESS if is_on else "#444444"), ft.BorderSide(2, COR_SUCCESS if is_on else "#444444"), ft.BorderSide(2, COR_SUCCESS if is_on else "#444444"))
+                circle.shadow = ft.BoxShadow(spread_radius=1, blur_radius=15, color=COR_SUCCESS + "40") if is_on else None
+                icon.color = "white" if is_on else COR_TEXT_SEC
+                
+                # Atualiza botão de deletar
+                btn_del_cont.visible = is_on
+                btn_del_cont.on_click = lambda _, id_d=f_id, lbl_d=d["lbl"]: confirm_delete(id_d, lbl_d)
+
+            try:
+                hand_stack.update()
+                safe_update(page)
+            except: 
+                rocksfit_core_update(page)
+
+        def confirm_delete(finger_id, label):
+            def handle_delete(_):
+                overlay.visible = False
+                rocksfit_core_update(page)
+                add_log(f"Removendo digital: {label}...", COR_WARNING)
+                if biometria_manager.apagar_digital_local(matricula, finger_id):
+                    add_log(f"✔ Registro de {label} apagado.", COR_SUCCESS)
+                    atualizar_cache_digital(matricula, finger_id, acao="DEL")
+                    update_fingers_ui()
+                else:
+                    add_log(f"Falha ao apagar {label}.", COR_ERROR)
+                rocksfit_core_update(page)
+
+            overlay = ft.Container(
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Text("CONFIRMAR EXCLUSÃO", size=18, weight="bold", color="white"),
+                        ft.Text(f"Deseja apagar o registro de {label}?", color=COR_TEXT_SEC),
+                        ft.Row([
+                            ft.ElevatedButton("SIM, APAGAR", bgcolor=COR_ERROR, color="white", on_click=handle_delete),
+                            ft.TextButton("CANCELAR", on_click=lambda _: (setattr(overlay, "visible", False), rocksfit_core_update(page)))
+                        ], alignment=ft.MainAxisAlignment.END)
+                    ], spacing=20, tight=True),
+                    bgcolor=COR_BG, padding=30, border_radius=15, width=400,
+                    border=ft.Border(ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"))
+                ),
+                alignment=ft.Alignment(0, 0),
+                bgcolor="#000000dd",
+                expand=True,
+                visible=True
+            )
+            page.overlay.append(overlay)
+            rocksfit_core_update(page)
+
+        def _execute_enroll(finger_id, label):
+            add_log(f"🖐️ Iniciando captura: {label}...", COR_PRIMARY)
+            status_captura.value = f"CAPTURA: {label.upper()}"
+            status_captura.color = COR_PRIMARY
+            rocksfit_core_update(page)
+            
+            def _thread():
+                try:
+                    add_log("🔄 Iniciando hardware biométrico...", COR_WARNING)
+                    biometria_manager.stop_all()
+                    time.sleep(0.8)
+                    
+                    proc = biometria_manager.enroll(matricula, finger_id)
+                    if proc:
+                        success = False
+                        add_log(f"🖐️ AGUARDANDO TOQUES ({label})", COR_ACCENT)
+                        while True:
+                            line = proc.stdout.readline()
+                            err_line = proc.stderr.readline()
+                            
+                            if err_line:
+                                msg_err = err_line.strip()
+                                if "already claimed" in msg_err.lower():
+                                    add_log("❌ ERRO: Sensor em uso por outro app!", COR_ERROR)
+                                else:
+                                    add_log(f"⚠️ {msg_err}", COR_WARNING)
+                            
+                            if not line: break
+                            line = line.strip()
+                            if "enroll-stage-passed" in line:
+                                add_log("⚡ Toque detectado! Continue...", COR_SUCCESS)
+                            elif "enroll-retry-scan" in line:
+                                add_log("⚠️ Falha na leitura. Tente novamente.", COR_WARNING)
+                            elif "enroll-completed" in line:
+                                success = True
+                                break
+                        
+                        proc.wait()
+                        if success or proc.returncode == 0:
+                            biometria_manager.guardar_arquivo_local(matricula, finger_id)
+                            atualizar_cache_digital(matricula, finger_id, acao="ADD")
+                            add_log(f"✅ {label.upper()} CADASTRADO!", COR_SUCCESS)
+                            time.sleep(0.5)
+                        else:
+                            add_log(f"✖ Captura cancelada ou falhou.", COR_ERROR)
+                    else:
+                        add_log("❌ Falha crítica ao abrir driver fprintd.", COR_ERROR)
+                except Exception as e:
+                    add_log(f"Erro Crítico: {e}", COR_ERROR)
+                finally:
+                    status_captura.value = "AGUARDANDO SELEÇÃO"
+                    status_captura.color = COR_TEXT_SEC
+                    update_fingers_ui()
+                    rocksfit_core_update(page)
+
+            threading.Thread(target=_thread, daemon=True).start()
+
+        # Botão extra no painel de controle para salvar posições
+        main_layout.content.controls[1].content.controls.insert(-1, ft.ElevatedButton(
+            "SALVAR COORDENADAS", 
+            icon="save_alt", 
+            on_click=lambda _: log_coords(),
+            width=300, height=40,
+            style=ft.ButtonStyle(bgcolor="#1a1a1a", color=COR_ACCENT, shape=ft.RoundedRectangleBorder(radius=8))
+        ))
+
+        # ARQUITETURA DE CAMADAS (STACK) - PREVINE REMOVE_VIEW CRASH
+        with UI_LOCK:
+            if "enroll_layer" in state:
+                layer = state["enroll_layer"]
+                layer.content = main_layout
+                layer.visible = True
+                page.update()
+            
+        # Registrar evento de resize para manter os dedos no lugar responsivamente
+        def handle_resize(e):
+            if ENROLLMENT_ACTIVE:
+                try: update_fingers_ui()
+                except: pass
+        page.on_resize = handle_resize
+        
+        update_fingers_ui()
+        print(f"✅ [UI] Camada de cadastro ativa para: {nome}")
+    except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
+        print(f"💥 ERRO AO ABRIR MODAL: {e}\n{error_msg}")
+        BIOMETRIA_BUSY = False
+        ENROLLMENT_ACTIVE = False
+        PAUSE_BIOMETRIA = False
 
 def main(page: ft.Page):
+    # Previne Stack Overflow desativando área de seleção global
+    try: page.selection_area = False
+    except: pass
+
+    def _safe_page_update(control=None):
+        rocksfit_core_update(page, control)
+
     page.title = "ROCKS FIT - RECEPÇÃO"
     page.padding = 0
     page.spacing = 0
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = COR_BG
-    page.window.width = 1400
-    page.window.height = 900
-    page.window.min_width = 1200
-    page.window.min_height = 800
-    page.window.maximizable = True
-    page.window.minimizable = True
-    page.window.resizable = True
-    page.window.title_bar_hidden = True  # Oculta a barra do sistema para o visual premium
-    page.window.title_bar_buttons_hidden = True
-    page.window.center()
+    
+    # --- SISTEMA DE UPLOAD DE FOTO ---
+    def on_file_result(e):
+        if e.files:
+            file_path = e.files[0].path
+            print(f"📸 Foto selecionada: {file_path}")
+            profile_img.src = file_path
+            profile_img.update()
+
+    # file_picker = ft.FilePicker()
+    # page.overlay.append(file_picker)
+    # file_picker.on_result = on_file_result
+    file_picker = None # Fallback para evitar NameError
+
+    profile_img = ft.Image(
+        src="media/imagens/rkslogo.png",
+        width=140, height=140,
+        fit="cover",
+        border_radius=70,
+    )
+
+    lbl_side_nome = ft.Text("RECEPÇÃO ATIVA", size=16, weight="bold", color=COR_TEXTO, text_align="center")
+    lbl_side_vencimento = ft.Text("Aguardando identificação...", size=12, color=COR_TEXT_SEC, text_align="center")
+
+    photo_field = ft.Container(
+        content=ft.Stack([
+            profile_img,
+            ft.Container(
+                content=ft.Icon("camera", size=20, color="white"),
+                bgcolor=COR_PRIMARY,
+                width=36, height=36,
+                border_radius=18,
+                right=5, bottom=5,
+                border=ft.Border(
+                    top=ft.BorderSide(3, "#000000"),
+                    right=ft.BorderSide(3, "#000000"),
+                    bottom=ft.BorderSide(3, "#000000"),
+                    left=ft.BorderSide(3, "#000000"),
+                ),
+                alignment=ft.Alignment(0, 0)
+            )
+        ]),
+        width=140, height=140,
+        # on_click=lambda _: file_picker.pick_files(),
+        on_click=lambda _: print("Upload temporariamente desativado"),
+        tooltip="Fazer upload de foto"
+    )
 
     # Garantir diretórios de persistência local
     os.makedirs("BIOMETRIA_DATA/ALUNOS", exist_ok=True)
@@ -506,18 +1361,34 @@ def main(page: ft.Page):
     global page_global
     page_global = page
     
-    # Sistema de notificação entre abas
+    # Sistema de notificação entre abas e threads (Versão Ultra-Segura)
     def on_broadcast(msg):
-        if isinstance(msg, dict) and msg.get("type") == "open_enroll":
-            aluno = msg.get("aluno")
-            abrir_cadastro_digital(aluno, page, biometria_manager_global, render_main_content, state)
-        elif msg == "sync_done":
-            state["alunos_data"] = GLOBAL_ALUNOS
-            render_alunos()
-        elif msg == "new_access":
-            state["historico"] = GLOBAL_HISTORICO
-            # Se o modal estiver aberto, ele não atualiza automaticamente aqui, 
-            # mas a lista interna estará pronta para a próxima abertura.
+        try:
+            if not page: return
+            if isinstance(msg, dict):
+                m_type = msg.get("type")
+                if m_type == "identificacao":
+                    print(f"✅ [ON_BROADCAST] Recebido identificacao para: {msg.get('data', {}).get('nome')}")
+                    _dashboard_feedback(msg.get("data"), msg.get("liberado"), msg.get("metodo"), msg.get("sentido"))
+
+                elif m_type == "open_enroll":
+                    aluno = msg.get("aluno")
+                    abrir_cadastro_digital(aluno, page, biometria_manager_global, render_main_content, state)
+                elif m_type == "hw_status":
+                    hw = msg.get("hw")
+                    online = msg.get("online")
+                    if hw == "fprint":
+                        dot_status_fprint.bgcolor = COR_SUCCESS if online else COR_ERROR
+                        lbl_status_fprint.value = "Biometria: ONLINE" if online else "Biometria: ERRO"
+                    elif hw == "catraca":
+                        dot_status_catraca.bgcolor = COR_SUCCESS if online else COR_ERROR
+                        lbl_status_catraca.value = "Catraca: ONLINE" if online else "Catraca: OFFLINE"
+                    try: right_panel.update()
+                    except: pass
+                elif m_type == "aguardando":
+                    pass
+        except Exception as e:
+            print(f"⚠️ Erro no processamento de broadcast: {e}")
 
     page.pubsub.subscribe(on_broadcast)
 
@@ -525,23 +1396,15 @@ def main(page: ft.Page):
     # COMPONENTES DA SIDEBAR ESQUERDA
     # ==========================
 
-    # Logo
-    logo = ft.Row(
+    # Logo/Perfil (Apenas a foto agora)
+    logo = ft.Column(
         [
-            ft.Container(
-                content=ft.Icon("fitness_center", color=COR_PRIMARY, size=32),
-                width=48, height=48, border_radius=12, bgcolor=COR_PRIMARY + "20",
-                alignment=ft.Alignment(0, 0)
-            ),
-            ft.Column(
-                [
-                    ft.Text("ROCKS", font_family="Space Grotesk", size=24, weight=ft.FontWeight.BOLD, color=COR_TEXTO),
-                    ft.Text("FIT", font_family="Space Grotesk", size=24, weight=ft.FontWeight.BOLD, color=COR_PRIMARY),
-                ],
-                spacing=0, alignment=ft.MainAxisAlignment.CENTER
-            ),
+            photo_field,
+            ft.Container(height=10),
+            lbl_side_nome,
+            lbl_side_vencimento
         ],
-        alignment=ft.MainAxisAlignment.CENTER, spacing=10
+        alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0
     )
 
     def create_menu_item(text, icon, active=False, on_click=None):
@@ -553,11 +1416,10 @@ def main(page: ft.Page):
                 ],
                 spacing=12, alignment=ft.MainAxisAlignment.START
             ),
-            padding=ft.padding.symmetric(horizontal=16, vertical=12),
+            padding=ft.Padding(16, 12, 16, 12),
             border_radius=12,
-            bgcolor=COR_CARD if active else None,
+            bgcolor="#1a1a1a" if active else None,
             on_click=on_click,
-            ink=True,
         )
 
     def create_section_title(text):
@@ -565,21 +1427,50 @@ def main(page: ft.Page):
 
     # Menu Monitoramento
     def switch_view(view_name):
+        # Fecha camada de cadastro se estiver aberta (Resolve navegação)
+        if state.get("close_enroll"):
+            try: state["close_enroll"]()
+            except: pass
+            
         state["current_view"] = view_name
         render_main_content()
-        page.update()
+        safe_update(page)
 
     menu_monitoramento = ft.Column(
         [
             create_section_title("MONITORAMENTO"),
             create_menu_item("Clientes", "people", active=state["current_view"] == "clientes", on_click=lambda _: switch_view("clientes")),
-            create_menu_item("Biometria", "fingerprint", active=state["current_view"] == "biometria", on_click=lambda _: switch_view("biometria")),
-            create_menu_item("Monitor Câmera", "videocam", on_click=lambda _: page.go("/monitor")),
+            create_menu_item("Monitor Câmera", "videocam", on_click=lambda _: subprocess.Popen([sys.executable, os.path.abspath(os.path.join(os.path.dirname(__file__), "monitor_aluno.py"))], start_new_session=True)),
         ],
         spacing=4
     )
 
     # Menu Acesso
+    def liberar_manual(sentido):
+        def _task():
+            success = trigger_catraca(sentido)
+            if success:
+                page.snack_bar = ft.SnackBar(ft.Text(f"Catraca liberada ({sentido}) com sucesso!"), bgcolor=COR_SUCCESS)
+            else:
+                page.snack_bar = ft.SnackBar(ft.Text("Erro: Não foi possível conectar à catraca."), bgcolor=COR_ERROR)
+            page.snack_bar.open = True
+            safe_update(page)
+        
+        threading.Thread(target=_task, daemon=True).start()
+
+    def liberar_aluno(aluno, sentido="ENTRADA"):
+        def _task():
+            nome = aluno.get("nome", "Liberacao").split()[0]
+            success = trigger_catraca(sentido)
+            if success:
+                page.snack_bar = ft.SnackBar(ft.Text(f"{nome} liberado com sucesso!"), bgcolor=COR_SUCCESS)
+            else:
+                page.snack_bar = ft.SnackBar(ft.Text(f"Erro ao liberar {nome}."), bgcolor=COR_ERROR)
+            page.snack_bar.open = True
+            safe_update(page)
+        
+        threading.Thread(target=_task, daemon=True).start()
+
     btn_entrada = ft.Container(
         content=ft.Row(
             [
@@ -591,9 +1482,9 @@ def main(page: ft.Page):
         bgcolor=COR_PRIMARY,
         height=48,
         border_radius=12,
-        padding=ft.padding.symmetric(horizontal=20),
+        padding=ft.Padding(20, 0, 20, 0),
         ink=True,
-        on_click=lambda _: None,
+        on_click=lambda _: liberar_manual("ENTRADA"),
     )
 
     btn_saida = ft.Container(
@@ -607,32 +1498,15 @@ def main(page: ft.Page):
         bgcolor=COR_CARD,
         height=48,
         border_radius=12,
-        padding=ft.padding.symmetric(horizontal=20),
-        border=ft.border.all(1, COR_ERROR + "40"),
+        padding=ft.Padding(20, 0, 20, 0),
+        border=ft.Border(ft.BorderSide(1, COR_ERROR + "40"), ft.BorderSide(1, COR_ERROR + "40"), ft.BorderSide(1, COR_ERROR + "40"), ft.BorderSide(1, COR_ERROR + "40")),
         ink=True,
-        on_click=lambda _: None,
-    )
-
-    btn_monitor = ft.Container(
-        content=ft.Row(
-            [
-                ft.Icon("desktop_windows", color="#ffffff", size=18),
-                ft.Text("2ª Tela (Monitor)", color="#ffffff", size=14, weight=ft.FontWeight.BOLD),
-            ],
-            spacing=10, alignment=ft.MainAxisAlignment.CENTER
-        ),
-        bgcolor=COR_PRIMARY,
-        height=48,
-        border_radius=12,
-        padding=ft.padding.symmetric(horizontal=20),
-        ink=True,
-        on_click=lambda _: page.go("/monitor"),
+        on_click=lambda _: liberar_manual("SAIDA"),
     )
 
     menu_acesso = ft.Column(
         [
             create_section_title("ACESSO"),
-            btn_monitor,
             btn_entrada,
             btn_saida,
         ],
@@ -641,136 +1515,88 @@ def main(page: ft.Page):
 
     def sync_crm(e=None):
         if not SYNC_LOCK.acquire(blocking=False):
-            print("⏳ Sync já em andamento...")
             return
 
-        def _fetch():
-            global GLOBAL_ALUNOS, GLOBAL_PERFIS
+        def _full_sync_task():
             try:
-                print("📡 Sincronizando com o CRM...")
-                r = requests.get(f"{SITE_URL}/api/catraca-sync/?token={SYNC_TOKEN}", timeout=15)
-                if r.status_code == 200:
-                    data = r.json()
-                    # Filtra apenas contatos válidos se necessário (ex: nome presente)
-                    novos_alunos = [a for a in data.get('alunos', []) if a.get('nome')]
-                    state["alunos_data"] = novos_alunos
-                    GLOBAL_ALUNOS = novos_alunos 
-                    print(f"✅ Sync Finalizado. {len(GLOBAL_ALUNOS)} alunos carregados.")
-                    
-                    # Notifica todas as abas abertas
-                    page.pubsub.send_all("sync_done")
-                    # Só atualiza lista no dashboard; no monitor a lista não existe na view
-                    if "/monitor" not in page.route:
-                        render_alunos()
-                    
-                    # Carregamento de perfis faciais
-                    if "cv2" in sys.modules:
-                        try:
-                            com_foto = [a for a in state["alunos_data"] if a.get("foto_url")]
-                            print(f"📸 Alunos com foto: {len(com_foto)} de {len(state['alunos_data'])}")
-                            if not com_foto:
-                                print("⚠️ Nenhum aluno tem foto_url – reconhecimento desativado")
-                            else:
-                                metodo = "face_recognition (neural)" if FR_DISPONIVEL else "ORB (keypoints)"
-                                print(f"🔄 Gerando perfis biométricos [{metodo}]...")
-                                NovosPerfis = {}
-                                
-                                for a in state["alunos_data"]:
-                                    furl = a.get("foto_url")
-                                    if not furl: continue
-                                    if furl.startswith('/'): furl = f"{SITE_URL}{furl}"
-                                    try:
-                                        resp = requests.get(furl, timeout=5)
-                                        if resp.status_code != 200:
-                                            print(f"  ⚠ HTTP {resp.status_code}: {a.get('nome')}")
-                                            continue
-                                        nparr = np.frombuffer(resp.content, np.uint8)
-                                        img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                                        if img_bgr is None:
-                                            print(f"  ⚠ Imagem inválida: {a.get('nome')}")
-                                            continue
+                # Feedback UI
+                btn_sync_top.disabled = True
+                btn_sync_top.text = "Sincronizando..."
+                btn_sync_top.icon = ft.icons.HOURGLASS_EMPTY
+                page.update()
 
-                                        if FR_DISPONIVEL:
-                                            # ── face_recognition: embedding neural 128-D ──
-                                            img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-                                            img_rgb = np.ascontiguousarray(img_rgb)
-                                            
-                                            with FR_LOCK:
-                                                locs = fr.face_locations(img_rgb, model="hog")
-                                                encs = fr.face_encodings(img_rgb, locs, num_jitters=0) if locs else fr.face_encodings(img_rgb, num_jitters=0)
-                                            
-                                            if encs:
-                                                NovosPerfis[str(a['matricula'])] = {'encoding': encs[0], 'data': a}
-                                                print(f"  ✔ Perfil neural: {a.get('nome')}")
-                                            else:
-                                                print(f"  ⚠ Rosto não detectado: {a.get('nome')}")
-                                        else:
-                                            # ── fallback ORB ──
-                                            gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-                                            img_face = cv2.resize(gray, (200, 200))
-                                            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-                                            img_face = clahe.apply(img_face)
-                                            orb = cv2.ORB_create(700)
-                                            _, des = orb.detectAndCompute(img_face, None)
-                                            if des is not None:
-                                                NovosPerfis[str(a['matricula'])] = {'des': des, 'img': img_face.copy(), 'data': a}
-                                                print(f"  ✔ Perfil ORB: {a.get('nome')}")
-                                    except Exception as fe:
-                                        print(f"  ⚠ Erro {a.get('nome')}: {fe}")
-
-                                # Atualização atômica do global
-                                GLOBAL_PERFIS = NovosPerfis
-                                print(f"✅ Perfis gerados: {len(GLOBAL_PERFIS)} rostos [{metodo}]")
-                        except Exception as e:
-                            print("⚠️ Erro ao gerar perfis:", e)
+                print("📡 [SYNC] Iniciando Sincronização Industrial Completa...")
+                
+                # 1. CRM -> Django
+                subprocess.run([sys.executable, "../sync_crm_to_db.py"], check=True)
+                
+                # 2. Django -> Embeddings
+                subprocess.run([sys.executable, "../rebuild_face_index.py"], check=True)
+                
+                # 3. Django -> Reception Module
+                subprocess.run([sys.executable, "../export_to_reception.py"], check=True)
+                
+                print("✅ [SYNC] Sincronização Industrial concluída com sucesso.")
+                
+                # Recarrega o cache local na memória da ponte
+                carregar_cache_local()
+                
+                # Notifica a UI
+                page.snack_bar = ft.SnackBar(ft.Text("Sincronização concluída com sucesso!"), bgcolor=COR_SUCCESS)
+                page.snack_bar.open = True
+                render_alunos() # Atualiza a lista na tela
+                page.update()
             except Exception as ex:
-                print("❌ Erro ao sincronizar com CRM:", ex)
+                print(f"❌ [SYNC] Erro na sincronização: {ex}")
+                page.snack_bar = ft.SnackBar(ft.Text(f"Erro no sincronismo: {ex}"), bgcolor=COR_ERROR)
+                page.snack_bar.open = True
+                page.update()
             finally:
+                btn_sync_top.disabled = False
+                btn_sync_top.text = "Sincronizar CRM"
+                btn_sync_top.icon = ft.icons.SYNC
                 try: SYNC_LOCK.release()
                 except: pass
-        threading.Thread(target=_fetch, daemon=True).start()
+                page.update()
 
-    # Menu Sistema
-    menu_sistema = ft.Column(
-        [
-            create_section_title("SISTEMA"),
-            create_menu_item("Sincronizar", "sync", on_click=sync_crm),
-            create_menu_item("Histórico de Acesso", "history", on_click=lambda e: abrir_historico(e)),
-            create_menu_item("Diagnóstico", "settings", on_click=lambda e: abrir_diagnostico(e)),
-        ],
-        spacing=4
-    )
+        threading.Thread(target=_full_sync_task, daemon=True).start()
+
 
     sidebar = ft.Container(
         width=260,
-        bgcolor=COR_BG,
-        padding=ft.padding.all(20),
-        border=ft.border.only(right=ft.BorderSide(1, COR_CARD_HIGH)),
+        bgcolor="#0a0a0a",
+        padding=ft.Padding(20, 20, 20, 20),
+        border=ft.Border(right=ft.BorderSide(1, "#222222")),
         content=ft.Column(
             [
-                logo,
-                ft.Divider(height=30, color="transparent"),
-                menu_monitoramento,
+                ft.Container(content=logo, alignment=ft.Alignment(0, 0)),
                 ft.Divider(height=20, color="transparent"),
-                menu_acesso,
-                ft.Divider(height=20, color="transparent"),
-                menu_sistema,
-                ft.Divider(height=20, color="transparent"),
-                ft.Container(expand=True),  # Spacer
+                create_section_title("MONITORAMENTO"),
+                create_menu_item("Clientes", "people", active=state["current_view"] == "clientes", on_click=lambda _: switch_view("clientes")),
+            create_menu_item("Monitor Câmera", "videocam", on_click=lambda _: subprocess.Popen([sys.executable, os.path.abspath(os.path.join(os.path.dirname(__file__), "monitor_aluno.py"))], start_new_session=True)),
+                
+                ft.Divider(height=10, color="transparent"),
+                create_section_title("ACESSO"),
+                btn_entrada,
+                btn_saida,
+                
+                ft.Divider(height=10, color="transparent"),
+                create_section_title("SISTEMA"),
+                create_menu_item("Histórico", "history", on_click=lambda _: abrir_historico()),
+                create_menu_item("Diagnóstico", "troubleshoot", on_click=lambda _: abrir_diagnostico()),
+                create_menu_item("Configurações", "settings", on_click=lambda _: abrir_configuracoes()),
+                
+                ft.Container(expand=True),
                 ft.Container(
-                    content=ft.Row(
-                        [
-                            ft.Container(width=8, height=8, border_radius=4, bgcolor=COR_WARNING),
-                            ft.Text("Câmera aguardando", color=COR_TEXT_SEC, size=12),
-                        ],
-                        spacing=8
-                    ),
-                    padding=ft.padding.all(12),
-                    border_radius=8,
-                    bgcolor=COR_CARD,
+                    content=ft.Row([
+                        ft.Container(width=8, height=8, border_radius=4, bgcolor=COR_SUCCESS),
+                        ft.Text("SISTEMA ONLINE", color=COR_TEXT_SEC, size=11),
+                    ], spacing=8),
+                    padding=10, bgcolor="#161616", border_radius=8
                 ),
             ],
-            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+            spacing=4,
+            scroll=ft.ScrollMode.AUTO # Caso o conteúdo cresça, ele permite scroll em vez de quebrar
         ),
     )
 
@@ -789,7 +1615,7 @@ def main(page: ft.Page):
             ],
             spacing=4
         ),
-        padding=ft.padding.symmetric(horizontal=16, vertical=8),
+        padding=ft.Padding(16, 8, 16, 8),
         border_radius=20,
         bgcolor=COR_CARD,
     )
@@ -798,11 +1624,11 @@ def main(page: ft.Page):
         content=ft.Row(
             [
                 ft.Text("Câmera: ", color=COR_TEXT_SEC, size=13),
-                ft.Text("OFF", color=COR_ERROR, size=13, weight=ft.FontWeight.BOLD),
+                ft.Text("OFF" if not CONFIG["camera_enabled"] else "ON", color=COR_ERROR if not CONFIG["camera_enabled"] else COR_SUCCESS, size=13, weight=ft.FontWeight.BOLD),
             ],
             spacing=4
         ),
-        padding=ft.padding.symmetric(horizontal=16, vertical=8),
+        padding=ft.Padding(16, 8, 16, 8),
         border_radius=20,
         bgcolor=COR_CARD,
     )
@@ -815,29 +1641,42 @@ def main(page: ft.Page):
         focused_border_color=COR_PRIMARY,
         color=COR_TEXTO,
         border_radius=10,
-        content_padding=ft.padding.symmetric(horizontal=15, vertical=10),
+        content_padding=ft.Padding(15, 10, 15, 10),
         text_size=14,
         expand=True,
         on_change=lambda e: render_alunos(),
     )
 
+    btn_sync_top = ft.ElevatedButton(
+        "Sincronizar CRM",
+        icon=ft.icons.SYNC,
+        bgcolor=COR_PRIMARY,
+        color="#000000",
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        on_click=lambda _: sync_crm()
+    )
+
     top_bar = ft.Row(
         [
             search_field,
+            btn_sync_top,
             status_online,
             status_camera,
         ],
         spacing=12, alignment=ft.MainAxisAlignment.START
     )
 
-    # Cards de estatísticas
-    def create_stat_card(title, value, color):
+    # Cards de estatísticas (Dinâmicos)
+    lbl_ativos_val = ft.Text("0", color=COR_SUCCESS, size=36, weight=ft.FontWeight.BOLD, font_family="Space Grotesk")
+    lbl_vencendo_val = ft.Text("0", color=COR_WARNING, size=36, weight=ft.FontWeight.BOLD, font_family="Space Grotesk")
+    lbl_vencidos_val = ft.Text("0", color=COR_ERROR, size=36, weight=ft.FontWeight.BOLD, font_family="Space Grotesk")
+
+    def create_stat_card(title, value_control, color):
         return ft.Container(
             content=ft.Column(
                 [
                     ft.Text(title, color=COR_TEXT_SEC, size=13, weight=ft.FontWeight.W_500),
-                    ft.Text(str(value), color=color, size=36, weight=ft.FontWeight.BOLD, 
-                           font_family="Space Grotesk"),
+                    value_control,
                 ],
                 spacing=4, alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER
             ),
@@ -845,468 +1684,753 @@ def main(page: ft.Page):
             bgcolor=COR_CARD,
             border_radius=16,
             alignment=ft.Alignment(0, 0),
-            padding=ft.padding.all(16),
+            padding=ft.Padding(16, 16, 16, 16),
         )
 
     stats_row = ft.Row(
         [
-            create_stat_card("Ativos", 142, COR_SUCCESS),
-            create_stat_card("Vencendo", 17, COR_WARNING),
-            create_stat_card("Vencidos", 8, COR_ERROR),
+            create_stat_card("Ativos", lbl_ativos_val, COR_SUCCESS),
+            create_stat_card("Vencendo", lbl_vencendo_val, COR_WARNING),
+            create_stat_card("Vencidos", lbl_vencidos_val, COR_ERROR),
         ],
         spacing=12, alignment=ft.MainAxisAlignment.START
     )
 
     # Lista de alunos
-    lista_alunos_col = ft.ListView(expand=True, spacing=8, padding=ft.padding.only(top=10))
+    lista_alunos_col = ft.ListView(expand=True, spacing=8, padding=ft.Padding(0, 10, 0, 0))
 
     def get_status_color(status):
         status = str(status).lower()
-        if status in ["ativo", "liberado"]:
-            return COR_SUCCESS
-        elif status in ["alerta", "vencendo"]:
-            return COR_WARNING
-        else:
-            return COR_ERROR
+        if status in ["ativo", "liberado", "pago", "ok"]: return COR_SUCCESS
+        elif status in ["alerta", "vencendo", "atencao"]: return COR_WARNING
+        else: return COR_ERROR
 
-    def get_status_badge(status, dias):
+    def get_status_badge(status, dias, vencimento=""):
         status = str(status).lower()
-        if status == "vencido":
-            return ft.Container(
-                content=ft.Text(f"Vencido há {abs(dias)} dias", color=COR_ERROR, size=11, weight=ft.FontWeight.BOLD),
-                bgcolor=COR_ERROR + "15",
-                padding=ft.padding.symmetric(horizontal=10, vertical=6),
-                border_radius=8,
-            )
-        elif status == "alerta" or dias <= 3:
-            return ft.Container(
-                content=ft.Text(f"Vence em {dias} dias", color=COR_WARNING, size=11, weight=ft.FontWeight.BOLD),
-                bgcolor=COR_WARNING + "15",
-                padding=ft.padding.symmetric(horizontal=10, vertical=6),
-                border_radius=8,
-            )
+        venc_str = f" | {vencimento}" if vencimento else ""
+        if status == "vencido" or dias <= 0:
+            return ft.Container(content=ft.Text(f"Crédito: {dias}d{venc_str}", color=COR_SUCCESS, size=11, weight="bold"), bgcolor=COR_SUCCESS + "15", padding=ft.Padding(10, 6, 10, 6), border_radius=8)
+        elif status == "alerta" or 0 < dias <= 15:
+            return ft.Container(content=ft.Text(f"Crédito: {dias}d{venc_str}", color=COR_WARNING, size=11, weight="bold"), bgcolor=COR_WARNING + "15", padding=ft.Padding(left=10, right=10, top=6, bottom=6), border_radius=8)
         else:
-            return ft.Container(
-                content=ft.Text(f"Vence {dias} dias", color=COR_SUCCESS, size=11, weight=ft.FontWeight.BOLD),
-                bgcolor=COR_SUCCESS + "15",
-                padding=ft.padding.symmetric(horizontal=10, vertical=6),
-                border_radius=8,
-            )
+            return ft.Container(content=ft.Text(f"Crédito: {dias}d{venc_str}", color=COR_SUCCESS, size=11, weight="bold"), bgcolor=COR_SUCCESS + "15", padding=ft.Padding(left=10, right=10, top=6, bottom=6), border_radius=8)
 
     def render_alunos():
         lista_alunos_col.controls.clear()
+        c_ativos, c_vencendo, c_vencidos = 0, 0, 0
+        if state["alunos_data"]:
+            for a in state["alunos_data"]:
+                s_raw = str(a.get("status", "ativo")).upper()
+                d = int(a.get("dias_restantes") or 0)
+                if s_raw in ["ATIVO", "LIBERADO", "PAGO", "OK"]:
+                    if d > 15: c_ativos += 1
+                    elif 0 < d <= 15: c_vencendo += 1
+                    else: c_vencidos += 1
+                elif s_raw in ["ALERTA", "VENCENDO", "ATENÇÃO", "AVISO"]: c_vencendo += 1
+                else: c_vencidos += 1
         
-        if not state["alunos_data"] and not GLOBAL_ALUNOS:
-            lista_alunos_col.controls.append(
-                ft.Container(
-                    content=ft.Column([
-                        ft.ProgressRing(color=COR_PRIMARY),
-                        ft.Text("Sincronizando contatos...", color=COR_TEXT_SEC)
-                    ], horizontal_alignment="center"),
-                    padding=50, alignment=ft.Alignment(0, 0)
-                )
-            )
-            try: page.update()
-            except: pass
-            return
-
+        lbl_ativos_val.value = str(c_ativos)
+        lbl_vencendo_val.value = str(c_vencendo)
+        lbl_vencidos_val.value = str(c_vencidos)
+        
         if not state["alunos_data"]:
-            lista_alunos_col.controls.append(
-                ft.Container(
-                    content=ft.Text("Nenhum aluno encontrado ou ativo no CRM.", color=COR_TEXT_SEC),
-                    padding=50, alignment=ft.Alignment(0, 0)
-                )
-            )
-            try: page.update()
-            except: pass
-            return
+            lista_alunos_col.controls.append(ft.Container(content=ft.Text("Nenhum aluno sincronizado.", color=COR_TEXT_SEC), padding=50, alignment=ft.Alignment(0, 0)))
+            safe_update(page); return
 
         filter_text = search_field.value.lower() if search_field.value else ""
+        matriculas_com_digital = set()
+        if BIOMETRIA_MAPPING_CACHE:
+            for mats in BIOMETRIA_MAPPING_CACHE.values():
+                for m in mats: matriculas_com_digital.add(str(m))
 
         for aluno in state["alunos_data"]:
             nome = str(aluno.get("nome", "ALUNO"))
-            matricula = str(aluno.get("matricula", "N/D"))
-            status = str(aluno.get("status", "ativo"))
-            dias = int(aluno.get("dias_restantes", 0))
-            
-            if filter_text and filter_text not in nome.lower() and filter_text not in matricula:
-                continue
-
-            # Avatar com iniciais
-            iniciais = "".join([p[0] for p in nome.split()[:2]]).upper()
-            cor_status = get_status_color(status)
-
-            avatar = ft.Container(
-                content=ft.Text(iniciais, color=cor_status, size=16, weight=ft.FontWeight.BOLD),
-                width=50, height=50,
-                border_radius=25,
-                bgcolor=COR_CARD_HIGH,
-                border=ft.border.all(2, cor_status),
-                alignment=ft.Alignment(0, 0),
-            )
-
-            # Indicador de status online
-            indicador = ft.Container(
-                width=10, height=10, border_radius=5,
-                bgcolor=cor_status,
-                border=ft.border.all(2, COR_CARD),
-            )
-
-            avatar_com_indicador = ft.Stack(
-                [
-                    avatar,
-                    ft.Container(content=indicador, right=0, bottom=0),
-                ],
-                width=52, height=52,
-            )
-
-            # Info do aluno
-            info = ft.Column(
-                [
-                    ft.Text(nome[:20] + "..." if len(nome) > 20 else nome, 
-                           color=COR_TEXTO, size=14, weight=ft.FontWeight.BOLD),
-                    ft.Text(f"Mat. {matricula}", color=COR_TEXT_SEC, size=12),
-                ],
-                spacing=2, alignment=ft.MainAxisAlignment.CENTER
-            )
-
-            # Badge de status
-            badge = get_status_badge(status, dias)
-
-            # Botão de Digital
-            btn_digital = ft.IconButton(
-                icon="fingerprint",
-                icon_color=COR_PRIMARY,
-                tooltip="Cadastrar Digital",
-                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state)
-            )
-
-            # Card do aluno
-            card = ft.Container(
-                content=ft.Row(
-                    [
-                        ft.Row(
-                            [avatar_com_indicador, info],
-                            spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER
-                        ),
-                        ft.Row([badge, btn_digital], spacing=8),
-                    ],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER
-                ),
-                bgcolor=COR_CARD,
-                border_radius=16,
-                padding=ft.padding.all(16),
-                on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state),
-                ink=True,
-            )
-
-            lista_alunos_col.controls.append(card)
-
-        if page.views:
-            page.update()
-
-
-    def render_biometria_view():
-        biometria_col = ft.ListView(expand=True, spacing=8, padding=ft.padding.only(top=10))
-        
-        # Filtra alunos que não têm digital (segundo o cache local)
-        path_digital = "BIOMETRIA_DATA/ALUNOS"
-        os.makedirs(path_digital, exist_ok=True)
-        digital_locais = [f.split(".")[0] for f in os.listdir(path_digital) if f.endswith(".finger")]
-        
-        alunos_pendentes = [a for a in state["alunos_data"] if str(a.get("matricula")) not in digital_locais]
-        alunos_cadastrados = [a for a in state["alunos_data"] if str(a.get("matricula")) in digital_locais]
-        
-        def create_biometria_item(aluno, cadastrado=False):
-            nome = str(aluno.get("nome", "ALUNO"))
             mat = str(aluno.get("matricula", "N/D"))
+            status = str(aluno.get("status", "ativo"))
+            dias = int(aluno.get("dias_restantes") or 0)
+            if filter_text and filter_text not in nome.lower() and filter_text not in mat: continue
+
+            cor_status = get_status_color(status)
+            furl = aluno.get("foto_url", "")
+            img_avatar = ft.Image(src=furl if furl.startswith("http") else f"{SITE_URL}{furl}", width=50, height=50, border_radius=25, fit="cover") if furl else None
             
-            return ft.Container(
-                content=ft.Row([
-                    ft.Row([
-                        ft.Icon("fingerprint", color=COR_SUCCESS if cadastrado else COR_WARNING),
-                        ft.Column([
-                            ft.Text(nome, color=COR_TEXTO, size=14, weight="bold"),
-                            ft.Text(f"Matrícula: {mat}", color=COR_TEXT_SEC, size=12),
-                        ], spacing=2)
-                    ], spacing=15),
-                    ft.ElevatedButton(
-                        "RECADASTRE" if cadastrado else "CADASTRAR AGORA",
-                        icon="sensors",
-                        bgcolor=COR_CARD_HIGH,
-                        color=COR_PRIMARY,
-                        on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state)
-                    )
-                ], alignment="spaceBetween"),
-                padding=15, bgcolor=COR_CARD, border_radius=12,
-                border=ft.border.all(1, COR_SUCCESS + "40" if cadastrado else COR_WARNING + "40")
+            avatar = ft.Container(
+                content=ft.Text("".join([p[0] for p in nome.split()[:2]]).upper(), color=cor_status, size=16, weight="bold") if not img_avatar else img_avatar,
+                width=50, height=50, border_radius=25, bgcolor=COR_CARD_HIGH, border=ft.Border(ft.BorderSide(2, cor_status), ft.BorderSide(2, cor_status), ft.BorderSide(2, cor_status), ft.BorderSide(2, cor_status)), alignment=ft.Alignment(0, 0), clip_behavior=ft.ClipBehavior.HARD_EDGE
             )
 
-        biometria_col.controls.append(create_section_title("PENDENTES DE BIOMETRIA"))
-        if not alunos_pendentes:
-            biometria_col.controls.append(ft.Text("Todos os alunos sincronizados possuem biometria local.", color=COR_TEXT_SEC, size=13))
-        else:
-            for a in alunos_pendentes:
-                biometria_col.controls.append(create_biometria_item(a, False))
-        
-        biometria_col.controls.append(ft.Divider(height=30, color="transparent"))
-        biometria_col.controls.append(create_section_title("BIOMETRIAS CADASTRADAS LOCALMENTE"))
-        for a in alunos_cadastrados:
-            biometria_col.controls.append(create_biometria_item(a, True))
+            info = ft.Column([ft.Text(nome[:20], color=COR_TEXTO, size=14, weight="bold"), ft.Text(f"Mat. {mat}", color=COR_TEXT_SEC, size=12)], spacing=2)
+            badge = get_status_badge(status, dias, str(aluno.get("vencimento", "")))
             
-        return ft.Column([
-            ft.Text("GESTOR DE BIOMETRIA", size=24, weight="bold", font_family="Space Grotesk"),
-            ft.Text("Gerencie as digitais salvas localmente neste módulo.", color=COR_TEXT_SEC, size=13),
-            ft.Divider(height=20, color=COR_CARD_HIGH),
-            biometria_col
-        ], expand=True)
+            has_digital = mat in matriculas_com_digital
+            btn_digital = ft.Container(content=ft.Icon(ft.icons.FINGERPRINT, size=24, color=COR_PRIMARY), on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state), padding=10, border_radius=10, ink=True)
+            btn_liberar = ft.Container(content=ft.Icon(ft.icons.LOCK_OPEN, size=24, color=COR_SUCCESS), on_click=lambda e, a=aluno: liberar_aluno(a, "ENTRADA"), padding=10, border_radius=10, ink=True)
+
+            lista_alunos_col.controls.append(ft.Container(
+                content=ft.Row([ft.Row([avatar, info], spacing=12), ft.Row([badge, btn_liberar, btn_digital], spacing=4)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                bgcolor=COR_CARD, border_radius=16, padding=16, on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state), ink=True
+            ))
+        safe_update(page)
+
+    # --- HISTÓRICO ---
+    # Componentes de Histórico Reforçados (Industrial Premium - FULL WIDTH)
+    historico_items = ft.Column(spacing=0, expand=True, scroll=ft.ScrollMode.AUTO)
+    
+    # Cabeçalho da Tabela (Fixed)
+    historico_header = ft.Container(
+        content=ft.Row([
+            ft.Text("ALUNO", weight="bold", size=13, width=280),
+            ft.Text("DATA E HORA", weight="bold", size=13, width=220),
+            ft.Text("SENTIDO", weight="bold", size=13, width=120, text_align="center"),
+            ft.Text("MÉTODO", weight="bold", size=13, expand=True, text_align="right"),
+        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+        bgcolor="#f271211a",
+        padding=ft.Padding(20, 12, 20, 12),
+        border_radius=10
+    )
+
+    # Inputs de Filtro (Industrial)
+    search_hist = ft.TextField(
+        label="Pesquisar por Nome ou Matrícula", 
+        text_size=13, 
+        border_radius=12,
+        border_color="#ffffff20", 
+        expand=True, 
+        prefix_icon="search",
+        on_submit=lambda _: render_historico()
+    )
+    
+    date_hist = ft.TextField(
+        label="Data (DD/MM/AAAA)", 
+        value=datetime.now().strftime("%d/%m/%Y"), 
+        text_size=13, 
+        width=180, 
+        border_radius=12,
+        border_color="#ffffff20",
+        prefix_icon="calendar_month"
+    )
+
+    def render_historico():
+        historico_items.controls.clear()
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            
+            query = """
+                SELECT l.matricula, a.nome, l.timestamp, l.sentido, l.metodo 
+                FROM logs_acesso l
+                LEFT JOIN alunos a ON l.matricula = a.matricula
+                WHERE 1=1
+            """
+            params = []
+            
+            if date_hist.value:
+                try:
+                    data_iso = datetime.strptime(date_hist.value, "%d/%m/%Y").strftime("%Y-%m-%d")
+                    query += " AND l.timestamp LIKE ?"
+                    params.append(f"{data_iso}%")
+                except: pass
+            
+            if search_hist.value:
+                query += " AND (l.matricula LIKE ? OR a.nome LIKE ?)"
+                params.extend([f"%{search_hist.value}%", f"%{search_hist.value}%"])
+            
+            query += " ORDER BY l.timestamp DESC LIMIT 100"
+            
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            for r in rows:
+                nome_display = r[1] if r[1] else f"Matrícula {r[0]}"
+                try:
+                    dt_obj = datetime.strptime(r[2], "%Y-%m-%d %H:%M:%S")
+                    dt_display = dt_obj.strftime("%d/%m/%Y %H:%M")
+                except: dt_display = r[2]
+
+                historico_items.controls.append(
+                    ft.Container(
+                        content=ft.Row([
+                            ft.Text(nome_display.upper()[:30], weight="bold", size=13, width=280, color="#f0f0f0"),
+                            ft.Text(dt_display, size=12, width=220, color=COR_TEXT_SEC),
+                            ft.Container(
+                                content=ft.Text(r[3], size=10, weight="bold", color="white"),
+                                bgcolor=COR_SUCCESS if "ENTRADA" in r[3] else COR_ERROR,
+                                padding=ft.Padding(10, 4, 10, 4),
+                                border_radius=6,
+                                width=120,
+                                alignment=ft.Alignment(0, 0),
+                            ),
+                            ft.Text(r[4], size=11, expand=True, text_align="right", color=COR_TEXT_SEC, italic=True)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        padding=ft.Padding(20, 12, 20, 12),
+                        border=ft.Border(bottom=ft.BorderSide(1, "#ffffff08"))
+                    )
+                )
+            conn.close()
+        except Exception as e:
+            print(f"❌ [DB] Erro ao renderizar histórico: {e}")
+        
+        safe_update(page)
 
     def render_main_content():
-        # Atualiza menu ativo no sidebar com segurança
-        for item in menu_monitoramento.controls:
-            if isinstance(item, ft.Container) and hasattr(item, "content") and isinstance(item.content, ft.Row):
-                try:
-                    # O texto está dentro de Row -> Container
-                    text_obj = item.content.controls[1]
-                    icon_obj = item.content.controls[0]
-                    is_active = (text_obj.value == "Clientes" and state["current_view"] == "clientes") or \
-                               (text_obj.value == "Biometria" and state["current_view"] == "biometria")
-                    
-                    item.bgcolor = COR_CARD if is_active else None
-                    icon_obj.color = COR_PRIMARY if is_active else COR_TEXT_SEC
-                    text_obj.color = COR_TEXTO if is_active else COR_TEXT_SEC
-                except (IndexError, AttributeError):
-                    pass
-
-        if state["current_view"] == "clientes":
-            center_panel.content = center_content
+        # No modo Stack, apenas garantimos que o dashboard está visível se não estivermos cadastrando
+        if not ENROLLMENT_ACTIVE:
             render_alunos()
-        else:
-            center_panel.content = render_biometria_view()
-        
-        try: page.update()
-        except: pass
+            rocksfit_core_update(page)
 
-    center_content = ft.Column(
+    def abrir_historico(e=None):
+        try:
+            global PAUSE_BIOMETRIA
+            if state.get("close_enroll"):
+                try: state["close_enroll"]()
+                except: pass
+            
+            PAUSE_BIOMETRIA = True
+            if biometria_manager_global: biometria_manager_global.pause()
+            
+            print("📜 [UI] Preparando Histórico...")
+            render_historico()
+            
+            overlay_hist = ft.Container(
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Row([
+                                ft.Icon("history", color=COR_PRIMARY, size=30),
+                                ft.Column([
+                                    ft.Text("AUDITORIA DE ACESSOS", size=22, weight="bold"),
+                                    ft.Text("LOGS EM TEMPO REAL • FORMATO INDUSTRIAL", size=11, color=COR_TEXT_SEC),
+                                ], spacing=0)
+                            ], spacing=15),
+                            ft.Container(content=ft.Icon(ft.icons.CLOSE, color="#555555", size=20), on_click=lambda _: close_hist(), padding=5, border_radius=5, ink=True)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        ft.Divider(height=30, color="#ffffff10"),
+                        ft.Row([
+                            search_hist,
+                            date_hist,
+                            ft.Container(
+                                content=ft.Container(content=ft.Icon(ft.icons.REFRESH, color="white", size=20), on_click=lambda _: render_historico(), padding=8, border_radius=12, ink=True),
+                                bgcolor=COR_PRIMARY,
+                                border_radius=12
+                            )
+                        ], spacing=15),
+                        ft.Divider(height=20, color="transparent"),
+                        ft.Container(
+                            content=ft.Column([historico_header, historico_items], scroll=ft.ScrollMode.AUTO, expand=True),
+                            expand=True,
+                            border_radius=15,
+                            bgcolor="#00000030",
+                            padding=10
+                        )
+                    ]), 
+                    bgcolor="#0d0d0d", 
+                    padding=35, 
+                    border_radius=30, 
+                    width=950, 
+                    height=700, 
+                    border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"))
+                ), 
+                alignment=ft.Alignment(0, 0), 
+                bgcolor="#000000ee", 
+                expand=True
+            )
+            def close_hist():
+                global PAUSE_BIOMETRIA
+                if overlay_hist in page.overlay:
+                    page.overlay.remove(overlay_hist)
+                PAUSE_BIOMETRIA = False
+                if biometria_manager_global: biometria_manager_global.resume()
+                page.update()
+
+            page.overlay.append(overlay_hist)
+            page.update()
+            print("✅ [UI] Histórico aberto.")
+        except Exception as ex:
+            print(f"❌ [UI] Erro ao abrir histórico: {ex}")
+
+    # Lista de alunos
+    lista_alunos_col = ft.ListView(expand=True, spacing=8, padding=ft.Padding(0, 10, 0, 0))
+
+    # Painel Direito: Monitor de Acesso em Tempo Real (Industrial)
+    last_access_img = ft.Image(src="", width=120, height=120, border_radius=60, fit="cover", visible=False)
+    last_access_placeholder = ft.Container(
+        content=ft.Icon("person", color="#444444", size=60), 
+        bgcolor="#1a1a1a", width=120, height=120, border_radius=60, 
+        alignment=ft.Alignment(0, 0), 
+        border=ft.Border(ft.BorderSide(2, "#333333"), ft.BorderSide(2, "#333333"), ft.BorderSide(2, "#333333"), ft.BorderSide(2, "#333333")),
+        shadow=ft.BoxShadow(blur_radius=20, color="#00000050")
+    )
+    last_access_nome = ft.Text("AGUARDANDO...", weight="bold", size=18, text_align="center")
+    last_access_matricula = ft.Text("", size=13, color=COR_TEXT_SEC)
+    last_access_vencimento = ft.Text("", size=14, weight="w600", color=COR_PRIMARY)
+    last_access_status_txt = ft.Text("STANDBY", size=12, weight="bold", color="white")
+    
+    last_access_status_box = ft.Container(
+        content=last_access_status_txt, 
+        padding=ft.Padding(20, 8, 20, 8), 
+        border_radius=10, 
+        bgcolor="#222222",
+        animate=ft.Animation(300, "decelerate")
+    )
+
+    dot_status_fprint = ft.Container(width=8, height=8, border_radius=4, bgcolor=COR_SUCCESS)
+    lbl_status_fprint = ft.Text("Biometria: ONLINE", size=11, color="#666666")
+    dot_status_catraca = ft.Container(width=8, height=8, border_radius=4, bgcolor=COR_SUCCESS)
+    lbl_status_catraca = ft.Text("Catraca: ONLINE", size=11, color="#666666")
+
+    right_panel = ft.Container(
+        width=300,
+        bgcolor="#0f0f0f",
+        padding=ft.Padding(20, 20, 20, 20),
+        border=ft.Border(ft.BorderSide(1, "#ffffff08"), None, None, None), 
+        content=ft.Column(
+            [
+                ft.Text("ÚLTIMO ACESSO", size=11, weight="bold", color=COR_TEXT_SEC, opacity=0.7),
+                ft.Container(height=10),
+                ft.Container(
+                    content=ft.Column([
+                        ft.Stack([last_access_placeholder, last_access_img]),
+                        ft.Container(height=10),
+                        last_access_nome,
+                        last_access_matricula,
+                        ft.Container(height=5),
+                        ft.Row([ft.Icon("calendar_today", size=16, color=COR_TEXT_SEC), last_access_vencimento], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
+                    padding=ft.Padding(20, 20, 20, 20),
+                    bgcolor="#161616",
+                    border_radius=20,
+                    # blur=ft.Blur(10, 10),
+                    border=ft.Border(ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05")),
+                ),
+                ft.Container(height=15),
+                last_access_status_box,
+                ft.Divider(height=40, color="#ffffff10"),
+                ft.Text("CONECTIVIDADE", size=11, color="#444444", weight="bold"),
+                ft.Container(
+                    content=ft.Column([
+                        ft.Row([dot_status_fprint, lbl_status_fprint], spacing=8),
+                        ft.Row([dot_status_catraca, lbl_status_catraca], spacing=8),
+                    ], spacing=8),
+                    padding=15,
+                    bgcolor="#111111",
+                    border_radius=12,
+                    border=ft.Border(ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05")),
+                )
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            width=260, # Largura útil (300 - padding)
+        ),
+        animate_offset=ft.Animation(500, "decelerate"),
+        offset=ft.Offset(0, 0)
+    )
+
+    center_content = ft.Row(
         [
-            top_bar,
-            ft.Divider(height=20, color="transparent"),
-            stats_row,
-            ft.Divider(height=20, color="transparent"),
-            lista_alunos_col,
+            # Coluna da Esquerda: Gestão e Lista
+            ft.Column([
+                top_bar,
+                ft.Divider(height=20, color="transparent"),
+                stats_row,
+                ft.Divider(height=20, color="transparent"),
+                lista_alunos_col,
+            ], expand=True, spacing=0),
+            
+            # Coluna da Direita: Monitoramento
+            right_panel
         ],
         expand=True, spacing=0
     )
 
-    center_panel = ft.Container(
+    # CAMADA DE CADASTRO (PERSISTENTE PARA EVITAR CRASHES DE REMOÇÃO)
+    enroll_layer = ft.Container(visible=False, expand=True)
+    state["enroll_layer"] = enroll_layer
+
+    global CENTER_PANEL_GLOBAL
+    CENTER_PANEL_GLOBAL = ft.Container(
         expand=True,
         bgcolor=COR_BG,
-        padding=ft.padding.all(30),
-        content=center_content,
+        padding=ft.Padding(left=30, right=30, top=30, bottom=30),
+        content=ft.Stack([
+            center_content,
+            enroll_layer
+        ], expand=True)
     )
+    center_panel = CENTER_PANEL_GLOBAL
     
-    # Inicializa o conteúdo principal
+    # Adiciona componentes invisíveis ao overlay por último
+    # page.overlay.append(file_picker) # Removido para evitar erro no Windows
+    
     render_main_content()
 
-    # ==========================
-    # MODAL DE HISTÓRICO E LOTAÇÃO
-    # ==========================
-
-    historico_lista = ft.ListView(expand=True, spacing=0, padding=ft.padding.only(top=10))
-
-    def render_historico():
-        historico_lista.controls.clear()
-        for reg in state["historico"]:
-            cor = COR_SUCCESS if reg["status"] == "Liberado" else COR_ERROR
-            item = ft.Container(
-                content=ft.Column(
-                    [
-                        ft.Text(reg["hora"], color=COR_TEXT_SEC, size=11),
-                        ft.Text(reg["nome"], color=COR_TEXTO, size=14, weight=ft.FontWeight.W_500),
-                        ft.Row(
-                            [
-                                ft.Container(width=6, height=6, border_radius=3, bgcolor=cor),
-                                ft.Text(reg["status"], color=cor, size=12, weight=ft.FontWeight.BOLD),
-                            ],
-                            spacing=6, vertical_alignment=ft.CrossAxisAlignment.CENTER
-                        ),
-                    ],
-                    spacing=4
-                ),
-                padding=ft.padding.symmetric(vertical=12, horizontal=15),
-                border=ft.border.only(bottom=ft.BorderSide(1, COR_CARD_HIGH)),
-            )
-            historico_lista.controls.append(item)
-        if page.views:
-            try:
-                page.update()
-            except Exception:
-                pass
-
-    def abrir_historico(e=None):
-        render_historico()
-        
-        # Simulação de lotação baseada nos acessos ou fixa
-        lotacao_porcentagem = 45
-        capacidade_maxima = 100
-        lotacao_atual = int((lotacao_porcentagem / 100) * capacidade_maxima)
-        
-        dlg = ft.AlertDialog(
-            title=ft.Text("MONITOR DE ACESSOS", font_family="Space Grotesk", weight="bold"),
-            content=ft.Container(
-                width=500,
-                height=600,
-                content=ft.Column(
-                    [
-                        ft.Text("LOTAÇÃO ATUAL", color=COR_TEXT_SEC, size=11, weight="bold", opacity=0.7),
-                        ft.Container(
-                            content=ft.Column([
-                                ft.Row([
-                                    ft.Text(f"{lotacao_porcentagem}%", size=32, font_family="Space Grotesk", weight="bold", color=COR_PRIMARY),
-                                    ft.Text(f"{lotacao_atual} de {capacidade_maxima} pessoas", color=COR_TEXT_SEC, size=12)
-                                ], alignment="spaceBetween", vertical_alignment="end"),
-                                ft.ProgressBar(value=lotacao_porcentagem/100, color=COR_PRIMARY, bgcolor=COR_CARD_HIGH, height=12),
-                            ]),
-                            padding=20, bgcolor=COR_CARD, border_radius=12, margin=ft.padding.only(bottom=20)
-                        ),
-                        ft.Text("HISTÓRICO RECENTE", color=COR_TEXT_SEC, size=11, weight="bold", opacity=0.7),
-                        ft.Container(
-                            content=historico_lista,
-                            expand=True, bgcolor=COR_CARD, border_radius=12, padding=5, border=ft.border.all(1, COR_CARD_HIGH)
-                        )
-                    ]
-                )
-            ),
-            bgcolor=COR_BG,
-            actions=[ft.TextButton("FECHAR", on_click=lambda e: fechar_historico(dlg))]
-        )
-        page.overlay.append(dlg)
-        dlg.open = True
-        page.update()
-
     def abrir_diagnostico(e=None):
-        def check_crm():
-            try:
-                r = requests.get(SITE_URL, timeout=3)
-                return True if r.status_code == 200 else False
-            except: return False
-
-        def check_catraca():
-            import socket
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.settimeout(1.5)
-                    s.connect(("192.168.1.100", 1001))
-                    return True
-            except: return False
-
-        def check_camera():
-            if "cv2" not in sys.modules: return False
-            indices = [0, 1, 2] if os.name == "nt" else ["/dev/video0", 0, 1]
-            for i in indices:
-                try:
-                    c = cv2.VideoCapture(i)
-                    if c.isOpened():
-                        c.release(); return True
+        try:
+            global PAUSE_BIOMETRIA
+            if state.get("close_enroll"):
+                try: state["close_enroll"]()
                 except: pass
-            return False
+            
+            PAUSE_BIOMETRIA = True
+            if biometria_manager_global: biometria_manager_global.pause()
+            
+            print("🔍 [UI] Preparando Diagnóstico...")
+            
+            def check_crm():
+                try: return requests.get(f"{SITE_URL}/api/catraca-sync/?token={SYNC_TOKEN}", timeout=2).status_code == 200
+                except: return False
+            
+            def check_catraca():
+                import socket
+                try:
+                    ip = CONFIG.get("catraca_ip", "169.254.37.150")
+                    porta = int(CONFIG.get("catraca_porta", 1001))
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.settimeout(1.5)
+                        s.connect((ip, porta))
+                        return True
+                except: return False
 
-        def check_biometria():
-            try:
-                user = getpass.getuser()
-                res = subprocess.run(["fprintd-list", user], capture_output=True, text=True, timeout=2)
-                return "found" in res.stdout.lower() or "device" in res.stdout.lower()
-            except: return False
+            def check_biometria():
+                try:
+                    user = os.getenv("USER") or os.getenv("LOGNAME") or "root"
+                    res = subprocess.run(["fprintd-list", user], capture_output=True, text=True, timeout=2)
+                    return "found" in res.stdout.lower() or "device" in res.stdout.lower()
+                except: return False
 
-        def test_relay():
-            if trigger_catraca("Teste Diagnostico"):
-                btn_test.text = "COMANDO ENVIADO"
-            else:
-                btn_test.text = "FALHA CONEXÃO"
-            btn_test.disabled = True
+            def diag_card(title, value, detail, icon):
+                is_ok = value if isinstance(value, bool) else (True if "detectado" in str(value).lower() or "ativo" in str(value).lower() else False)
+                color = COR_SUCCESS if is_ok else COR_ERROR
+                return ft.Container(
+                    content=ft.Row([
+                        ft.Icon(icon, color=COR_PRIMARY, size=24),
+                        ft.Column([
+                            ft.Text(title, size=13, weight="bold", color=COR_TEXT_SEC),
+                            ft.Text(detail, size=11, color=COR_TEXT_SEC),
+                        ], spacing=2, expand=True),
+                        ft.Icon("check_circle" if is_ok else "error", color=color, size=32),
+                    ], spacing=15),
+                    padding=15, bgcolor="#000000", border_radius=12,
+                    border=ft.Border(ft.BorderSide(1, color + "40"), ft.BorderSide(1, color + "40"), ft.BorderSide(1, color + "40"), ft.BorderSide(1, color + "40"))
+                )
+
+            # Cards de carregamento inicial
+            card_crm = ft.Container(content=ft.Row([ft.ProgressRing(width=20, height=20, color=COR_PRIMARY), ft.Text("Verificando CRM...", size=13, color=COR_TEXT_SEC)], spacing=15), padding=15, bgcolor="#000000", border_radius=12)
+            card_cat = ft.Container(content=ft.Row([ft.ProgressRing(width=20, height=20, color=COR_PRIMARY), ft.Text("Verificando Catraca...", size=13, color=COR_TEXT_SEC)], spacing=15), padding=15, bgcolor="#000000", border_radius=12)
+            card_bio = ft.Container(content=ft.Row([ft.ProgressRing(width=20, height=20, color=COR_PRIMARY), ft.Text("Verificando Biometria...", size=13, color=COR_TEXT_SEC)], spacing=15), padding=15, bgcolor="#000000", border_radius=12)
+            
+            overlay_diag = ft.Container(
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Row([ft.Icon("analytics", color=COR_PRIMARY), ft.Text("DIAGNÓSTICO ROCKS-FIT", size=20, weight="bold")], spacing=10),
+                            ft.Container(content=ft.Icon(ft.icons.CLOSE, size=20), on_click=lambda _: close_diag(), padding=5, border_radius=5, ink=True)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        ft.Divider(height=1, color="#ffffff10"),
+                        ft.Column([
+                            card_crm,
+                            card_cat,
+                            card_bio,
+                            diag_card("CÂMERA BIOMÉTRICA", True, "Dispositivo USB Ativo", "videocam"),
+                            diag_card("MOTOR NEURAL", DEEPFACE_ONLINE, "DeepFace: " + ("ATIVO" if DEEPFACE_ONLINE else "DESATIVADO"), "memory"),
+                        ], spacing=10, scroll=ft.ScrollMode.AUTO, height=400),
+                        ft.Row([
+                            ft.ElevatedButton("LIMPAR HARDWARE", on_click=lambda _: nuclear_cleanup(), expand=True, style=ft.ButtonStyle(bgcolor=COR_PRIMARY, color="white")),
+                            ft.ElevatedButton("TESTAR ENTRADA", on_click=lambda _: trigger_catraca("ENTRADA"), expand=True, bgcolor=COR_SUCCESS, color="white"),
+                            ft.ElevatedButton("TESTAR SAÍDA", on_click=lambda _: trigger_catraca("SAIDA"), expand=True, bgcolor=COR_ERROR, color="white"),
+                        ], spacing=10)
+                    ], spacing=20, tight=True),
+                    bgcolor="black", padding=ft.Padding(25, 25, 25, 25), border_radius=20, width=500,
+                    border=ft.Border(ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"))
+                ),
+                alignment=ft.Alignment(0, 0), bgcolor="#000000dd", expand=True, visible=True
+            )
+            def run_async_checks():
+                try:
+                    s_crm = check_crm()
+                    s_cat = check_catraca()
+                    s_bio = check_biometria()
+                    
+                    res_crm = diag_card("SERVIDOR CRM", s_crm, "IP: academiarocksfit.com.br", "cloud_done")
+                    card_crm.content = res_crm.content
+                    card_crm.border = res_crm.border
+                    
+                    res_cat = diag_card("CATRACA (RELÉ)", s_cat, f"IP: {CONFIG.get('catraca_ip')}", "dashboard")
+                    card_cat.content = res_cat.content
+                    card_cat.border = res_cat.border
+                    
+                    res_bio = diag_card("LEITOR DIGITAL", s_bio, "Scanner fprintd Ativo", "fingerprint")
+                    card_bio.content = res_bio.content
+                    card_bio.border = res_bio.border
+                    
+                    page.update()
+                except: pass
+
+            def close_diag():
+                global PAUSE_BIOMETRIA
+                if overlay_diag in page.overlay:
+                    page.overlay.remove(overlay_diag)
+                PAUSE_BIOMETRIA = False
+                if biometria_manager_global: biometria_manager_global.resume()
+                page.update()
+
+            page.overlay.append(overlay_diag)
             page.update()
+            
+            # Dispara os testes em segundo plano
+            threading.Thread(target=run_async_checks, daemon=True).start()
+            print("✅ [UI] Diagnóstico aberto.")
+        except Exception as ex:
+            print(f"❌ [UI] Erro crítico ao abrir diagnóstico: {ex}")
 
-        status_crm = check_crm()
-        status_cat = check_catraca()
-        status_cam = check_camera()
-        
-        def diag_card(label, status, details, icon_name):
-            cor = COR_SUCCESS if status else COR_ERROR
-            return ft.Container(
-                content=ft.Column([
-                    ft.Row([
-                        ft.Icon(icon_name, color=cor, size=24),
-                        ft.Text(label, weight="bold", size=16, color="#ffffff", expand=True),
-                        ft.Container(
-                            content=ft.Text("ONLINE" if status else "OFFLINE", color=cor, size=10, weight="bold"),
-                            padding=ft.padding.symmetric(horizontal=8, vertical=2),
-                            border=ft.border.all(1, cor),
-                            border_radius=4
-                        )
-                    ], alignment="spaceBetween"),
-                    ft.Text(details if status else "Falha de comunicação ou hardware não detectado", color=COR_TEXT_SEC, size=12),
+    def abrir_configuracoes(e=None):
+        try:
+            global PAUSE_BIOMETRIA
+            print("⚙️ [UI] Preparando Configurações...")
+            if state.get("close_enroll"):
+                try: state["close_enroll"]()
+                except: pass
+                
+            PAUSE_BIOMETRIA = True
+            if biometria_manager_global: biometria_manager_global.pause()
+
+            def update_config(key, value):
+                CONFIG[key] = value
+                save_settings(CONFIG)
+                update_global_from_config()
+                # Sincronização automática com a ponte
+                if key in ["catraca_ip", "catraca_porta"]:
+                    sync_ponte_catraca(key, value)
+                print(f"⚙️ [CONFIG] {key} alterado para {value}")
+                page.update()
+
+            # Labels Dinâmicos
+            lbl_face_thr = ft.Text(f"Sensibilidade (Threshold): {CONFIG['face_threshold']}", size=12, weight="bold")
+            lbl_face_streak = ft.Text(f"Ciclos de Confirmação (Streak): {CONFIG['face_streak']}", size=12, weight="bold")
+            lbl_face_skip = ft.Text(f"Frequência de Análise (Frames): {CONFIG['face_frame_skip']}", size=12, weight="bold")
+            lbl_fprint_timeout = ft.Text(f"Tempo Limite (Timeout): {CONFIG['fprint_timeout']}s", size=12, weight="bold")
+            lbl_cooldown_facial = ft.Text(f"Carência de Reconhecimento: {CONFIG.get('cooldown_facial', 30)}s", size=12, weight="bold")
+
+            lbl_face_model = ft.Text(f"Modelo de Deteção: {CONFIG.get('face_model', 'hog').upper()}", size=12, weight="bold")
+            lbl_face_scale = ft.Text(f"Escala de Análise: {int(CONFIG.get('face_scale', 0.5)*100)}%", size=12, weight="bold")
+
+            tab_facial = ft.Column([
+                ft.Text("REGULAGEM DE FIDELIDADE FACIAL", size=14, weight="bold", color=COR_PRIMARY),
+                ft.Text("Ajuste a sensibilidade do algoritmo neural para seu ambiente.", size=11, color=COR_TEXT_SEC),
+                ft.Divider(height=10, color="transparent"),
+
+                lbl_face_thr,
+                (slider_face_thr := ft.Slider(
+                    min=0.30, max=0.70, divisions=40,
+                    value=CONFIG['face_threshold'],
+                    on_change=lambda e: (
+                        setattr(lbl_face_thr, "value", f"Sensibilidade (Threshold): {round(e.control.value, 2)}"),
+                        update_config("face_threshold", round(e.control.value, 2))
+                    )
+                )),
+                ft.Text("◄ Menor = Mais Rígido (menos falsos) | Maior = Mais Permissivo ►", size=10, italic=True, color=COR_TEXT_SEC),
+
+                ft.Divider(height=20),
+                lbl_face_streak,
+                (slider_face_streak := ft.Slider(
+                    min=1, max=10, divisions=9,
+                    value=CONFIG['face_streak'],
+                    on_change=lambda e: (
+                        setattr(lbl_face_streak, "value", f"Ciclos de Confirmação (Streak): {int(e.control.value)}"),
+                        update_config("face_streak", int(e.control.value))
+                    )
+                )),
+                ft.Text("Quantas vezes seguidas a IA deve reconhecer para liberar.", size=10, italic=True, color=COR_TEXT_SEC),
+
+                ft.Divider(height=20),
+                lbl_face_skip,
+                (slider_face_skip := ft.Slider(min=1, max=30, divisions=29, value=CONFIG.get('face_frame_skip', 3),
+                          on_change=lambda e: (
+                              setattr(lbl_face_skip, "value", f"Frequência de Análise (Frames): {int(e.control.value)}"),
+                              update_config("face_frame_skip", int(e.control.value))
+                          ))),
+                ft.Text("Menor = Análise mais freqüente (mais CPU) | Maior = Mais econômico", size=10, italic=True, color=COR_TEXT_SEC),
+
+                ft.Divider(height=20),
+                lbl_face_model,
+                ft.Dropdown(
+                    label="Modelo de Detecção",
+                    value=CONFIG.get("face_model", "hog"),
+                    options=[
+                        ft.dropdown.Option("hog", "HOG – Rápido (CPU, recomendado)"),
+                        ft.dropdown.Option("cnn", "CNN – Preciso (GPU/CUDA, lento sem GPU)"),
+                    ],
+                    on_change=lambda e: (
+                        setattr(lbl_face_model, "value", f"Modelo de Deteção: {e.control.value.upper()}"),
+                        update_config("face_model", e.control.value)
+                    ),
+                    bgcolor="#111111",
+                ),
+                ft.Text("HOG recomendado para a maioria dos sistemas. CNN requer GPU CUDA.", size=10, italic=True, color=COR_TEXT_SEC),
+
+                ft.Divider(height=20),
+                lbl_face_scale,
+                (slider_face_scale := ft.Slider(min=0.25, max=1.0, divisions=15, value=CONFIG.get('face_scale', 0.5),
+                          on_change=lambda e: (
+                              setattr(lbl_face_scale, "value", f"Escala de Análise: {int(e.control.value*100)}%"),
+                              update_config("face_scale", round(e.control.value, 2))
+                          ))),
+                ft.Text("50% = Melhor equilíbrio velocidade/precisão | 100% = Máxima precisão", size=10, italic=True, color=COR_TEXT_SEC),
+
+                ft.Divider(height=20),
+                ft.Text("🔬 STATUS DO MOTOR NEURAL", size=12, weight="bold", color=COR_PRIMARY),
+                ft.Row([
+                    ft.Container(width=8, height=8, border_radius=4, bgcolor=COR_SUCCESS if DEEPFACE_ONLINE else COR_ERROR),
+                    ft.Text(
+                        f"DeepFace API {'ATIVA' if DEEPFACE_ONLINE else 'NÃO DISPONÍVEL (Verifique o servidor Django)'}",
+                        size=11, color=COR_TEXT_SEC
+                    )
                 ], spacing=8),
-                padding=20,
-                bgcolor=COR_CARD,
-                border_radius=12,
-                border=ft.border.all(1, COR_CARD_HIGH if status else COR_ERROR + "44")
+
+                ft.Divider(height=20),
+                ft.Text("☀️ AUTORREGULAGEM DE LUMINOSIDADE", size=12, weight="bold", color=COR_PRIMARY),
+                ft.Text(
+                    "Analisa a luminosidade atual da câmera e ajusta o threshold automaticamente "
+                    "para o ambiente de iluminação.",
+                    size=10, italic=True, color=COR_TEXT_SEC
+                ),
+                ft.ElevatedButton(
+                    content=ft.Row([
+                        ft.Icon("auto_fix_high", color="white", size=18),
+                        ft.Text("  CALIBRAR AGORA", color="white", weight="bold", size=13)
+                    ], tight=True),
+                    style=ft.ButtonStyle(
+                        bgcolor=COR_PRIMARY,
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(left=20, right=20, top=12, bottom=12),
+                    ),
+                    on_click=lambda _: auto_calibrate_threshold(
+                        page, lbl_face_thr, lbl_face_streak, lbl_face_skip, lbl_face_scale,
+                        slider_face_thr, slider_face_streak, slider_face_skip, slider_face_scale,
+                        update_config
+                    ),
+                ),
+
+                ft.Divider(height=10),
+                ft.ElevatedButton(
+                    content=ft.Row([
+                        ft.Icon("save", color="white", size=18),
+                        ft.Text("  SALVAR PARÂMETROS FACIAIS", color="white", weight="bold", size=13)
+                    ], tight=True),
+                    style=ft.ButtonStyle(
+                        bgcolor=COR_SUCCESS,
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(20, 12, 20, 12),
+                    ),
+                    on_click=lambda _: (
+                        save_settings(CONFIG),
+                        setattr(page, "snack_bar", ft.SnackBar(ft.Text("✅ Parâmetros Faciais salvos e aplicados!"), bgcolor=COR_SUCCESS)),
+                        setattr(page.snack_bar, "open", True),
+                        page.update()
+                    ),
+                ),
+            ], scroll=ft.ScrollMode.AUTO, spacing=10)
+
+            # TAB 2: Catraca & Rede
+            tab_catraca = ft.Column([
+                ft.Text("COMUNICAÇÃO COM HARDWARE", size=14, weight="bold", color=COR_PRIMARY),
+                ft.TextField(label="IP da Catraca", value=CONFIG['catraca_ip'], 
+                             on_blur=lambda e: update_config("catraca_ip", e.control.value), bgcolor="#111111"),
+                ft.TextField(label="Porta Socket", value=str(CONFIG['catraca_porta']), 
+                             on_blur=lambda e: (
+                                 update_config("catraca_porta", int(e.control.value)) if e.control.value.isdigit() else None
+                             ), bgcolor="#111111"),
+                ft.Divider(height=20),
+                ft.Text("SENTIDOS DE ROTAÇÃO", size=14, weight="bold", color=COR_PRIMARY),
+                ft.Dropdown(
+                    label="Sentido Entrada",
+                    value=str(CONFIG['catraca_sentido_entrada']),
+                    options=[ft.dropdown.Option("0", "Horário (Comando 0)"), ft.dropdown.Option("1", "Anti-Horário (Comando 1)")],
+                    on_change=lambda e: update_config("catraca_sentido_entrada", int(e.control.value))
+                ),
+                ft.Dropdown(
+                    label="Sentido Saída",
+                    value=str(CONFIG['catraca_sentido_saida']),
+                    options=[ft.dropdown.Option("0", "Horário (Comando 0)"), ft.dropdown.Option("1", "Anti-Horário (Comando 1)")],
+                    on_change=lambda e: update_config("catraca_sentido_saida", int(e.control.value))
+                ),
+                ft.Divider(height=20),
+                ft.Text("REGRAS DE ACESSO", size=14, weight="bold", color=COR_PRIMARY),
+                lbl_cooldown_facial,
+                ft.Slider(min=5, max=120, divisions=115, value=CONFIG.get('cooldown_facial', 30),
+                          on_change=lambda e: (
+                              setattr(lbl_cooldown_facial, "value", f"Carência de Reconhecimento: {int(e.control.value)}s"),
+                              update_config("cooldown_facial", int(e.control.value))
+                          )),
+                ft.Text("Tempo mínimo entre uma identificação e outra para o mesmo aluno.", size=10, italic=True, color=COR_TEXT_SEC),
+            ], scroll=ft.ScrollMode.AUTO, spacing=15)
+
+            # TAB 3: Digital & Câmera
+            tab_hardware = ft.Column([
+                ft.Text("BIOMETRIA DIGITAL", size=14, weight="bold", color=COR_PRIMARY),
+                lbl_fprint_timeout,
+                ft.Slider(min=5, max=60, value=CONFIG['fprint_timeout'], 
+                          on_change=lambda e: (
+                              setattr(lbl_fprint_timeout, "value", f"Tempo Limite (Timeout): {int(e.control.value)}s"),
+                              update_config("fprint_timeout", int(e.control.value))
+                          )),
+                
+                ft.Divider(height=20),
+                ft.Text("CÂMERA DO SISTEMA", size=14, weight="bold", color=COR_PRIMARY),
+                ft.Switch(label="Câmera Ativada", value=CONFIG['camera_enabled'], 
+                          on_change=lambda e: update_config("camera_enabled", e.control.value)),
+                ft.Text("Desative para usar apenas a digital e economizar recursos.", size=10, italic=True),
+            ], scroll=ft.ScrollMode.AUTO, spacing=15)
+
+            overlay_config = ft.Container(
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Text("CONFIGURAÇÕES TÉCNICAS", size=20, weight="bold", color="white"),
+                            ft.Container(content=ft.Icon(ft.icons.CLOSE, size=20), on_click=lambda _: close_config(), padding=5, border_radius=5, ink=True)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        ft.Divider(height=1, color="#ffffff10"),
+                        ft.Tabs(
+                            selected_index=0,
+                            animation_duration=300,
+                            tabs=[
+                                ft.Tab(text="FACIAL", content=ft.Container(tab_facial, padding=20)),
+                                ft.Tab(text="CATRACA", content=ft.Container(tab_catraca, padding=20)),
+                                ft.Tab(text="HARDWARE", content=ft.Container(tab_hardware, padding=20)),
+                            ],
+                            expand=True
+                        )
+                    ], expand=True),
+                    bgcolor=COR_BG, padding=30, border_radius=20, width=600, height=750,
+                    border=ft.Border(ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"))
+                ),
+                alignment=ft.Alignment(0, 0), bgcolor="#000000dd", expand=True
             )
 
-        btn_test = ft.ElevatedButton(
-            "TESTAR ABERTURA MANUAL", 
-            icon="vpn_key", 
-            on_click=lambda _: test_relay(), 
-            style=ft.ButtonStyle(
-                bgcolor=COR_PRIMARY, 
-                color="#ffffff", 
-                shape=ft.RoundedRectangleBorder(radius=8),
-                padding=20
-            )
-        )
+            def close_config():
+                global PAUSE_BIOMETRIA
+                if overlay_config in page.overlay:
+                    page.overlay.remove(overlay_config)
+                PAUSE_BIOMETRIA = False
+                if biometria_manager_global: biometria_manager_global.resume()
+                page.update()
 
-        dlg = ft.AlertDialog(
-            title=ft.Text("DIAGNÓSTICO DO SISTEMA", font_family="Space Grotesk", weight="bold"),
-            bgcolor=COR_BG,
-            content=ft.Container(
-                width=500,
-                height=650,
-                content=ft.Column([
-                    ft.Text("STATUS DE CONEXÃO E HARDWARE", color=COR_TEXT_SEC, size=11, weight="bold", opacity=0.7),
-                    diag_card("SERVIDOR CRM", status_crm, f"IP: academiarocksfit.com.br (Porta 443)", "cloud_done"),
-                    diag_card("CATRACA (RELÉ)", status_cat, f"IP: 192.168.1.100 (Porta 1001)", "dashboard"),
-                    diag_card("CÂMERA BIOMÉTRICA", status_cam, "Dispositivo USB /dev/video0 Ativo", "videocam"),
-                    diag_card("LEITOR DIGITAL", check_biometria(), "Scanner fprintd detectado no barramento USB", "fingerprint"),
-                    diag_card("MOTOR NEURAL", FR_DISPONIVEL, f"{len(GLOBAL_PERFIS)} alunos mapeados em memória", "memory"),
-                    ft.Divider(height=10, color="transparent"),
-                    ft.Text("AÇÕES RÁPIDAS", color=COR_TEXT_SEC, size=11, weight="bold", opacity=0.7),
-                    ft.Container(content=btn_test, alignment=ft.Alignment(0, 0))
-                ], spacing=10, scroll=ft.ScrollMode.ADAPTIVE)
-            ),
-            actions=[ft.TextButton("FECHAR", on_click=lambda _: (setattr(dlg, 'open', False), page.update()))],
-        )
-        page.overlay.append(dlg)
-        dlg.open = True
-        page.update()
-
-    def fechar_historico(dlg):
-        dlg.open = False
-        if dlg in page.overlay:
-            page.overlay.remove(dlg)
-        page.update()
+            page.overlay.append(overlay_config)
+            page.update()
+            print("✅ [UI] Configurações abertas.")
+        except Exception as ex:
+            print(f"❌ [UI] Erro ao abrir configurações: {ex}")
 
     # ==========================
     # BARRA DE TÍTULO CUSTOMIZADA (PREMIUM) - FUNÇÃO GERADORA
     # ==========================
     def create_title_bar(title_text="ROCKS FIT - SISTEMA DE RECEPÇÃO"):
         def close_app(e):
-            camera_estado["rodando"] = False
-            time.sleep(0.5)
+            if hasattr(page, "_cam_estado") and page._cam_estado:
+                page._cam_estado["rodando"] = False
+            if state in GLOBAL_SESSION_STATES:
+                GLOBAL_SESSION_STATES.remove(state)
             try:
                 page.window.close()
             except:
-                import sys
-                sys.exit(0)
+                pass
 
         def minimize_app(e): 
             try: page.window.minimized = True
@@ -1315,7 +2439,7 @@ def main(page: ft.Page):
         def maximize_app(e): 
             try:
                 page.window.maximized = not page.window.maximized
-                page.update()
+                rocksfit_core_update(page)
             except: pass
 
         return ft.Container(
@@ -1324,18 +2448,18 @@ def main(page: ft.Page):
                     ft.WindowDragArea(
                         content=ft.Container(
                             content=ft.Row([
-                                ft.Image(src="assets/rkslogo.png", height=20) if os.path.exists("assets/rkslogo.png") else ft.Icon("fitness_center", color=COR_PRIMARY, size=20),
+                                ft.Image(src="media/imagens/rkslogo.png", height=20) if os.path.exists("media/imagens/rkslogo.png") else ft.Icon("fitness_center", color=COR_PRIMARY, size=20),
                                 ft.Text(title_text, size=11, weight="bold", color=COR_TEXT_SEC, font_family="Space Grotesk"),
                             ], spacing=10),
-                            padding=ft.padding.only(left=20),
+                            padding=ft.Padding(left=20, right=0, top=0, bottom=0),
                         ),
                         expand=True,
                     ),
                     ft.Row(
                         [
-                            ft.IconButton(ft.Icons.REMOVE, icon_size=16, icon_color=COR_TEXT_SEC, on_click=minimize_app),
-                            ft.IconButton(ft.Icons.CROP_SQUARE, icon_size=16, icon_color=COR_TEXT_SEC, on_click=maximize_app),
-                            ft.IconButton(ft.Icons.CLOSE, icon_size=16, icon_color="#e74c3c", on_click=close_app),
+                            ft.Container(content=ft.Icon(ft.icons.REMOVE, size=20, color="#adaaaa"), on_click=minimize_app, padding=6, border_radius=6, ink=True),
+                            ft.Container(content=ft.Icon(ft.icons.CROP_SQUARE, size=20, color="#adaaaa"), on_click=maximize_app, padding=6, border_radius=6, ink=True),
+                            ft.Container(content=ft.Icon(ft.icons.CLOSE, color="#e74c3c", size=20), on_click=close_app, padding=6, border_radius=6, ink=True),
                         ],
                         spacing=0,
                     ),
@@ -1362,582 +2486,809 @@ def main(page: ft.Page):
     )
 
     # Layouts iniciais (instâncias únicas)
-    layout = ft.Column([create_title_bar(), main_container], expand=True, spacing=0)
+    dashboard_layout = ft.Column([create_title_bar(), main_container], expand=True, spacing=0)
 
+    # --- ARQUITETURA SINGLE-VIEW (ESTABILIDADE TOTAL LINUX) ---
+    app_content_wrapper = ft.Container(content=dashboard_layout, expand=True)
+    page.add(app_content_wrapper)
 
-    # ==========================
-    # ROTEAMENTO DE TELAS (DASHBOARD vs CÂMERA)
-    # ==========================
     def route_change(e):
-        # Limpa callbacks de UI da rota anterior para evitar "instabilidade" e erros de memória
+        route = e.route if hasattr(e, "route") else page.route
+        print(f"🛣️ Roteamento Single-View: {route}")
+        
+        # Limpa callbacks globais
         state["_ui_identificado_cb"] = None
         state["_ui_aguardando_cb"] = None
         
-        route = e.route if hasattr(e, "route") else page.route
-        print(f"🛣️ Mudança de rota: {route}")
-        
-        # Evita limpar se já estiver na rota (ajuda na estabilidade do Desktop)
-        if len(page.views) > 0 and page.views[-1].route == route:
-            return
+        # Para câmera se estiver ativa
+        if hasattr(page, "_cam_estado") and page._cam_estado:
+            page._cam_estado["rodando"] = False
+            time.sleep(0.3)
 
-        page.views.clear()
-        
-        if "/monitor" in route:
-            page.title = "Monitor - Rocks Fit"
-            surf = "#0e0e0e"
-            surf_low = "#131313"
-            surf_high = "#201f1f"
-            surf_highest = "#262626"
-            primary = "#ff7a2f"
-            
-            titulo = ft.Row([
-                ft.Text("BIOMETRIA ", size=36, font_family="Space Grotesk", weight="bold", italic=True, color="#ffffff"),
-                ft.Text("ATIVA", size=36, font_family="Space Grotesk", weight="bold", italic=True, color=primary)
-            ], spacing=0)
-            subtitulo = ft.Text("APROXIME-SE PARA VALIDAR", size=14, color="#adaaaa", weight="w500")
-            
-            img_cam = ft.Image(
-                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-                fit=ft.ImageFit.CONTAIN,
-                expand=True,
-            )
-            # Wrapper centralizado
-            img_cam_wrapper = ft.Container(
-                content=img_cam,
-                expand=True,
-                alignment=ft.Alignment(0, 0),
-            )
-
-            # Overlay: borda laranja sobre todo o quadro
-            cam_overlay = ft.Container(
-                bgcolor="transparent",
-                border=ft.border.all(2, "#ff7a2f66"),
-                border_radius=16,
-                expand=True,
-            )
-
-            lbl_cam_status = ft.Text("AGUARDANDO...", size=14, weight="bold", color="#000000")
-            badge_cam_status = ft.Container(
-                content=ft.Row([
-                    ft.Container(width=12, height=12, border_radius=6, bgcolor="#000000"),
-                    lbl_cam_status
-                ], alignment="center", spacing=8),
-                bgcolor=primary,
-                border_radius=20,
-                padding=ft.padding.symmetric(horizontal=24, vertical=10),
-                margin=ft.padding.only(bottom=20)
-            )
-
-            cam_container = ft.Container(
-                content=ft.Stack(
-                    [
-                        img_cam_wrapper,
-                        cam_overlay,
-                        ft.Container(content=badge_cam_status, alignment=ft.Alignment(0, 1)),
-                    ],
-                    expand=True,
-                ),
-                expand=True,
-                bgcolor=surf_highest,
-                border_radius=16,
-                margin=ft.padding.only(top=10),
-                border=ft.border.all(1, "#ffffff10"),
-                clip_behavior=ft.ClipBehavior.HARD_EDGE,
-            )
-            
-            
-            left_col = ft.Column(
-                [titulo, subtitulo, cam_container],
-                expand=True,
-                spacing=4,
-            )
-            
-            # PAINEL DIREITO: foto proeminente do aluno identificado
-            lbl_nome = ft.Text(
-                "AGUARDANDO", size=22, font_family="Space Grotesk",
-                weight="bold", color="#ffffff", text_align=ft.TextAlign.CENTER
-            )
-            lbl_matricula = ft.Text(
-                "Posicione-se em frente à câmera", size=13,
-                color="#adaaaa", text_align=ft.TextAlign.CENTER
-            )
-            lbl_msg = ft.Text(
-                "", size=13, color="#adaaaa", text_align=ft.TextAlign.CENTER
-            )
-
-            # Foto grande placeholder
-            img_perfil = ft.Image(
-                src="", width=180, height=180,
-                border_radius=90, fit=ft.ImageFit.COVER,
-                visible=False
-            )
-            icon_placeholder = ft.Container(
-                content=ft.Icon("person", color="#555555", size=80),
-                width=180, height=180, border_radius=90,
-                bgcolor=surf_highest,
-                border=ft.border.all(3, "#333333"),
-                alignment=ft.Alignment(0, 0),
-                visible=True,
-            )
-            foto_stack = ft.Stack(
-                [icon_placeholder, img_perfil],
-                width=180, height=180
-            )
-
-            lbl_status_tag = ft.Text("INATIVO", size=14, weight="bold", color="#ff7351")
-            status_container = ft.Container(
-                content=ft.Row([
-                    ft.Container(width=10, height=10, border_radius=5, bgcolor="#ff7351"),
-                    lbl_status_tag,
-                ], spacing=8, alignment=ft.MainAxisAlignment.CENTER),
-                bgcolor="#ff735133",
-                padding=ft.padding.symmetric(horizontal=20, vertical=10),
-                border_radius=20,
-            )
-
-            card_perfil = ft.Container(
-                content=ft.Column([
-                    ft.Container(content=foto_stack, alignment=ft.Alignment(0, 0), margin=ft.padding.only(bottom=20)),
-                    ft.Container(content=lbl_nome, alignment=ft.Alignment(0, 0)),
-                    ft.Container(content=lbl_matricula, alignment=ft.Alignment(0, 0), margin=ft.padding.only(bottom=16)),
-                    ft.Container(content=status_container, alignment=ft.Alignment(0, 0)),
-                    ft.Divider(color=surf_highest, height=28),
-                    ft.Row([
-                        ft.Text("UNIDADE", size=12, color="#adaaaa"),
-                        ft.Text("ROCKS FIT #01", size=13, weight="bold", color="#ffffff")
-                    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                    ft.Container(content=lbl_msg, alignment=ft.Alignment(0, 0), margin=ft.padding.only(top=8)),
-                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
-                bgcolor=surf_high, padding=30, border_radius=20, expand=True,
-            )
-
-            card_capacidade = ft.Container(
-                content=ft.Column([
-                    ft.Row([
-                        ft.Text("CAPACIDADE", size=18, font_family="Space Grotesk", weight="bold", italic=True, color="#000000"),
-                        ft.Icon("people", color="#000000")
-                    ], alignment="spaceBetween"),
-                    ft.Row([
-                        ft.Text("74%", size=48, font_family="Space Grotesk", weight="bold", color="#000000"),
-                        ft.Text("LOTADO", size=12, weight="bold", color="#000000")
-                    ], alignment="spaceBetween", vertical_alignment="end"),
-                    ft.ProgressBar(value=0.74, color="#000000", bgcolor="#ffffff40", height=8)
-                ]),
-                gradient=ft.LinearGradient(begin=ft.Alignment(-1, -1), end=ft.Alignment(1, 1), colors=["#ff9159", "#ff7a2f"]),
-                padding=30, border_radius=20, margin=ft.padding.only(top=16)
-            )
-
-            right_col = ft.Container(content=ft.Column([card_perfil, card_capacidade], expand=True), width=380, margin=ft.padding.only(left=40))
-            
-            monitor_layout = ft.Container(
-                content=ft.Column([
-                    ft.Container(
-                        content=ft.Row([
-                            ft.Text("ROCKS FIT", size=24, font_family="Space Grotesk", weight="bold", italic=True, color=primary),
-                            ft.Row([ft.Text("Biometria", color=primary, weight="bold"), ft.Text("Dashboard", color="#adaaaa"), ft.Text("Membros", color="#adaaaa")], spacing=30),
-                            ft.Row([ft.Icon("sensors", color=primary), ft.Icon("notifications", color=primary)], spacing=15)
-                        ], alignment="spaceBetween"), margin=ft.padding.only(bottom=16)
-                    ),
-                    ft.Row([left_col, right_col], expand=True),
-                    ft.Container(
-                        content=ft.Row([
-                            ft.Row([
-                                ft.Container(width=8, height=8, border_radius=4, bgcolor=primary),
-                                ft.Text("SERVER: ONLINE", size=10, weight="bold", color="#adaaaa"),
-                                ft.Container(width=8, height=8, border_radius=4, bgcolor=primary, margin=ft.padding.only(left=20)),
-                                ft.Text("SCANNER: ACTIVE", size=10, weight="bold", color="#adaaaa"),
-                            ]),
-                            ft.Text("SÃO PAULO, BR", size=10, color="#adaaaa")
-                        ], alignment="spaceBetween"), margin=ft.padding.only(top=10)
-                    )
-                ], expand=True), expand=True, padding=ft.padding.symmetric(horizontal=30, vertical=20), bgcolor=surf
-            )
-            
-            # Para qualquer loop anterior antes de abrir um novo
-            if hasattr(page, "_cam_estado") and page._cam_estado:
-                page._cam_estado["rodando"] = False
-                time.sleep(0.5) # Aumentado para garantir liberação do hardware
-            camera_estado = {"rodando": True}
-            page._cam_estado = camera_estado
-
-            def _set_aguardando():
-                lbl_nome.value = "AGUARDANDO"
-                lbl_nome.color = "#ffffff"
-                lbl_matricula.value = "Posicione-se em frente à câmera"
-                lbl_msg.value = ""
-                lbl_status_tag.value = "INATIVO"
-                lbl_status_tag.color = "#ff7351"
-                status_container.bgcolor = "#ff735133"
-                status_container.content.controls[0].bgcolor = "#ff7351"
-                img_perfil.visible = False
-                icon_placeholder.visible = True
-                lbl_cam_status.value = "AGUARDANDO..."
-                badge_cam_status.bgcolor = primary
-                try: page.update()
-                except: pass
-
-            def _set_identificado(data, liberado):
-                nome = data.get("nome", "ALUNO").upper()
-                mat = str(data.get("matricula", ""))
-                furl = data.get("foto_url", "")
-                lbl_nome.value = nome
-                lbl_matricula.value = f"Matrícula: {mat}"
-                if furl:
-                    if furl.startswith("/"): furl = f"{SITE_URL}{furl}"
-                    img_perfil.src = furl
-                    img_perfil.visible = True
-                    icon_placeholder.visible = False
-                else:
-                    img_perfil.visible = False
-                    icon_placeholder.visible = True
-                if liberado:
-                    lbl_status_tag.value = "✔ LIBERADO"
-                    lbl_status_tag.color = "#000000"
-                    status_container.bgcolor = "#2ecc71"
-                    status_container.content.controls[0].bgcolor = "#000000"
-                    lbl_cam_status.value = "ACESSO PERMITIDO"
-                    badge_cam_status.bgcolor = "#2ecc71"
-                    lbl_nome.color = "#2ecc71"
-                    lbl_msg.value = "✔ Acesso liberado"
-                    lbl_msg.color = "#2ecc71"
-                else:
-                    lbl_status_tag.value = "✖ BLOQUEADO"
-                    lbl_status_tag.color = "#000000"
-                    status_container.bgcolor = "#e74c3c"
-                    status_container.content.controls[0].bgcolor = "#000000"
-                    lbl_cam_status.value = "ACESSO NEGADO"
-                    badge_cam_status.bgcolor = "#e74c3c"
-                    lbl_nome.color = "#e74c3c"
-                    lbl_msg.value = "✖ Plano vencido ou bloqueado"
-                    lbl_msg.color = "#e74c3c"
-                try: page.update()
-                except: pass
-
-            state["_ui_identificado_cb"] = _set_identificado
-            state["_ui_aguardando_cb"] = _set_aguardando
-            try: page.update()
-            except: pass
-
-            def loop_camera():
-                if "cv2" not in sys.modules:
-                    print("⚠️ cv2 não disponível – câmera desativada")
-                    return
-                
-                # Tenta travar o acesso à câmera (aguarda até 5s pela liberação de outra aba)
-                if not CAM_LOCK.acquire(blocking=True, timeout=5.0):
-                    print("📷 Câmera bloqueada por outra sessão.")
-                    lbl_cam_status.value = "CÂMERA EM USO (AGUARDE...)"
-                    badge_cam_status.bgcolor = "#f39c12"
-                    try: page.update()
-                    except: pass
-                    return
-
-                cap = None
-                try:
-                    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-                    cooldown = 0
-                    votos = {}
-                    voto_lider_anterior = None
-                    frame_count = 0
-                    last_fr_time = 0
-
-                    for device in ["/dev/video0", "/dev/video1", 0, 1]:
-                        # ... (keep existing device logic)
-                        for backend in [cv2.CAP_V4L, cv2.CAP_FFMPEG, cv2.CAP_ANY]:
-                            try:
-                                c = cv2.VideoCapture(device, backend)
-                                if c.isOpened():
-                                    c.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                                    c.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                                    ret, frame = c.read()
-                                    if ret and frame is not None:
-                                        cap = c
-                                        print(f"✅ Câmera aberta: {device} backend={backend}")
-                                        break
-                                    c.release()
-                            except Exception: pass
-                        if cap: break
-
-                    if not cap:
-                        print("⚠️ Nenhuma câmera disponível")
-                        lbl_cam_status.value = "CÂMERA NÃO ENCONTRADA"
-                        badge_cam_status.bgcolor = "#e74c3c"
-                        try: page.update()
-                        except: pass
-                        return
-                    
-                    while camera_estado["rodando"] and cap.isOpened():
-                        ret, frame = cap.read()
-                        if not ret: break
-                        
-                        frame_count += 1
-                        frame = cv2.flip(frame, 1)
-                        
-                        # Processa Haar apenas a cada 2 frames para economizar CPU
-                        faces = []
-                        if frame_count % 2 == 0:
-                            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                            faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-                            
-                        for (x,y,w,h) in faces:
-                            cv2.rectangle(frame, (x,y), (x+w, y+h), (242, 113, 33), 2)
-                            
-                        # Reconhecimento Neural: apenas se houver rosto e após cooldown e delay entre verificações
-                        now = time.time()
-                        if len(faces) > 0 and cooldown <= 0 and (now - last_fr_time) > 1.0:
-                            last_fr_time = now
-                            (x,y,w,h) = faces[0]
-                            perfis = GLOBAL_PERFIS
-                            melhor_aluno = None
-
-                            if not perfis:
-                                lbl_cam_status.value = "SEM PERFIS"; badge_cam_status.bgcolor = "#e74c3c"
-                                try: page.update()
-                                except: pass
-                                cooldown = 60
-                            elif FR_DISPONIVEL:
-                                # Reduz imagem para o neural ser instantâneo
-                                small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
-                                h_small, w_small = small_frame.shape[:2]
-                                rgb_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
-                                rgb_small = np.ascontiguousarray(rgb_small)
-                                
-                                # Escala e CLIP para evitar crash no dlib (coordenadas fora da imagem)
-                                top = max(0, int(y/2))
-                                right = min(w_small, int((x+w)/2))
-                                bottom = min(h_small, int((y+h)/2))
-                                left = max(0, int(x/2))
-                                
-                                # Garante que a área é válida
-                                if right > left and bottom > top:
-                                    with FR_LOCK:
-                                        face_encs = fr.face_encodings(rgb_small, [(top, right, bottom, left)], num_jitters=0)
-                                        if face_encs:
-                                            encoding_webcam = face_encs[0]
-                                            conhecidos_encs = [p['encoding'] for p in perfis.values() if 'encoding' in p]
-                                            conhecidos_dados = [p['data'] for p in perfis.values() if 'encoding' in p]
-                                            if conhecidos_encs:
-                                                distancias = fr.face_distance(conhecidos_encs, encoding_webcam)
-                                                min_idx = np.argmin(distancias)
-                                                if distancias[min_idx] < 0.5:
-                                                    melhor_aluno = conhecidos_dados[min_idx]
-                                                    print(f"🧬 Neural: {melhor_aluno['nome']} (dist: {distancias[min_idx]:.3f})")
-                            else:
-                                # Fallback ORB (já otimizado)
-                                margin = int(w * 0.2); x1, y1 = max(0, x - margin), max(0, y - margin); x2, y2 = min(frame.shape[1], x + w + margin), min(frame.shape[0], y + h + margin)
-                                face_roi = frame[y1:y2, x1:x2]; gray_webcam = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8)).apply(cv2.cvtColor(cv2.resize(face_roi, (200, 200)), cv2.COLOR_BGR2GRAY))
-                                orb = cv2.ORB_create(700); _, des_webcam = orb.detectAndCompute(gray_webcam, None)
-                                if des_webcam is not None:
-                                    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False); melhor_score = 0
-                                    for mat, perfil in perfis.items():
-                                        if 'des' not in perfil: continue
-                                        matches = bf.knnMatch(des_webcam, perfil['des'], k=2)
-                                        bons = [m for m, n in matches if m.distance < 0.75 * n.distance]
-                                        if len(bons) > melhor_score: melhor_score = len(bons); melhor_aluno = perfil['data']
-                                    if melhor_aluno and melhor_score >= 10:
-                                        if str(melhor_aluno['matricula']) in perfis and 'img' in perfis[str(melhor_aluno['matricula'])]:
-                                            res = cv2.matchTemplate(gray_webcam.astype('float32'), perfis[str(melhor_aluno['matricula'])]['img'].astype('float32'), cv2.TM_CCOEFF_NORMED)
-                                            if res[0][0] < 0.35: melhor_aluno = None
-
-                            if melhor_aluno:
-                                mat_lider = str(melhor_aluno['matricula'])
-                                if mat_lider != voto_lider_anterior: votos = {}; voto_lider_anterior = mat_lider
-                                votos[mat_lider] = votos.get(mat_lider, 0) + 1
-                                if votos[mat_lider] >= (2 if FR_DISPONIVEL else 10):
-                                    print(f"✅ Identificado: {melhor_aluno['nome']}"); votos = {}; voto_lider_anterior = None
-                                    try:
-                                        r = requests.get(f"{SITE_URL}/api/catraca-check/{melhor_aluno['matricula']}/?token={SYNC_TOKEN}", timeout=3)
-                                        data = r.json() if r.status_code == 200 else melhor_aluno
-                                    except Exception: data = melhor_aluno
-                                    liberado = data.get("status", "") in ["ativo", "liberado"]
-                                    _set_identificado(data, liberado)
-                                    if liberado:
-                                        trigger_catraca(f"Face: {melhor_aluno['nome']}")
-                                    cooldown = 120
-                                    threading.Thread(target=lambda: (time.sleep(4), _set_aguardando()), daemon=True).start()
-
-                        if cooldown > 0: cooldown -= 1
-                        
-                        # Atualiza UI apenas a cada 2 frames para reduzir banda
-                        if frame_count % 2 == 0:
-                            try:
-                                _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-                                img_cam.src_base64 = base64.b64encode(buffer).decode('utf-8')
-                                # Update super seguro no loop de vídeo
-                                try: page.update()
-                                except: pass
-                            except Exception:
-                                pass
-                        time.sleep(0.01)
-                except Exception as e: print("Erro na câmera Flet:", e)
-                finally:
-                    if cap: cap.release()
-                    try:
-                        CAM_LOCK.release()
-                    except:
-                        pass
-
-            def loop_digital():
-                global BIOMETRIA_BUSY
-                if not biometria_manager_global: return
-                print("☝️ [FPRINT] Loop de biometria digital iniciado")
-                
-                while camera_estado["rodando"]:
-                    if BIOMETRIA_BUSY:
-                        time.sleep(1)
-                        continue
-                    
-                    path_digital = "BIOMETRIA_DATA/ALUNOS"
-                    if not os.path.exists(path_digital):
-                        os.makedirs(path_digital, exist_ok=True)
-                    
-                    # Lista arquivos no formato {matricula}_{dedo}.finger
-                    files = [f for f in os.listdir(path_digital) if f.endswith(".finger")]
-                    
-                    if not files:
-                        time.sleep(2)
-                        continue
-                    
-                    # Filtra apenas alunos sincronizados para evitar checar registros órfãos
-                    matriculas_validas = [str(a.get("matricula")) for a in state["alunos_data"]]
-                    
-                    biometrias = []
-                    for f in files:
-                        name = f.replace(".finger", "")
-                        if "_" in name:
-                            parts = name.split("_")
-                            mat = parts[0]
-                            if mat in matriculas_validas:
-                                biometrias.append((mat, parts[1]))
-                        else:
-                            mat = name
-                            if mat in matriculas_validas:
-                                biometrias.append((mat, "right-index-finger"))
-
-                    # Otimização: A verificação por fprintd-verify é lenta. 
-                    # Idealmente fprintd deveria gerenciar isso, mas como estamos emulando 1:N
-                    # vamos tentar agrupar por dedo ou reduzir a frequência.
-                    for mat, finger in biometrias:
-                        if not camera_estado["rodando"] or BIOMETRIA_BUSY: break
-                        
-                        # Chama a verificação bloqueante (com timeout interno na classe)
-                        if biometria_manager_global.verify(mat, finger):
-                            print(f"✅ [FPRINT] Correspondência: {mat} ({finger})")
-                            aluno_data = next((a for a in state["alunos_data"] if str(a.get("matricula")) == mat), None)
-                            if aluno_data:
-                                try:
-                                    # Valida no CRM antes de liberar
-                                    r = requests.get(f"{SITE_URL}/api/catraca-check/{mat}/?token={SYNC_TOKEN}", timeout=3)
-                                    data = r.json() if r.status_code == 200 else aluno_data
-                                except: data = aluno_data
-                                
-                                liberado = data.get("status", "") in ["ativo", "liberado"]
-                                _set_identificado(data, liberado)
-                                if liberado:
-                                    trigger_catraca(f"Digital: {data.get('nome', mat)}")
-                                
-                                time.sleep(4) # Cooldown após sucesso
-                                _set_aguardando()
-                                break
-                    
-                    time.sleep(0.1) # Breve pausa entre ciclos completos
-
-            threading.Thread(target=loop_camera, daemon=True).start()
-            # Combinamos a barra (nova instância) com o layout do monitor
-            monitor_with_bar = ft.Column([create_title_bar("MONITOR DE ACESSO - ROCKS FIT"), monitor_layout], expand=True, spacing=0)
-            page.views.append(ft.View("/monitor", [monitor_with_bar], bgcolor=surf, padding=0))
+        if route == "/monitor":
+            render_monitor_view()
         else:
-            page.title = "ROCKS FIT - RECEPÇÃO"
-            # O layout principal também recebe uma barra nova a cada mudança de rota para garantir estabilidade
-            layout_final = ft.Column([create_title_bar(), main_container], expand=True, spacing=0)
-            page.views.append(ft.View("/", [layout_final], padding=0, bgcolor=COR_BG))
+            app_content_wrapper.content = dashboard_layout
+            state["_ui_identificado_cb"] = lambda d, l, m, s: _dashboard_feedback(d, l, m, s)
+            state["_ui_aguardando_cb"] = lambda: page.pubsub.send_all({"type": "aguardando"}) # Mantém compatibilidade
+            rocksfit_core_update(page)
+
+
+    def _dashboard_feedback(data, liberado, metodo, sentido="ENTRADA"):
+        try:
+            nome_completo = data.get("nome", "Cliente")
+            nome = nome_completo.split()[0].upper()
+            cor = COR_SUCCESS if liberado else COR_ERROR
+            
+            venc = data.get("vencimento", data.get("validade", "N/A"))
+            dias = data.get("dias_restantes", data.get("dias", 0))
+            matricula = data.get("matricula", "")
+            
+            # --- OTIMIZAÇÃO INDUSTRIAL DE VISUALIZAÇÃO: BASE64 EM MEMÓRIA ---
+            import base64
+            caminho_existente = None
+            foto_base64 = None
+            
+            if matricula:
+                for ext in [".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG"]:
+                    test_path = os.path.join("/home/ccs/Modelos/Rocks-Fit/media/alunos/fotos", f"aluno_{matricula}{ext}")
+                    if os.path.exists(test_path):
+                        caminho_existente = test_path
+                        break
+            
+            if caminho_existente:
+                try:
+                    with open(caminho_existente, "rb") as image_file:
+                        foto_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+                except Exception as ex:
+                    print(f"⚠️ [UI] Erro base64 no painel: {ex}")
+            
+            # 1. ATUALIZA A SIDEBAR ESQUERDA (NO LUGAR DA LOGOMARCA)
+            if lbl_side_nome:
+                lbl_side_nome.value = f"{nome} - {sentido}"
+                lbl_side_nome.color = cor
+            
+            if lbl_side_vencimento:
+                lbl_side_vencimento.value = f"CRÉDITO: {dias} DIAS"
+
+            if profile_img:
+                if foto_base64:
+                    profile_img.src_base64 = foto_base64
+                    profile_img.src = None
+                else:
+                    profile_img.src_base64 = None
+                    profile_img.src = "media/imagens/rkslogo.png"
+            
+            # 2. ATUALIZA O MONITOR DE ACESSO DIREITO (MIRROR DO MONITOR DO ALUNO)
+            try:
+                if last_access_nome:
+                    last_access_nome.value = nome_completo.upper()
+                
+                if last_access_matricula:
+                    last_access_matricula.value = f"MATRÍCULA: {matricula}\nCRÉDITO: {dias} DIAS"
+                
+                if last_access_vencimento:
+                    last_access_vencimento.value = f"VENC: {venc}"
+                
+                if last_access_status_txt:
+                    last_access_status_txt.value = sentido
+                
+                if last_access_status_box:
+                    last_access_status_box.bgcolor = cor
+                
+                if last_access_img:
+                    if foto_base64:
+                        last_access_img.src_base64 = foto_base64
+                        last_access_img.src = None
+                        last_access_img.visible = True
+                        if last_access_placeholder: last_access_placeholder.visible = False
+                    else:
+                        last_access_img.src_base64 = None
+                        last_access_img.src = None
+                        last_access_img.visible = False
+                        if last_access_placeholder: last_access_placeholder.visible = True
+            except Exception as ex:
+                print(f"⚠️ [UI] Falha no monitor direito: {ex}")
+                
+            safe_update(page) # Atualização atômica imediata
+            
+            # REMOVIDO RESET DE TIMEOUT: Mantém a informação refletida persistentemente 
+            # na tela até que o próximo aluno realize a identificação (conforme solicitado).
+        except Exception as e:
+            print(f"❌ [FEEDBACK ERROR] {e}")
+            print(f"⚠️ [UI] Falha dashboard feedback: {e}")
+
+    def render_monitor_view():
+        # Elementos da UI do Monitor (Instâncias Únicas para esta "Vista")
+        lbl_nome = ft.Text("AGUARDANDO", size=22, font_family="Space Grotesk", weight="bold", color="#ffffff", text_align=ft.TextAlign.CENTER)
+        lbl_matricula = ft.Text("Posicione-se em frente à câmera", size=13, color="#adaaaa", text_align=ft.TextAlign.CENTER)
+        lbl_msg = ft.Text("", size=22, weight="bold", color="#adaaaa", text_align=ft.TextAlign.CENTER)
+        lbl_vencimento = ft.Text("", size=13, weight="bold", color="#ffffff")
+        lbl_status_tag = ft.Text("INATIVO", size=14, weight="bold", color="#ff7351")
+        lbl_cam_status = ft.Text("APROXIME-SE", size=14, weight="bold", color="#000000")
         
-        page.update()
+        # Placeholder transparente para evitar TransformLayer error no primeiro frame (JPEG)
+        transparent_pixel = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD+f+iiigD/2Q=="
+        img_cam = ft.Image(src_base64=transparent_pixel, width=640, height=480, fit="cover", border_radius=16)
+        img_perfil = ft.Image(src="", width=180, height=180, border_radius=90, fit="cover", visible=False)
+        
+        # QR Code para suporte (WhatsApp)
+        def get_qr():
+            try:
+                import urllib.parse
+                qr = qrcode.QRCode(version=1, box_size=10, border=2)
+                msg = "Estou com problemas no meu acesso, pode verificar por favor?"
+                url = f"https://wa.me/5584999470586?text={urllib.parse.quote(msg)}"
+                qr.add_data(url)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+                buf = io.BytesIO()
+                img.save(buf, format="PNG")
+                return base64.b64encode(buf.getvalue()).decode("utf-8")
+            except: return ""
+            
+        img_qr = ft.Image(src_base64=get_qr(), width=180, height=180, border_radius=12, visible=False)
+        
+        status_container = ft.Container(
+            content=ft.Row([ft.Container(width=10, height=10, border_radius=5, bgcolor="#ff7351"), lbl_status_tag], spacing=8, alignment=ft.MainAxisAlignment.CENTER),
+            bgcolor="#ff735133", padding=ft.Padding(left=20, right=20, top=10, bottom=10), border_radius=20,
+        )
 
-    # Vinculamos o estado da sessão atual para que o loop global saiba como atualizar a UI
-    state["_ui_identificado_cb"] = None
-    state["_ui_aguardando_cb"] = None
-    GLOBAL_SESSION_STATES.append(state)
+        badge_cam_status = ft.Container(
+            content=ft.Row([ft.Container(width=12, height=12, border_radius=6, bgcolor="#000000"), lbl_cam_status], alignment=ft.MainAxisAlignment.CENTER, spacing=8),
+            bgcolor=COR_PRIMARY, border_radius=20, padding=ft.Padding(left=24, right=24, top=10, bottom=10), margin=ft.Padding(left=0, right=0, top=0, bottom=20)
+        )
 
-    def view_pop(view):
-        if "/monitor" in page.route: return
-        page.views.clear(); page.go("/")
+        # Callbacks de UI (Capturam as instâncias locais acima)
+        def _set_aguardando():
+            lbl_nome.value = "AGUARDANDO"; lbl_nome.color = "#ffffff"
+            lbl_matricula.value = "Posicione-se em frente à câmera"
+            lbl_msg.value = "AGUARDANDO BIOMETRIA..."; lbl_msg.color = "#adaaaa"
+            lbl_status_tag.value = "INATIVO"; status_container.bgcolor = "#ff735133"
+            img_perfil.visible = False; img_qr.visible = False
+            lbl_cam_status.value = "APROXIME-SE"; badge_cam_status.bgcolor = COR_PRIMARY
+            rocksfit_core_update(page)
+
+        def _set_identificado(data, liberado, metodo="FACIAL", sentido="ENTRADA"):
+            nome = data.get("nome", "ALUNO").upper()
+            mat = str(data.get("matricula", ""))
+            lbl_nome.value = nome
+            lbl_matricula.value = f"Matrícula: {mat} | {sentido}"
+            
+            dias = data.get("dias_restantes", 0)
+            venc = data.get("vencimento", "N/A")
+            lbl_vencimento.value = f"Crédito: {dias} dias | Venc: {venc}"
+            
+            furl = data.get("foto_url", "")
+            if furl:
+                if furl.startswith("/"): furl = f"{SITE_URL}{furl}"
+                img_perfil.src = furl; img_perfil.visible = True
+            
+            if liberado:
+                lbl_status_tag.value = f"✔ {sentido}"; lbl_status_tag.color = "#000000"
+                cor = "#2ecc71"
+                status_container.bgcolor = cor; badge_cam_status.bgcolor = cor
+                lbl_cam_status.value = "Olá, bom treino" if sentido == "ENTRADA" else "Até logo"
+                lbl_msg.value = "BOM TREINO!" if sentido == "ENTRADA" else "ATÉ AMANHÃ!"
+                lbl_msg.color = cor
+                threading.Thread(target=registrar_acesso_crm, args=(mat, metodo), daemon=True).start()
+                trigger_catraca(sentido)
+            else:
+                lbl_status_tag.value = "✖ BLOQUEADO"; status_container.bgcolor = "#e74c3c"
+                lbl_cam_status.value = "ACESSO NEGADO"; badge_cam_status.bgcolor = "#e74c3c"
+                lbl_msg.value = "FALE CONOSCO"; lbl_msg.color = "#e74c3c"
+                img_perfil.visible = False; img_qr.visible = True
+                lbl_matricula.value = "Aponte o celular para o QR Code"
+            
+            safe_update(page)
+
+        state["_ui_identificado_cb"] = _set_identificado
+        state["_ui_aguardando_cb"] = _set_aguardando
+
+        # Layout do Monitor (Full Premium)
+        monitor_layout = ft.Container(
+            content=ft.Column([
+                create_title_bar("MONITOR DE ACESSO - ROCKS FIT"),
+                ft.ResponsiveRow([
+                    ft.Column([
+                        ft.Container(
+                            content=ft.Stack([
+                                ft.Container(content=img_cam, expand=True, alignment=ft.Alignment(0, 0)),
+                                ft.Container(content=badge_cam_status, alignment=ft.Alignment(0, 1))
+                            ]), 
+                            expand=True, bgcolor="#000000", border_radius=16, border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10")), clip_behavior=ft.ClipBehavior.HARD_EDGE
+                        )
+                    ], col={"sm": 12, "md": 7, "lg": 8}),
+                    ft.Column([
+                        ft.Container(content=ft.Column([
+                            ft.Stack([img_perfil, img_qr], width=180, height=180),
+                            lbl_nome, lbl_matricula, status_container, ft.Divider(height=20, color="#ffffff10"), 
+                            ft.Row([ft.Text("UNIDADE", size=12, color="#adaaaa"), ft.Text("ROCKS FIT #01", size=13, weight="bold", color="#ffffff")], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                            ft.Row([ft.Text("VENCIMENTO", size=12, color="#adaaaa"), lbl_vencimento], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                            ft.Container(content=lbl_msg, margin=ft.Padding(left=0, right=0, top=20, bottom=0))
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15), bgcolor=COR_CARD, padding=30, border_radius=20)
+                    ], col={"sm": 12, "md": 5, "lg": 4})
+                ], spacing=20, run_spacing=20, expand=True)
+            ], expand=True),
+            expand=True, bgcolor=COR_BG, padding=30
+        )
+
+        app_content_wrapper.content = monitor_layout
+        rocksfit_core_update(page)
+        time.sleep(0.5) # Estabilização térmica da UI (Harden Linux)
+
+        # O monitor agora apenas consome o feed global que já está rodando em background
+        def ui_feed_loop():
+            # Inicializa estado se não existir
+            if not hasattr(page, "_cam_estado"):
+                page._cam_estado = {"rodando": True, "engine_alive": True}
+            
+            print("📺 [UI] Monitorando feed de câmera industrial...")
+            last_frame = ""
+            while page._cam_estado["rodando"] and page._engine_alive:
+                try:
+                    if not page._engine_alive: break
+                    
+                    with VISION_LOCK:
+                        current_frame = GLOBAL_FRAME_BASE64
+                    
+                    if current_frame and current_frame != last_frame:
+                        # Só atualiza se a string base64 for válida (mínimo de cabeçalho)
+                        if len(current_frame) > 128:
+                            with PAGE_LOCK:
+                                if not page._engine_alive: break
+                                img_cam.src_base64 = current_frame
+                                last_frame = current_frame
+                                try:
+                                    img_cam.update()
+                                except: pass
+                                # Update assíncrono para evitar gargalo na thread principal
+                                page.update()
+                except BaseException as e:
+                    pass
+                time.sleep(0.1) # ~10 FPS estável para evitar sobrecarga no barramento USB/Gráfico
+        
+        threading.Thread(target=ui_feed_loop, daemon=True).start()
+
+    # Configuração de Callbacks iniciais
+    state["_ui_identificado_cb"] = _dashboard_feedback
+    
+    # Rastreamento de Sessão
+    if state not in GLOBAL_SESSION_STATES:
+        GLOBAL_SESSION_STATES.append(state)
+
+    def on_close(e):
+        # Sinaliza parada da câmera e invalida engine desta sessão
+        page._engine_alive = False
+        if hasattr(page, "_cam_estado") and page._cam_estado:
+            page._cam_estado["rodando"] = False
+            page._cam_estado["engine_alive"] = False
+        if state in GLOBAL_SESSION_STATES:
+            GLOBAL_SESSION_STATES.remove(state)
+        # Pausa maior para threads pararem antes da engine sumir (Harden Linux)
+        print("🛑 [SISTEMA] Encerrando sessão UI...")
+        time.sleep(0.5)
+    page.on_close = on_close
 
     page.on_route_change = route_change
-    page.on_view_pop = view_pop
-    
-    # Força a primeira renderização manualmente para evitar tela preta
-    route_change(ft.RouteChangeEvent(route=page.route or "/"))
-    
-    # Sincroniza em segundo plano
-    threading.Thread(target=sync_crm, daemon=True).start()
+    rocksfit_core_update(page)
 
-GLOBAL_SESSION_STATES = []
-GLOBAL_LOOP_STARTED = False
-
-def global_loop_digital():
-    if not biometria_manager_global: return
-    print("☝️ [FPRINT] Loop Global de Biometria Iniciado")
-    while True:
-        if BIOMETRIA_BUSY:
-            time.sleep(1); continue
-        
-        # Carrega digitais locais
-        path_digital = "BIOMETRIA_DATA/ALUNOS"
-        if not os.path.exists(path_digital): time.sleep(2); continue
-        files = [f for f in os.listdir(path_digital) if f.endswith(".finger")]
-        if not files: time.sleep(2); continue
-        
-        # Alunos válidos
-        matriculas_validas = [str(a.get("matricula")) for a in GLOBAL_ALUNOS]
-        
-        for f in files:
-            if BIOMETRIA_BUSY: break
-            name = f.replace(".finger", "")
-            mat = name.split("_")[0] if "_" in name else name
-            finger = name.split("_")[1] if "_" in name else "right-index-finger"
-            
-            if mat in matriculas_validas:
-                if biometria_manager_global.verify(mat, finger):
-                    print(f"✅ [FPRINT GLOBAL] Identificado: {mat}")
-                    aluno = next((a for a in GLOBAL_ALUNOS if str(a.get("matricula")) == mat), None)
-                    if aluno:
-                        try:
-                            r = requests.get(f"{SITE_URL}/api/catraca-check/{mat}/?token={SYNC_TOKEN}", timeout=3)
-                            data = r.json() if r.status_code == 200 else aluno
-                        except: data = aluno
-                        
-                        liberado = data.get("status", "") in ["ativo", "liberado"]
-                        
-                        # Notifica todas as sessões ativas
-                        for s_state in GLOBAL_SESSION_STATES:
-                            if s_state.get("_ui_identificado_cb"):
-                                s_state["_ui_identificado_cb"](data, liberado)
-                        
-                        if liberado:
-                            trigger_catraca(f"Digital: {data.get('nome', mat)}")
-                        
-                        time.sleep(5)
-                        for s_state in GLOBAL_SESSION_STATES:
-                            if s_state.get("_ui_aguardando_cb"):
-                                s_state["_ui_aguardando_cb"]()
-                        break
-        time.sleep(0.5)
-
-if __name__ == "__main__":
-    if not GLOBAL_LOOP_STARTED:
-        threading.Thread(target=global_loop_digital, daemon=True).start()
+    # --- HARDENING: INÍCIO DOS LOOPS DE HARDWARE (APÓS UI ESTABILIZAR - ASSÍNCRONO) ---
+    def start_hardware_loops():
+        global GLOBAL_LOOP_STARTED
+        if GLOBAL_LOOP_STARTED:
+            print("📡 [SISTEMA] Loops de hardware globais já estão ativos. Evitando duplicidade de barramento.")
+            return
         GLOBAL_LOOP_STARTED = True
 
-    # Força o uso do backend X11 no Linux para evitar conflitos com Wayland
-    if sys.platform.startswith("linux"):
-        os.environ["GDK_BACKEND"] = "x11"
+        time.sleep(2.0)
+        if FPRINT_DISPONIVEL:
+            print("☝️ [FPRINT] Ativando Biometria Always-On (Gestor)...")
+            threading.Thread(target=global_loop_digital, daemon=True).start()
         
+        print("🎥 [SISTEMA] Iniciando captura de vídeo industrial...")
+        threading.Thread(target=loop_camera, daemon=True).start()
+        
+        print("📡 [SYNC] Ativando Sincronização em Tempo Real com Monitor...")
+        threading.Thread(target=bridge_event_relay, daemon=True).start()
+        threading.Thread(target=auto_calibration_loop, daemon=True).start()
+
+    threading.Thread(target=start_hardware_loops, daemon=True).start()
+
+# Fim da lógica de processamento de acesso
+
+def auto_calibration_loop():
+    """Loop 100% autônomo que roda a cada 15 minutos calibrando a biometria"""
+    print("🔆 [CALIB] Robô autônomo iniciado (A cada 15 min).")
+    while True:
+        try:
+            frame = None
+            shared_path = "BIOMETRIA_DATA/shared_frame.jpg"
+            if os.path.exists(shared_path):
+                try:
+                    frame = cv2.imread(shared_path)
+                except: pass
+            
+            if frame is not None:
+                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                brightness = float(np.mean(hsv[:, :, 2]))  # 0–255
+
+                if brightness < 60:
+                    new_thr, new_streak = 0.45, 1
+                    perfil = f"🌑 ESCURO ({brightness:.0f}/255) → Threshold rígido"
+                elif brightness < 110:
+                    new_thr, new_streak = 0.50, 1
+                    perfil = f"🌥️ MEIA-LUZ ({brightness:.0f}/255) → Threshold moderado"
+                elif brightness < 170:
+                    new_thr, new_streak = 0.52, 1
+                    perfil = f"☀️ BOM ({brightness:.0f}/255) → Threshold ideal (Perfeito)"
+                elif brightness < 220:
+                    new_thr, new_streak = 0.55, 1
+                    perfil = f"🌟 MUITO CLARO ({brightness:.0f}/255) → Threshold permissivo"
+                else:
+                    new_thr, new_streak = 0.58, 1
+                    perfil = f"💡 SUPEREXPOSTO ({brightness:.0f}/255) → Threshold máximo"
+
+                print(f"🔆 [CALIB-AUTO] Luminosidade: {brightness:.1f}/255 | Perfil: {perfil}")
+                
+                # Salvar no config.json de forma segura
+                cfg = {}
+                config_path = "BIOMETRIA_DATA/config.json"
+                if os.path.exists(config_path):
+                    with open(config_path, "r") as f:
+                        try:
+                            cfg = json.load(f)
+                        except: pass
+                
+                cfg["face_threshold"] = new_thr
+                cfg["face_streak"] = new_streak
+                
+                with open(config_path, "w") as f:
+                    json.dump(cfg, f)
+                
+        except Exception as e:
+            pass # Silencioso para não poluir o terminal
+            
+        # Espera 15 minutos (900 segundos) antes de calibrar novamente
+        time.sleep(900)
+
+
+def bridge_event_relay():
+    """Monitora eventos vindos do Monitor do Aluno e sincroniza a UI do Gestor com segurança"""
+    last_event_time = time.time()
+    event_path = "BIOMETRIA_DATA/bridge_event.json"
+    while True:
+        try:
+            if os.path.exists(event_path):
+                with open(event_path, "r") as f:
+                    ev = json.load(f)
+                ev_time = ev.get("timestamp", 0)
+                if ev_time > last_event_time:
+                    last_event_time = ev_time
+                    mat = ev.get("matricula")
+                    met = ev.get("metodo", "FACIAL")
+                    sent = ev.get("sentido", "ENTRADA")
+                    
+                    if mat and page_global:
+                        # Busca aluno de forma segura (thread-safe copy)
+                        alunos_snapshot = list(GLOBAL_ALUNOS)
+                        aluno = next((a for a in alunos_snapshot if str(a.get("matricula")) == str(mat)), None)
+                        
+                        if aluno:
+                            print(f"📡 [BRIDGE RELAY] Sincronizando: {aluno.get('nome')} ({met})")
+                            liberado = is_liberado(aluno.get("status", ""))
+                            
+                            # Envia via PubSub com verificação rigorosa de engine (Harden Linux)
+                            try:
+                                # Bypassa o PubSub do Flet (que pode falhar em threads no Linux)
+                                # e chama diretamente o callback da UI armazenado no state
+                                if GLOBAL_SESSION_STATES:
+                                    state_ativo = GLOBAL_SESSION_STATES[-1] # Pega a sessão mais recente
+                                    if "_ui_identificado_cb" in state_ativo:
+                                        print(f"✅ [BRIDGE RELAY] Invocando callback direto da UI...")
+                                        state_ativo["_ui_identificado_cb"](aluno, liberado, f"{met} (MONITOR)", sent)
+                                        
+                                        # REDUNDÂNCIA INDUSTRIAL: Dispara catraca também pela ponte se o monitor falhar
+                                        if liberado:
+                                            threading.Thread(target=trigger_catraca, args=(sent,), daemon=True).start()
+                                        
+                                        # Reset automático após 5s
+                                        def delayed_reset():
+                                            time.sleep(5)
+                                            try:
+                                                if "_ui_aguardando_cb" in state_ativo:
+                                                    state_ativo["_ui_aguardando_cb"]()
+                                            except: pass
+                                        threading.Thread(target=delayed_reset, daemon=True).start()
+                                    else:
+                                        print("⚠️ [BRIDGE RELAY] Callback _ui_identificado_cb não encontrado no state!")
+                            except Exception as ex:
+                                print(f"⚠️ [BRIDGE RELAY] Falha crítica ao atualizar UI: {ex}")
+
+                        else:
+                            print(f"⚠️ [BRIDGE RELAY] Matrícula {mat} não encontrada no GLOBAL_ALUNOS!")
+        except Exception as e:
+            # Silencioso para evitar crash no console
+            pass
+        time.sleep(1)
+
+def process_match(matricula_alvo, matriculas_validas, metodo="DIGITAL"):
+    global BIOMETRIA_BUSY, PAUSE_BIOMETRIA, page_global, IS_PROCESSING_MATCH
+    if not MATCH_PROCESSING_LOCK.acquire(blocking=False): return
+    try:
+        if IS_PROCESSING_MATCH: return
+        IS_PROCESSING_MATCH = True
+        PAUSE_BIOMETRIA = True
+        aluno = next((a for a in GLOBAL_ALUNOS if str(a.get("matricula")) == str(matricula_alvo)), None)
+        if aluno:
+            liberado = is_liberado(aluno.get("status", ""))
+            sentido, allowed = detectar_sentido_acesso(str(matricula_alvo), metodo=metodo)
+            
+            if not allowed:
+                # Se não permitido (carência), apenas loga e não abre catraca
+                cooldown_time = 3 if metodo == "DIGITAL" else CONFIG.get("cooldown_facial", 30)
+                print(f"🚫 [{metodo}] Acesso negado por carência de {cooldown_time}s: {matricula_alvo}")
+                return
+
+            registrar_acesso_local(matricula_alvo, metodo, sentido)
+            log_acesso_local(aluno, metodo, "LIBERADO" if liberado else "BLOQUEADO", sentido)
+            
+            # Envia para a UI e Monitor
+            safe_pubsub_send({
+                "type": "identificacao", 
+                "data": aluno, 
+                "liberado": liberado, 
+                "metodo": metodo, 
+                "sentido": sentido
+            })
+
+            # Notifica o Monitor do Aluno (Processo Externo)
+            try:
+                os.makedirs("BIOMETRIA_DATA", exist_ok=True)
+                with open("BIOMETRIA_DATA/monitor_event.json", "w") as f:
+                    json.dump({
+                        "matricula": matricula_alvo, 
+                        "metodo": metodo, 
+                        "sentido": sentido, # Passa o sentido calculado
+                        "timestamp": time.time(),
+                        "aluno_data": aluno
+                    }, f)
+            except: pass
+
+            # Dispara a catraca de forma assíncrona (não-bloqueante) em segundo plano
+            # para não atrasar a atualização da foto e o fluxo da UI
+            if liberado:
+                threading.Thread(target=trigger_catraca, args=(sentido,), daemon=True).start()
+            
+            # Pequeno delay de segurança antes de liberar o processamento
+            time.sleep(0.5)
+            safe_pubsub_send({"type": "aguardando"})
+    finally:
+        if not ENROLLMENT_ACTIVE: PAUSE_BIOMETRIA = False
+        BIOMETRIA_BUSY = False
+        IS_PROCESSING_MATCH = False
+        MATCH_PROCESSING_LOCK.release()
+
+def global_loop_digital():
+    global BIOMETRIA_BUSY, PAUSE_BIOMETRIA, GLOBAL_PRIORITY_MATRICULA
+    if not FPRINT_DISPONIVEL: return
+    
+    err_count = 0
+    no_device_logged = False  # Evita spam de log quando o sensor está ausente
+    while True:
+        try:
+            GLOBAL_PRIORITY_MATRICULA = None
+            if PAUSE_BIOMETRIA:
+                try:
+                    with open("BIOMETRIA_DATA/scanner_status.json", "w") as f:
+                        json.dump({"status": "ENROLLING", "timestamp": time.time()}, f)
+                except: pass
+                time.sleep(0.1); continue
+            
+            # Notifica que o scanner está ativo para identificação
+            try:
+                with open("BIOMETRIA_DATA/scanner_status.json", "w") as f:
+                    json.dump({"status": "ACTIVE", "timestamp": time.time()}, f)
+            except: pass
+
+            BIOMETRIA_BUSY = True
+            res = biometria_manager_global.verify(timeout=15)
+            BIOMETRIA_BUSY = False
+            
+            if PAUSE_BIOMETRIA: continue
+
+            # --- None = hardware ausente (sensor desconectado/sem dispositivo) ---
+            # Não é um erro; aguarda e tenta novamente após 10s sem spam de log.
+            if res is None:
+                if not no_device_logged:
+                    print("⚠️ [FPRINT] Sensor biométrico não detectado. Aguardando conexão...")
+                    safe_pubsub_send({"type": "hw_status", "hw": "fprint", "online": False})
+                    no_device_logged = True
+                time.sleep(2)  # Verifica novamente após 2s (mais responsivo ao reconectar USB)
+                continue
+
+            # Se chegou aqui, o hardware voltou
+            if no_device_logged:
+                print("✅ [FPRINT] Sensor biométrico reconectado!")
+                no_device_logged = False
+            
+            if res is False:
+                safe_pubsub_send({"type": "hw_status", "hw": "fprint", "online": False})
+                err_count += 1
+                if err_count > 10: # Aumentado de 3 para 10 para evitar death spiral
+                    print("☢️ [FPRINT] Erros persistentes (10+). Tentativa de recuperação...")
+                    nuclear_cleanup()
+                    err_count = 0
+                    time.sleep(5) # Espera maior após limpeza
+            
+            # Modo Industrial: Ciclo contínuo de verificação
+            if res and isinstance(res, str) and res != "NO_MATCH":
+                safe_pubsub_send({"type": "hw_status", "hw": "fprint", "online": True})
+                mats = BIOMETRIA_MAPPING_CACHE.get(res, [])
+                if mats:
+                    mat_identificad = mats[0]
+                    print(f"🎯 [FPRINT] Mapeado dedo {res} para matricula {mat_identificad}")
+                    process_match(mat_identificad, GLOBAL_ALUNOS, metodo="DIGITAL")
+                else:
+                    print(f"⚠️ [FPRINT] Dedo {res} reconhecido, mas nenhuma matrícula mapeada no banco local.")
+        except: pass
+
+def global_loop_camera():
+    """Deprecated vision loop – processing moved to remote Django API.
+    The local client now only captures frames, sends them to the server,
+    and displays the preview. Keeping this stub avoids import errors
+    and satisfies references elsewhere in the code.
+    """
+    print("⚠️ [NOTICE] global_loop_camera() is deprecated – use the Flet client to capture and send frames to the API.")
+    # No operation – actual camera handling is performed in the Flet UI thread (see loop_camera()).
+
+def loop_camera():
+    """Captura de câmera local e comunicação com o backend DeepFace.
+    Substitui a antiga `global_loop_camera`, delegando a inferência ao
+    servidor Django, garantindo alta velocidade e resiliência.
+    """
+    # Garante diretório offline
+    os.makedirs("BIOMETRIA_DATA/offline_queue", exist_ok=True)
+    
+    print("🎥 [SISTEMA] Iniciando captura de vídeo industrial...")
+    
+    # --- ABERTURA ANTI-TRAVAMENTO DA CÂMERA ---
+    # No Linux, cv2.VideoCapture(0) sem backend pode tentar múltiplos drivers e
+    # bloquear por muitos segundos. Usamos V4L2 diretamente e definimos um buffer
+    # mínimo (1 frame) para evitar acúmulo de frames antigos na memória.
+    cap = None
+    backend = cv2.CAP_V4L2 if sys.platform.startswith("linux") else cv2.CAP_ANY
+    for idx in [0, 1, 2]:  # Reduzido: tenta apenas 0, 1, 2 (os mais comuns)
+        try:
+            print(f"🎥 [CAM] Tentando abrir dispositivo {idx} (backend V4L2)...")
+            c = cv2.VideoCapture(idx, backend)
+            if c.isOpened():
+                # Buffer de 1 frame: evita fila de frames velhos e reduz latência
+                c.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                # Resolução 640x480: Qualidade maior para o motor neural
+                c.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                c.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                c.set(cv2.CAP_PROP_FPS, 15)  # 15 FPS é suficiente para reconhecimento
+                cap = c
+                print(f"✅ [CAM] Câmera ativa no dispositivo {idx} | Res: 320x240 | FPS: 15")
+                break
+            c.release()
+        except Exception as e:
+            print(f"⚠️ [CAM] Falha no dispositivo {idx}: {e}")
+            pass
+            
+    if not cap or not cap.isOpened():
+        print("❌ [CAM] Falha crítica: Nenhuma câmera detectada no sistema.")
+        return
+    
+    print("✅ [CAM] Visão industrial ativa e transmitindo.")
+
+    def inference_worker(img_b64, frame_buffer):
+        """Worker assíncrono para inferência DeepFace com Fallback Local de alta performance."""
+        if INFERENCE_LOCK.locked(): return
+        with INFERENCE_LOCK:
+            success = False
+            try:
+                resp = requests.post(
+                    "http://localhost:8000/api/biometria/verificar/",
+                    json={"image": img_b64},
+                    timeout=2.0,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    mat = data.get("matricula")
+                    if mat and mat != "NO_MATCH":
+                        print(f"👤 [FACIAL ONLINE] Identificado: {mat} (Dist: {data.get('distancia', 0):.4f})")
+                        process_match(mat, GLOBAL_ALUNOS, metodo="FACIAL")
+                        success = True
+                else:
+                    raise Exception("Status API inválido")
+            except Exception as e:
+                # --- OTIMIZAÇÃO INDUSTRIAL: FALLBACK DE RECONHECIMENTO FACIAL OFFLINE ---
+                # Se o Django estiver fora do ar ou sem rede, realizamos a inferência DeepFace
+                # diretamente aqui na recepção de forma ultrarrápida usando o cache local de .npy!
+                try:
+                    import base64
+                    import cv2
+                    import numpy as np
+                    from deepface import DeepFace
+                    
+                    # 1. Decodifica a imagem Base64 vinda da câmera
+                    img_bytes = base64.b64decode(img_b64)
+                    np_arr = np.frombuffer(img_bytes, np.uint8)
+                    frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                    
+                    if frame is not None and GLOBAL_EMBEDDINGS_CACHE:
+                        # 2. Extrai embedding usando ArcFace localmente (Sem detecção lenta de bounding boxes)
+                        results = DeepFace.represent(
+                            img_path=frame,
+                            model_name="ArcFace",
+                            enforce_detection=False,
+                            detector_backend="skip"
+                        )
+                        
+                        if results and len(results) > 0:
+                            embedding_np = np.array(results[0]["embedding"])
+                            norm_a = np.linalg.norm(embedding_np)
+                            
+                            best_match = None
+                            min_dist = 999.0
+                            threshold = 0.55  # Alinhado com o threshold rigoroso do backend
+                            
+                            # 3. Varredura vetorial Cosine em memória (sub-microssegundo)
+                            for matricula, stored_embedding in GLOBAL_EMBEDDINGS_CACHE.items():
+                                try:
+                                    norm_b = np.linalg.norm(stored_embedding)
+                                    cosine_sim = np.dot(embedding_np, stored_embedding) / (norm_a * norm_b)
+                                    dist = 1.0 - cosine_sim
+                                    if dist < min_dist:
+                                        min_dist = dist
+                                        best_match = matricula
+                                except: continue
+                            
+                            if best_match and min_dist < threshold:
+                                print(f"👤 [FACIAL OFFLINE] Identificado localmente via cache .npy: {best_match} (Dist: {min_dist:.4f})")
+                                process_match(best_match, GLOBAL_ALUNOS, metodo="FACIAL")
+                except Exception as ex:
+                    # Silencioso para não travar a thread de visão nem poluir a tela
+                    pass
+
+    global GLOBAL_FRAME_COUNT
+    last_inference_time = 0
+    while True:
+        try:
+            # Throttle para evitar 100% de CPU e travamento do sistema
+            time.sleep(0.04) 
+
+            ret, frame_raw = cap.read()
+            if not ret or frame_raw is None:
+                time.sleep(0.1)
+                continue
+
+            GLOBAL_FRAME_COUNT += 1
+            # Espelha para visualização natural
+            frame = cv2.flip(frame_raw, 1)
+
+            # Detecção leve apenas para o HUD (Quadrado de busca) - Não é reconhecimento neural!
+            faces_hud = []
+            if GLOBAL_FRAME_COUNT % 2 == 0:
+                try:
+                    if frame is not None and frame.size > 0:
+                        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                        h, w = gray.shape[:2]
+                        if h > 50 and w > 50:
+                            # Detecção de alta sensibilidade no frame completo
+                            detected = FACE_CASCADE.detectMultiScale(gray, 1.1, 2)
+                            for (x, y, w_f, h_f) in detected:
+                                # top, right, bottom, left (escala 0.5 compatível com monitor_aluno)
+                                faces_hud.append([int(y * 0.5), int((x+w_f) * 0.5), int((y+h_f) * 0.5), int(x * 0.5)])
+                            
+                            # Exporta para o monitor consumir
+                            with open("BIOMETRIA_DATA/faces_detected.json", "w") as f:
+                                json.dump({"faces": faces_hud, "ts": time.time()}, f)
+                except Exception as e:
+                    print(f"⚠️ [HUD] Erro na detecção: {e}")
+                    pass
+
+            # Converte para JPEG + base64 (Qualidade aumentada para reconhecimento facial)
+            success, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            if not success: continue
+            
+            img_b64 = base64.b64encode(buffer).decode('utf-8')
+
+            # Shared Frame Service (Feed para o monitor do aluno) - Otimizado para não travar I/O
+            if GLOBAL_FRAME_COUNT % 3 == 0:
+                try:
+                    temp_path = "BIOMETRIA_DATA/shared_frame.tmp"
+                    with open(temp_path, "wb") as f:
+                        f.write(buffer.tobytes())
+                    os.replace(temp_path, "BIOMETRIA_DATA/shared_frame.jpg")
+                    if GLOBAL_FRAME_COUNT == 3: # Loga apenas o primeiro para não sujar o terminal
+                        print("📡 [SHARED-FEED] Transmitindo frames para o Monitor do Aluno...")
+                except Exception as e:
+                    print(f"⚠️ [SHARED-FEED] Erro ao gravar frame: {e}")
+                    pass
+
+            # Atualiza UI global de forma thread-safe
+            with VISION_LOCK:
+                global GLOBAL_FRAME_BASE64
+                GLOBAL_FRAME_BASE64 = img_b64
+
+            # Inferência Assíncrona Otimizada (A cada 2 frames ou 0.1s se houver rosto - Primeira tentativa rápida)
+            current_time = time.time()
+            if GLOBAL_FRAME_COUNT % 2 == 0 and (current_time - last_inference_time) > 0.1:
+                if not INFERENCE_LOCK.locked():
+                    last_inference_time = current_time
+                    target_img_b64 = img_b64
+                    target_buffer = buffer.tobytes()
+                    
+                    # Se detectamos um rosto pelo Haar Cascade, enviamos o RECORTE para a API
+                    if faces_hud:
+                        try:
+                            # Ordena por tamanho para pegar o rosto mais próximo
+                            face = sorted(faces_hud, key=lambda f: (f[2]-f[0])*(f[1]-f[3]), reverse=True)[0]
+                            # Escala de volta (faces_hud foi reduzido 50%)
+                            y1, x2, y2, x1 = face[0]*2, face[1]*2, face[2]*2, face[3]*2
+                            # Margem de 10%
+                            margin_y = int((y2-y1)*0.1)
+                            margin_x = int((x2-x1)*0.1)
+                            crop = frame[max(0, y1-margin_y):min(480, y2+margin_y), 
+                                         max(0, x1-margin_x):min(640, x2+margin_x)]
+                            
+                            if crop.size > 0:
+                                success, c_buf = cv2.imencode('.jpg', crop, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                                if success:
+                                    target_img_b64 = base64.b64encode(c_buf).decode('utf-8')
+                                    target_buffer = c_buf.tobytes()
+                        except: pass
+                    
+                    threading.Thread(target=inference_worker, args=(target_img_b64, target_buffer), daemon=True).start()
+
+        except Exception as e:
+            time.sleep(0.1)
+
+if __name__ == "__main__":
+    # Hardening Industrial: Limpeza nuclear no startup
+    nuclear_cleanup()
+    
+    threading.Thread(target=run_api, daemon=True).start()
+    
+    # Limpa processos de biometria residuais
+    try: 
+        print("🧹 [SISTEMA] Limpando processos residuais...")
+        biometria_manager_global.stop_all()
+        time.sleep(1)
+    except: pass
+
+    carregar_cache_local()
+
     print("🚀 Iniciando Módulo de Recepção Rocks-Fit...")
     print("🌐 Dashboard Flet disponível em: http://localhost:8552")
-    ft.app(
-        target=main, 
-        view=ft.AppView.FLET_APP, 
-        port=8552,
-        assets_dir="assets"
-    )
+    time.sleep(1) # Delay de segurança para estabilização de hardware/renderização
+    try:
+        # Configuração flexível de visualização (Harden Linux)
+        # Permite forçar o modo web via .env (FLET_VIEW_MODE=WEB_BROWSER) ou argumento '--web'
+        forced_web = os.getenv("FLET_VIEW_MODE") == "WEB_BROWSER" or "--web" in sys.argv
+        
+        if forced_web:
+            print("🌐 [FLET] Inicializando em modo WEB_BROWSER (Navegador) para evitar tela preta...")
+            view_mode = getattr(getattr(ft, "AppView", None), "WEB_BROWSER", getattr(ft, "WEB_BROWSER", "web_browser"))
+        else:
+            # Compatibilidade entre versões do Flet (Moderno vs Legado)
+            view_mode = getattr(ft, "FLET_APP", getattr(ft, "AppView", None))
+            if hasattr(view_mode, "FLET_APP"): 
+                view_mode = view_mode.FLET_APP
+            elif hasattr(ft, "AppView") and hasattr(ft.AppView, "FLET_APP"):
+                view_mode = ft.AppView.FLET_APP
+            else:
+                view_mode = "flet_app" # Fallback string literal
+            print(f"🖥️ [FLET] Inicializando em modo Desktop nativo (View: {view_mode})...")
+            
+        # Usa ft.run para versões modernas ou ft.app como fallback seguro
+        if hasattr(ft, "run"):
+            ft.run(main, view=view_mode, port=8552, assets_dir=".")
+        else:
+            # Garante que passamos os argumentos corretos para ft.app legado
+            ft.app(target=main, view=view_mode, port=8552, assets_dir=".")
+    except Exception as e:
+        print(f"⚠️ [FLET] Falha ao iniciar a interface gráfica Flet: {e}")

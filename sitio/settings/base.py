@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_otp",
     "django_otp.plugins.otp_totp",
+    "pgvector",
+    "biometria",
 ]
 
 MIDDLEWARE = [
@@ -128,7 +130,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Configurações do Controle de Acesso (Catraca)
-CATRACA_SYNC_TOKEN = "rocksfit@2024"
+CATRACA_SYNC_TOKEN = "Rocksfit@2024"
 
 # --- Autenticação e Usuário ---
 AUTH_USER_MODEL = 'blog.User'
@@ -183,3 +185,7 @@ CORS_ALLOW_ALL_ORIGINS = True  # Para desenvolvimento do App do Aluno
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/admin/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# --- Biometria e DeepFace ---
+FACE_MATCH_THRESHOLD = 0.40  # Distância Euclidiana máxima para ArcFace
+REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")

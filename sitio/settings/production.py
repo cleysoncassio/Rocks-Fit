@@ -8,7 +8,7 @@ from decouple import config
 from .base import *
 
 # Configurações de segurança: DEBUG deve ser False em produção
-DEBUG = True # Alterado temporariamente para debugar o erro 500
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 # ============================================
 # ALLOWED_HOSTS CORRIGIDO - NÃO usar '*' em produção!
@@ -103,9 +103,9 @@ LOGGING = {
 
 # Configuração do Cloudinary (Armazenamento de Imagens Persistente)
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config("CLOUDINARY_CLOUD_NAME", default="dcpmp0hjf"),
-    'API_KEY': config("CLOUDINARY_API_KEY", default="973228675879414"),
-    'API_SECRET': config("CLOUDINARY_API_SECRET", default="Ggc4LL8P_3FZggiJdu6u4DPjG_A"),
+    'CLOUD_NAME': config("CLOUDINARY_CLOUD_NAME"),
+    'API_KEY': config("CLOUDINARY_API_KEY"),
+    'API_SECRET': config("CLOUDINARY_API_SECRET"),
 }
 
 

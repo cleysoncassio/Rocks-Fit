@@ -28,6 +28,7 @@ urlpatterns = [
     path("reparar-banco-de-dados-privilegiado/", views.crm_reparar_banco, name="reparar_banco"),
     path("fix/", views.crm_reparar_banco, name="fix_db"),
     path("", include("blog.urls")),
+    path("api/biometria/", include("biometria.urls")),
 ]
 
 # Servir arquivos de mídia em desenvolvimento e produção

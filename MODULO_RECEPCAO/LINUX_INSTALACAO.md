@@ -25,7 +25,7 @@ Crie e configure o ambiente virtual:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements_recepcao.txt
+pip install -r requirements.txt
 ```
 
 ## 4. Configuração

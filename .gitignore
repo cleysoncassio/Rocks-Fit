@@ -264,3 +264,12 @@ error.log
 *.log
 server.log
 monitor.log
+
+# ============================================================
+# Rocks-Fit: Dados Biométricos, Bancos Locais e Caches (Recepção)
+# ============================================================
+MODULO_RECEPCAO/BIOMETRIA_DATA/
+MODULO_RECEPCAO/ALUNOS_SYNC.json
+MODULO_RECEPCAO/*.log
+MODULO_RECEPCAO/__pycache__/
+

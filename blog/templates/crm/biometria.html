@@ -134,7 +134,7 @@
         msg.innerText = `Posicione o dedo no sensor para ${nome}`;
 
         try {
-            const response = await fetch(`${BRIDGE_URL}/api/enroll/${matricula}`, {
+            const response = await fetch(`${BRIDGE_URL}/api/enroll/${matricula}?token={{ catraca_sync_token }}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
