@@ -1,6 +1,12 @@
 import os
 import sys
 
+# Garante que o diretório de trabalho é o do próprio script (MODULO_RECEPCAO)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR:
+    os.chdir(SCRIPT_DIR)
+    print(f"📂 [DIRETÓRIO MONITOR] Pasta de trabalho definida para: {os.getcwd()}")
+
 # Carrega dotenv bem no início para que as variáveis afetem as configurações do Flet
 try:
     from dotenv import load_dotenv
@@ -10,7 +16,7 @@ except:
 
 import flet as ft
 # --- POLYFILL PARA ICONES DESCONTINUADOS OU FALTANTES ---
-for icon_name in ["FINGERPRINT", "LOCK_OPEN", "CLOSE", "REFRESH", "REMOVE", "CROP_SQUARE", "PEOPLE", "VIDEOCAM", "SYNC", "HISTORY", "TROUBLESHOOT", "SETTINGS", "CLOUD_DONE", "CHECK_CIRCLE", "SEARCH", "CALENDAR_MONTH", "PERSON", "LOCK", "ANALYTICS", "MEMORY", "ERROR", "REPLAY"]:
+for icon_name in ["FINGERPRINT", "LOCK_OPEN", "CLOSE", "REFRESH", "REMOVE", "CROP_SQUARE", "PEOPLE", "VIDEOCAM", "SYNC", "HISTORY", "TROUBLESHOOT", "SETTINGS", "CLOUD_DONE", "CHECK_CIRCLE", "SEARCH", "CALENDAR_MONTH", "PERSON", "PERSON_OUTLINE", "LOCK", "ANALYTICS", "MEMORY", "ERROR", "REPLAY"]:
     if not hasattr(ft.icons, icon_name):
         setattr(ft.icons, icon_name, icon_name.lower())
 
@@ -116,7 +122,7 @@ def get_whatsapp_qr_base64():
         img = qr.make_image(fill_color="black", back_color="white")
         buffered = io.BytesIO()
         img.save(buffered, format="PNG")
-        return base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode("utf-8")
     except: return ""
 
 QR_WPP_BASE64 = get_whatsapp_qr_base64()
@@ -294,8 +300,8 @@ def main(page: ft.Page):
     lbl_digital_status = ft.Text("SCANNER: ACTIVE", size=10, weight="bold", color="#adaaaa")
     
     # Pixel transparente para inicialização segura de componentes Image (agora em JPEG para compatibilidade com a câmera)
-    transparent_pixel = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD+f+iiigD/2Q=="
-    img_cam = ft.Image(src_base64=transparent_pixel, width=640, height=480, fit="fill", border_radius=12)
+    transparent_pixel = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD+f+iiigD/2Q=="
+    img_cam = ft.Image(src=transparent_pixel, width=640, height=480, fit="fill", border_radius=12)
     lbl_cam_status = ft.Text("APROXIME-SE", size=20, weight="bold", color="#000000")
     badge_cam_status = ft.Container(content=lbl_cam_status, bgcolor=primary, border_radius=10, padding=ft.Padding(40, 15, 40, 15), margin=ft.Padding(0, 0, 0, 20))
     
@@ -329,10 +335,10 @@ def main(page: ft.Page):
     lbl_vencimento = ft.Text("", size=13, weight="bold", color="#ffffff")
     lbl_metodo_acesso = ft.Text("VIA FACE", size=10, weight="bold", color=primary, visible=False)
     
-    qr_whatsapp_img = ft.Image(src_base64=transparent_pixel, width=120, height=120)
-    img_perfil = ft.Image(src_base64=transparent_pixel, width=180, height=180, border_radius=90, fit="cover", visible=False)
-    img_qr = ft.Image(src_base64=QR_WPP_BASE64, width=180, height=180, border_radius=12, visible=False)
-    icon_placeholder = ft.Container(content=ft.Icon("person", color="#adaaaa", size=80), width=180, height=180, border_radius=90, bgcolor=surf_highest, border=ft.Border(ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333")), alignment=ft.Alignment(0, 0))
+    qr_whatsapp_img = ft.Image(src=transparent_pixel, width=120, height=120)
+    img_perfil = ft.Image(src=transparent_pixel, width=180, height=180, border_radius=90, fit="cover", visible=False)
+    img_qr = ft.Image(src=QR_WPP_BASE64, width=180, height=180, border_radius=12, visible=False)
+    icon_placeholder = ft.Container(content=ft.Icon(ft.Icons.PERSON, color="#adaaaa", size=80), width=180, height=180, border_radius=90, bgcolor=surf_highest, border=ft.Border(ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333")), alignment=ft.Alignment(0, 0))
     
     lbl_status_tag = ft.Text("INATIVO", size=14, weight="bold", color="#ff7351")
     status_container = ft.Container(content=ft.Row([ft.Container(width=10, height=10, border_radius=5, bgcolor="#ff7351"), lbl_status_tag], spacing=8, alignment=ft.MainAxisAlignment.CENTER), bgcolor="#ff735133", padding=ft.Padding(20, 10, 20, 10), border_radius=20)
@@ -361,7 +367,7 @@ def main(page: ft.Page):
     
     card_capacidade = ft.Container(
         content=ft.Column([
-            ft.Row([ft.Text("CAPACIDADE", size=18, weight="bold", italic=True, color="#000000"), ft.Icon("people", color="#000000")], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            ft.Row([ft.Text("CAPACIDADE", size=18, weight="bold", italic=True, color="#000000"), ft.Icon(ft.Icons.PEOPLE, color="#000000")], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             ft.Row([ft.Text("74%", size=48, weight="bold", color="#000000"), ft.Text("LOTADO", size=12, weight="bold", color="#000000")], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, vertical_alignment=ft.CrossAxisAlignment.END),
             ft.ProgressBar(value=0.74, color="#000000", bgcolor="#ffffff40", height=8)
         ]),
@@ -375,8 +381,8 @@ def main(page: ft.Page):
                 ft.Row([
                     ft.Image(src="media/imagens/rkslogo.png", height=70),
                     ft.Row([
-                        ft.Icon("wifi", color=primary),
-                        ft.Icon("info", color=primary)
+                        ft.Icon(ft.Icons.WIFI, color=primary),
+                        ft.Icon(ft.Icons.INFO, color=primary)
                     ], spacing=15)
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 
@@ -423,7 +429,7 @@ def main(page: ft.Page):
                 lbl_metodo_acesso.visible = False; lbl_msg.value = ""
                 lbl_status_tag.value = "INATIVO"; lbl_status_tag.color = "#ff7351"
                 status_container.bgcolor = "#ff735133"
-                img_perfil.src_base64 = transparent_pixel
+                img_perfil.src = transparent_pixel
                 img_perfil.visible = False
                 img_qr.visible = False; icon_placeholder.visible = True
                 lbl_cam_status.value = "APROXIME-SE"; badge_cam_status.bgcolor = primary
@@ -496,27 +502,23 @@ def main(page: ft.Page):
                             # Otimização de velocidade: converte a foto do disco em Base64
                             # para o Flet renderizar de forma instantânea na memória
                             with open(caminho_existente, "rb") as image_file:
-                                img_perfil.src_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-                            img_perfil.src = None
+                                img_perfil.src = "data:image/jpeg;base64," + base64.b64encode(image_file.read()).decode('utf-8')
                         except Exception as ex:
                             print(f"⚠️ [MONITOR] Erro base64: {ex}")
                             img_perfil.src = f"/media/alunos/fotos/{nome_arquivo}"
-                            img_perfil.src_base64 = None
                         has_local_photo = True
                     elif furl.startswith("http"):
                         img_perfil.src = furl
-                        img_perfil.src_base64 = None
                         has_local_photo = True
                     elif not data.get("vencimento") == "OFFLINE":
                         if furl.startswith("/"): furl = f"{SITE_URL}{furl}"
                         img_perfil.src = furl
-                        img_perfil.src_base64 = None
                         has_local_photo = True
                     
                 if has_local_photo:
                     img_perfil.visible = True; icon_placeholder.visible = False
                 else:
-                    img_perfil.src_base64 = transparent_pixel
+                    img_perfil.src = transparent_pixel
                     img_perfil.visible = False; icon_placeholder.visible = True
 
                 if liberado:
@@ -744,7 +746,7 @@ def main(page: ft.Page):
                 # Qualidade reduzida para fluidez máxima na interface
                 success, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 35])
                 if success and buffer is not None:
-                    img_data = base64.b64encode(buffer).decode('utf-8')
+                    img_data = "data:image/jpeg;base64," + base64.b64encode(buffer).decode('utf-8')
                     with VISION_LOCK:
                         global GLOBAL_FRAME_BASE64
                         GLOBAL_FRAME_BASE64 = img_data
@@ -822,7 +824,7 @@ def main(page: ft.Page):
                     if len(current_frame) > 128:
                         with PAGE_LOCK:
                             if not getattr(page, "_engine_alive", True): break
-                            img_cam.src_base64 = current_frame
+                            img_cam.src = current_frame
                             last_frame = current_frame
                             
                             # Força a remoção do overlay de carregamento assim que o primeiro frame real chegar
@@ -878,6 +880,17 @@ if __name__ == "__main__":
         if forced_web:
             print("🌐 [FLET] Inicializando em modo WEB_BROWSER (Navegador) para evitar tela preta...")
             view_mode = getattr(getattr(ft, "AppView", None), "WEB_BROWSER", getattr(ft, "WEB_BROWSER", "web_browser"))
+            
+            # --- SEGURO ABERTURA FORÇADA DO NAVEGADOR EM LINUX ---
+            def abrir_navegador_seguro():
+                time.sleep(2.5)
+                try:
+                    import webbrowser
+                    print("🌐 [SISTEMA] Forçando abertura automática do navegador em: http://localhost:8554")
+                    webbrowser.open("http://localhost:8554")
+                except:
+                    pass
+            threading.Thread(target=abrir_navegador_seguro, daemon=True).start()
         else:
             # Compatibilidade entre versões do Flet (Moderno vs Legado)
             view_mode = getattr(ft, "FLET_APP", getattr(ft, "AppView", None))

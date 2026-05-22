@@ -3,6 +3,14 @@ import os
 import sys
 import time
 
+# Garante que o diretório de trabalho é o do próprio script (MODULO_RECEPCAO)
+# Isso resolve erros de arquivo não encontrado (como imagens e bancos de dados SQLite)
+# ao iniciar o script de diretórios de trabalho diferentes.
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR:
+    os.chdir(SCRIPT_DIR)
+    print(f"📂 [DIRETÓRIO] Pasta de trabalho definida para: {os.getcwd()}")
+
 # Carrega dotenv bem no início para que as variáveis afetem as configurações do Flet
 try:
     from dotenv import load_dotenv
@@ -35,9 +43,9 @@ import subprocess
 
 # --- POLYFILL PARA ICONES DESCONTINUADOS OU FALTANTES ---
 print("Applying Icon Polyfill...")
-for icon_name in ["FINGERPRINT", "LOCK_OPEN", "CLOSE", "REFRESH", "REMOVE", "CROP_SQUARE", "PEOPLE", "VIDEOCAM", "SYNC", "HISTORY", "TROUBLESHOOT", "SETTINGS", "CLOUD_DONE", "CHECK_CIRCLE", "SEARCH", "CALENDAR_MONTH", "PERSON", "LOCK", "ANALYTICS", "MEMORY", "ERROR", "REPLAY"]:
-    if not hasattr(ft.icons, icon_name):
-        setattr(ft.icons, icon_name, icon_name.lower())
+for icon_name in ["FINGERPRINT", "LOCK_OPEN", "CLOSE", "REFRESH", "REMOVE", "CROP_SQUARE", "PEOPLE", "VIDEOCAM", "SYNC", "HISTORY", "TROUBLESHOOT", "SETTINGS", "CLOUD_DONE", "CHECK_CIRCLE", "SEARCH", "CALENDAR_MONTH", "PERSON", "PERSON_OUTLINE", "LOCK", "ANALYTICS", "MEMORY", "ERROR", "REPLAY"]:
+    if not hasattr(ft.Icons, icon_name):
+        setattr(ft.Icons, icon_name, icon_name.lower())
 print("Polyfill Applied.")
 
 from flask import Flask, jsonify, request
@@ -114,6 +122,10 @@ COR_TEXT_SEC = "#b0b0b0" # Aumentando contraste do texto secundário
 COR_SUCCESS = "#2ecc71"
 COR_WARNING = "#f39c12"
 COR_ERROR = "#e74c3c"
+
+# Constant used to avoid Flet Image must have 'src' specified error
+TRANSPARENT_PIXEL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oAMBAAIRAxEAPwD+f+iiigD/2Q=="
+
 
 try:
     # A biometria fprintd é apenas para Linux
@@ -873,7 +885,7 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
         
         status_captura = ft.Text("AGUARDANDO SELEÇÃO", color="#ffffff", size=12, weight="bold")
         sw_calib = ft.Switch(label="AJUSTAR POSIÇÕES", value=False, active_color=COR_PRIMARY)
-        log_messages = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=5)
+        log_messages = ft.Column(scroll="auto", spacing=5)
 
         def add_log(msg, color=COR_TEXT_SEC):
             timestamp = time.strftime("%H:%M:%S")
@@ -881,7 +893,7 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
             log_messages.controls.append(
                 ft.Row([
                     ft.Text(f"[{timestamp}]", color="#444444", size=9, weight="bold"),
-                    ft.Text(f" {msg}", color=color, size=11, weight="w600", expand=True)
+                    ft.Text(f" {msg}", color=color, size=11, weight="bold", expand=True)
                 ], spacing=5)
             )
             if len(log_messages.controls) > 30: log_messages.controls.pop(0)
@@ -919,6 +931,29 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
         # Disponibiliza o fechamento para o menu lateral
         state["close_enroll"] = fechar_dlg
 
+        # Verifica se imagem existe para evitar placeholder cinza
+        HAND_IMAGE_PATH = "media/imagens/biometric_hand_premium.png"
+        if os.path.exists(HAND_IMAGE_PATH):
+            hand_bg_content = ft.Image(
+                src=HAND_IMAGE_PATH,
+                fit="cover",
+                opacity=0.9,
+                border_radius=12
+            )
+        else:
+            # Fallback visual elegante quando não há imagem
+            hand_bg_content = ft.Container(
+                content=ft.Column([
+                    ft.Icon(ft.Icons.FINGERPRINT, size=80, color=COR_PRIMARY),
+                    ft.Text("MAPA BIOMÉTRICO", size=14, weight="bold", color=COR_PRIMARY, text_align="center"),
+                    ft.Text("Toque no sensor para cadastrar", size=11, color=COR_TEXT_SEC, text_align="center"),
+                ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                alignment=ft.Alignment(0, 0),
+                expand=True,
+                bgcolor="#0a0a0a",
+                border_radius=12,
+            )
+
         # DASHBOARD PREMIUM (CYBER-INDUSTRIAL)
         main_layout = ft.Container(
             expand=True, bgcolor="#050505", border_radius=20, padding=10,
@@ -931,26 +966,19 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
                         expand=True,
                         aspect_ratio=1.0, # Proporção quadrada para preencher o quadro sem bordas pretas
                         alignment=ft.Alignment(0, 0),
-                        border=ft.Border(ft.BorderSide(2, COR_PRIMARY), ft.BorderSide(2, COR_PRIMARY), ft.BorderSide(2, COR_PRIMARY), ft.BorderSide(2, COR_PRIMARY)), # Quadro ajustado à imagem
+                        border=ft.Border.all(2, COR_PRIMARY), # Quadro ajustado à imagem
                         border_radius=15,
                         padding=2,
                         content=ft.Stack(
                             expand=True,
-                            controls=[
-                                ft.Image(
-                                    src="media/imagens/biometric_hand_premium.png", 
-                                    fit="cover", 
-                                    opacity=0.9,
-                                    border_radius=12
-                                ),
-                            ]
+                            controls=[hand_bg_content]
                         )
                     )
                 ),
                 # Painel de Controle (Direita)
                 ft.Container(
                     expand=25, bgcolor="#0a0a0a", border_radius=15, padding=20,
-                    border=ft.Border(ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05")),
+                    border=ft.Border.all(1, "#ffffff05"),
                     content=ft.Column([
                         ft.Text(nome, size=20, weight="bold", color=COR_PRIMARY, overflow="ellipsis"),
                         ft.Text(f"MATRÍCULA: {matricula}", size=11, color=COR_TEXT_SEC),
@@ -958,10 +986,10 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
                         ft.Container(
                             content=ft.Column([
                                 ft.Text("STATUS DO SENSOR", size=9, weight="bold", color="#888888"),
-                                ft.Row([ft.Icon("wifi", color=COR_PRIMARY, size=16), status_captura], spacing=10),
+                                ft.Row([ft.Icon(ft.Icons.WIFI, color=COR_PRIMARY, size=16), status_captura], spacing=10),
                             ]),
                             bgcolor="#1a1a1a", padding=12, border_radius=12,
-                            border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"))
+                            border=ft.Border.all(1, "#ffffff10")
                         ),
                         ft.Container(
                             content=ft.Column([
@@ -969,14 +997,14 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
                                 sw_calib,
                             ]),
                             bgcolor="#1a1a1a", padding=12, border_radius=12,
-                            border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"))
+                            border=ft.Border.all(1, "#ffffff10")
                         ),
                         ft.Row([
                             ft.Text("LOG DE OPERAÇÕES", size=10, weight="bold", color=COR_TEXT_SEC),
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                         ft.Container(
                             expand=True, bgcolor="#000000", border_radius=12, padding=10, 
-                            content=log_messages, border=ft.Border(ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05")),
+                            content=log_messages, border=ft.Border.all(1, "#ffffff05"),
                         ),
                         ft.Column([
                             ft.ElevatedButton(
@@ -1104,7 +1132,7 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
                                     ft.Container(
                                         width=52, height=52, border_radius=26, 
                                         alignment=ft.Alignment(0, 0),
-                                        content=ft.Icon("fingerprint", size=28)
+                                        content=ft.Icon(ft.Icons.FINGERPRINT, size=28)
                                     ),
                                     ft.Container(
                                         content=ft.Text(d["lbl"], size=9, weight="bold", color="white"),
@@ -1114,9 +1142,9 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
                                 on_click=lambda _, id_d=f_id, lbl_d=d["lbl"]: _execute_enroll(id_d, lbl_d),
                             ),
                             ft.Container( # btn_del_base
-                                content=ft.Icon("close", size=10, color="white"),
+                                content=ft.Icon(ft.Icons.CLOSE, size=10, color="white"),
                                 width=18, height=18, border_radius=9, bgcolor=COR_ERROR,
-                                border=ft.Border(ft.BorderSide(1, "white"), ft.BorderSide(1, "white"), ft.BorderSide(1, "white"), ft.BorderSide(1, "white")),
+                                border=ft.Border.all(1, "white"),
                                 left=32, top=-3
                             )
                         ], width=70, height=80),
@@ -1145,7 +1173,7 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
                 circle = btn_finger_cont.content.controls[0]
                 icon = circle.content
                 circle.bgcolor = COR_SUCCESS if is_on else "#1a1a1a"
-                circle.border = ft.Border(ft.BorderSide(2, COR_SUCCESS if is_on else "#444444"), ft.BorderSide(2, COR_SUCCESS if is_on else "#444444"), ft.BorderSide(2, COR_SUCCESS if is_on else "#444444"), ft.BorderSide(2, COR_SUCCESS if is_on else "#444444"))
+                circle.border = ft.Border.all(2, COR_SUCCESS if is_on else "#444444")
                 circle.shadow = ft.BoxShadow(spread_radius=1, blur_radius=15, color=COR_SUCCESS + "40") if is_on else None
                 icon.color = "white" if is_on else COR_TEXT_SEC
                 
@@ -1183,7 +1211,7 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
                         ], alignment=ft.MainAxisAlignment.END)
                     ], spacing=20, tight=True),
                     bgcolor=COR_BG, padding=30, border_radius=15, width=400,
-                    border=ft.Border(ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"))
+                    border=ft.Border.all(1, "#ffffff20")
                 ),
                 alignment=ft.Alignment(0, 0),
                 bgcolor="#000000dd",
@@ -1253,7 +1281,7 @@ def abrir_cadastro_digital(aluno, page: ft.Page, biometria_manager, render_main_
         # Botão extra no painel de controle para salvar posições
         main_layout.content.controls[1].content.controls.insert(-1, ft.ElevatedButton(
             "SALVAR COORDENADAS", 
-            icon="save_alt", 
+            icon=ft.Icons.SAVE_ALT, 
             on_click=lambda _: log_coords(),
             width=300, height=40,
             style=ft.ButtonStyle(bgcolor="#1a1a1a", color=COR_ACCENT, shape=ft.RoundedRectangleBorder(radius=8))
@@ -1311,31 +1339,40 @@ def main(page: ft.Page):
     # file_picker.on_result = on_file_result
     file_picker = None # Fallback para evitar NameError
 
+    profile_img_src = "media/imagens/rkslogo.png" if os.path.exists("media/imagens/rkslogo.png") else None
+
+    profile_placeholder = ft.Container(
+        content=ft.Icon(ft.Icons.PERSON_OUTLINE, color=COR_PRIMARY, size=70),
+        bgcolor="#1a1a1a",
+        width=140, height=140,
+        border_radius=70,
+        alignment=ft.Alignment(0, 0),
+        border=ft.Border.all(2, COR_PRIMARY + "40"),
+        shadow=ft.BoxShadow(blur_radius=15, color="#00000030")
+    )
+
     profile_img = ft.Image(
-        src="media/imagens/rkslogo.png",
+        src=profile_img_src if profile_img_src else TRANSPARENT_PIXEL,
         width=140, height=140,
         fit="cover",
         border_radius=70,
     )
+
 
     lbl_side_nome = ft.Text("RECEPÇÃO ATIVA", size=16, weight="bold", color=COR_TEXTO, text_align="center")
     lbl_side_vencimento = ft.Text("Aguardando identificação...", size=12, color=COR_TEXT_SEC, text_align="center")
 
     photo_field = ft.Container(
         content=ft.Stack([
+            profile_placeholder,
             profile_img,
             ft.Container(
-                content=ft.Icon("camera", size=20, color="white"),
+                content=ft.Icon(ft.Icons.CAMERA, size=20, color="white"),
                 bgcolor=COR_PRIMARY,
                 width=36, height=36,
                 border_radius=18,
                 right=5, bottom=5,
-                border=ft.Border(
-                    top=ft.BorderSide(3, "#000000"),
-                    right=ft.BorderSide(3, "#000000"),
-                    bottom=ft.BorderSide(3, "#000000"),
-                    left=ft.BorderSide(3, "#000000"),
-                ),
+                border=ft.Border.all(3, "#000000"),
                 alignment=ft.Alignment(0, 0)
             )
         ]),
@@ -1412,18 +1449,18 @@ def main(page: ft.Page):
             content=ft.Row(
                 [
                     ft.Icon(icon, color=COR_PRIMARY if active else COR_TEXT_SEC, size=20),
-                    ft.Text(text, color=COR_TEXTO if active else COR_TEXT_SEC, size=14, weight=ft.FontWeight.W_500),
+                    ft.Text(text, color=COR_TEXTO if active else COR_TEXT_SEC, size=14, weight="normal"),
                 ],
                 spacing=12, alignment=ft.MainAxisAlignment.START
             ),
             padding=ft.Padding(16, 12, 16, 12),
             border_radius=12,
-            bgcolor="#1a1a1a" if active else None,
+            bgcolor="#1a1a1a" if active else "transparent",
             on_click=on_click,
         )
 
     def create_section_title(text):
-        return ft.Text(text, color=COR_TEXT_SEC, size=11, weight=ft.FontWeight.BOLD, opacity=0.7)
+        return ft.Text(text, color=COR_TEXT_SEC, size=11, weight="bold", opacity=0.7)
 
     # Menu Monitoramento
     def switch_view(view_name):
@@ -1439,8 +1476,8 @@ def main(page: ft.Page):
     menu_monitoramento = ft.Column(
         [
             create_section_title("MONITORAMENTO"),
-            create_menu_item("Clientes", "people", active=state["current_view"] == "clientes", on_click=lambda _: switch_view("clientes")),
-            create_menu_item("Monitor Câmera", "videocam", on_click=lambda _: subprocess.Popen([sys.executable, os.path.abspath(os.path.join(os.path.dirname(__file__), "monitor_aluno.py"))], start_new_session=True)),
+            create_menu_item("Clientes", ft.Icons.PEOPLE, active=state["current_view"] == "clientes", on_click=lambda _: switch_view("clientes")),
+            create_menu_item("Monitor Câmera", ft.Icons.VIDEOCAM, on_click=lambda _: subprocess.Popen([sys.executable, os.path.abspath(os.path.join(os.path.dirname(__file__), "monitor_aluno.py"))], start_new_session=True)),
         ],
         spacing=4
     )
@@ -1474,8 +1511,8 @@ def main(page: ft.Page):
     btn_entrada = ft.Container(
         content=ft.Row(
             [
-                ft.Icon("lock_open", color=COR_PRIMARY, size=18),
-                ft.Text("Liberar entrada", color=COR_TEXTO, size=14, weight=ft.FontWeight.BOLD),
+                ft.Icon(ft.Icons.LOCK_OPEN, color=COR_PRIMARY, size=18),
+                ft.Text("Liberar entrada", color=COR_TEXTO, size=14, weight="bold"),
             ],
             spacing=10, alignment=ft.MainAxisAlignment.CENTER
         ),
@@ -1490,8 +1527,8 @@ def main(page: ft.Page):
     btn_saida = ft.Container(
         content=ft.Row(
             [
-                ft.Icon("lock", color=COR_ERROR, size=18),
-                ft.Text("Liberar saída", color=COR_ERROR, size=14, weight=ft.FontWeight.BOLD),
+                ft.Icon(ft.Icons.LOCK, color=COR_ERROR, size=18),
+                ft.Text("Liberar saída", color=COR_ERROR, size=14, weight="bold"),
             ],
             spacing=10, alignment=ft.MainAxisAlignment.CENTER
         ),
@@ -1499,7 +1536,7 @@ def main(page: ft.Page):
         height=48,
         border_radius=12,
         padding=ft.Padding(20, 0, 20, 0),
-        border=ft.Border(ft.BorderSide(1, COR_ERROR + "40"), ft.BorderSide(1, COR_ERROR + "40"), ft.BorderSide(1, COR_ERROR + "40"), ft.BorderSide(1, COR_ERROR + "40")),
+        border=ft.Border.all(1, COR_ERROR + "40"),
         ink=True,
         on_click=lambda _: liberar_manual("SAIDA"),
     )
@@ -1522,7 +1559,7 @@ def main(page: ft.Page):
                 # Feedback UI
                 btn_sync_top.disabled = True
                 btn_sync_top.text = "Sincronizando..."
-                btn_sync_top.icon = ft.icons.HOURGLASS_EMPTY
+                btn_sync_top.icon = ft.Icons.HOURGLASS_EMPTY
                 page.update()
 
                 print("📡 [SYNC] Iniciando Sincronização Industrial Completa...")
@@ -1554,7 +1591,7 @@ def main(page: ft.Page):
             finally:
                 btn_sync_top.disabled = False
                 btn_sync_top.text = "Sincronizar CRM"
-                btn_sync_top.icon = ft.icons.SYNC
+                btn_sync_top.icon = ft.Icons.SYNC
                 try: SYNC_LOCK.release()
                 except: pass
                 page.update()
@@ -1572,8 +1609,8 @@ def main(page: ft.Page):
                 ft.Container(content=logo, alignment=ft.Alignment(0, 0)),
                 ft.Divider(height=20, color="transparent"),
                 create_section_title("MONITORAMENTO"),
-                create_menu_item("Clientes", "people", active=state["current_view"] == "clientes", on_click=lambda _: switch_view("clientes")),
-            create_menu_item("Monitor Câmera", "videocam", on_click=lambda _: subprocess.Popen([sys.executable, os.path.abspath(os.path.join(os.path.dirname(__file__), "monitor_aluno.py"))], start_new_session=True)),
+                create_menu_item("Clientes", ft.Icons.PEOPLE, active=state["current_view"] == "clientes", on_click=lambda _: switch_view("clientes")),
+            create_menu_item("Monitor Câmera", ft.Icons.VIDEOCAM, on_click=lambda _: subprocess.Popen([sys.executable, os.path.abspath(os.path.join(os.path.dirname(__file__), "monitor_aluno.py"))], start_new_session=True)),
                 
                 ft.Divider(height=10, color="transparent"),
                 create_section_title("ACESSO"),
@@ -1582,9 +1619,9 @@ def main(page: ft.Page):
                 
                 ft.Divider(height=10, color="transparent"),
                 create_section_title("SISTEMA"),
-                create_menu_item("Histórico", "history", on_click=lambda _: abrir_historico()),
-                create_menu_item("Diagnóstico", "troubleshoot", on_click=lambda _: abrir_diagnostico()),
-                create_menu_item("Configurações", "settings", on_click=lambda _: abrir_configuracoes()),
+                create_menu_item("Histórico", ft.Icons.HISTORY, on_click=lambda _: abrir_historico()),
+                create_menu_item("Diagnóstico", ft.Icons.TROUBLESHOOT, on_click=lambda _: abrir_diagnostico()),
+                create_menu_item("Configurações", ft.Icons.SETTINGS, on_click=lambda _: abrir_configuracoes()),
                 
                 ft.Container(expand=True),
                 ft.Container(
@@ -1596,7 +1633,7 @@ def main(page: ft.Page):
                 ),
             ],
             spacing=4,
-            scroll=ft.ScrollMode.AUTO # Caso o conteúdo cresça, ele permite scroll em vez de quebrar
+            
         ),
     )
 
@@ -1608,10 +1645,10 @@ def main(page: ft.Page):
     status_online = ft.Container(
         content=ft.Row(
             [
-                ft.Icon("cloud_done", color=COR_SUCCESS, size=16),
+                ft.Icon(ft.Icons.CLOUD_DONE, color=COR_SUCCESS, size=16),
                 ft.Text("Online: ", color=COR_TEXT_SEC, size=13),
-                ft.Text("CRM", color=COR_SUCCESS, size=13, weight=ft.FontWeight.BOLD),
-                ft.Icon("check_circle", color=COR_SUCCESS, size=14),
+                ft.Text("CRM", color=COR_SUCCESS, size=13, weight="bold"),
+                ft.Icon(ft.Icons.CHECK_CIRCLE, color=COR_SUCCESS, size=14),
             ],
             spacing=4
         ),
@@ -1624,7 +1661,7 @@ def main(page: ft.Page):
         content=ft.Row(
             [
                 ft.Text("Câmera: ", color=COR_TEXT_SEC, size=13),
-                ft.Text("OFF" if not CONFIG["camera_enabled"] else "ON", color=COR_ERROR if not CONFIG["camera_enabled"] else COR_SUCCESS, size=13, weight=ft.FontWeight.BOLD),
+                ft.Text("OFF" if not CONFIG["camera_enabled"] else "ON", color=COR_ERROR if not CONFIG["camera_enabled"] else COR_SUCCESS, size=13, weight="bold"),
             ],
             spacing=4
         ),
@@ -1647,12 +1684,21 @@ def main(page: ft.Page):
         on_change=lambda e: render_alunos(),
     )
 
-    btn_sync_top = ft.ElevatedButton(
-        "Sincronizar CRM",
-        icon=ft.icons.SYNC,
+    btn_sync_icon = ft.Icon(ft.Icons.SYNC, color="#000000", size=18)
+    btn_sync_text = ft.Text("Sincronizar CRM", color="#000000", size=14, weight="bold")
+    btn_sync_top = ft.Container(
+        content=ft.Row(
+            [
+                btn_sync_icon,
+                btn_sync_text,
+            ],
+            spacing=8, alignment=ft.MainAxisAlignment.CENTER
+        ),
         bgcolor=COR_PRIMARY,
-        color="#000000",
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        height=40,
+        border_radius=10,
+        padding=ft.Padding(left=15, top=0, right=15, bottom=0),
+        ink=True,
         on_click=lambda _: sync_crm()
     )
 
@@ -1667,15 +1713,15 @@ def main(page: ft.Page):
     )
 
     # Cards de estatísticas (Dinâmicos)
-    lbl_ativos_val = ft.Text("0", color=COR_SUCCESS, size=36, weight=ft.FontWeight.BOLD, font_family="Space Grotesk")
-    lbl_vencendo_val = ft.Text("0", color=COR_WARNING, size=36, weight=ft.FontWeight.BOLD, font_family="Space Grotesk")
-    lbl_vencidos_val = ft.Text("0", color=COR_ERROR, size=36, weight=ft.FontWeight.BOLD, font_family="Space Grotesk")
+    lbl_ativos_val = ft.Text("0", color=COR_SUCCESS, size=36, weight="bold", font_family="Space Grotesk")
+    lbl_vencendo_val = ft.Text("0", color=COR_WARNING, size=36, weight="bold", font_family="Space Grotesk")
+    lbl_vencidos_val = ft.Text("0", color=COR_ERROR, size=36, weight="bold", font_family="Space Grotesk")
 
     def create_stat_card(title, value_control, color):
         return ft.Container(
             content=ft.Column(
                 [
-                    ft.Text(title, color=COR_TEXT_SEC, size=13, weight=ft.FontWeight.W_500),
+                    ft.Text(title, color=COR_TEXT_SEC, size=13, weight="normal"),
                     value_control,
                 ],
                 spacing=4, alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER
@@ -1743,6 +1789,7 @@ def main(page: ft.Page):
             for mats in BIOMETRIA_MAPPING_CACHE.values():
                 for m in mats: matriculas_com_digital.add(str(m))
 
+        rendered_count = 0
         for aluno in state["alunos_data"]:
             nome = str(aluno.get("nome", "ALUNO"))
             mat = str(aluno.get("matricula", "N/D"))
@@ -1750,21 +1797,32 @@ def main(page: ft.Page):
             dias = int(aluno.get("dias_restantes") or 0)
             if filter_text and filter_text not in nome.lower() and filter_text not in mat: continue
 
+            rendered_count += 1
+            if rendered_count > 30:
+                lista_alunos_col.controls.append(
+                    ft.Container(
+                        content=ft.Text("Use a barra de pesquisa para filtrar outros alunos...", color=COR_TEXT_SEC, size=12, italic=True),
+                        padding=ft.Padding(left=12, top=12, right=12, bottom=12),
+                        alignment=ft.Alignment(0, 0)
+                    )
+                )
+                break
+
             cor_status = get_status_color(status)
             furl = aluno.get("foto_url", "")
             img_avatar = ft.Image(src=furl if furl.startswith("http") else f"{SITE_URL}{furl}", width=50, height=50, border_radius=25, fit="cover") if furl else None
             
             avatar = ft.Container(
                 content=ft.Text("".join([p[0] for p in nome.split()[:2]]).upper(), color=cor_status, size=16, weight="bold") if not img_avatar else img_avatar,
-                width=50, height=50, border_radius=25, bgcolor=COR_CARD_HIGH, border=ft.Border(ft.BorderSide(2, cor_status), ft.BorderSide(2, cor_status), ft.BorderSide(2, cor_status), ft.BorderSide(2, cor_status)), alignment=ft.Alignment(0, 0), clip_behavior=ft.ClipBehavior.HARD_EDGE
+                width=50, height=50, border_radius=25, bgcolor=COR_CARD_HIGH, border=ft.Border.all(2, cor_status), alignment=ft.Alignment(0, 0), clip_behavior=ft.ClipBehavior.HARD_EDGE
             )
 
             info = ft.Column([ft.Text(nome[:20], color=COR_TEXTO, size=14, weight="bold"), ft.Text(f"Mat. {mat}", color=COR_TEXT_SEC, size=12)], spacing=2)
             badge = get_status_badge(status, dias, str(aluno.get("vencimento", "")))
             
             has_digital = mat in matriculas_com_digital
-            btn_digital = ft.Container(content=ft.Icon(ft.icons.FINGERPRINT, size=24, color=COR_PRIMARY), on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state), padding=10, border_radius=10, ink=True)
-            btn_liberar = ft.Container(content=ft.Icon(ft.icons.LOCK_OPEN, size=24, color=COR_SUCCESS), on_click=lambda e, a=aluno: liberar_aluno(a, "ENTRADA"), padding=10, border_radius=10, ink=True)
+            btn_digital = ft.Container(content=ft.Icon(ft.Icons.FINGERPRINT, size=24, color=COR_PRIMARY), on_click=lambda e, a=aluno: abrir_cadastro_digital(a, page, biometria_manager_global, render_main_content, state), padding=10, border_radius=10, ink=True)
+            btn_liberar = ft.Container(content=ft.Icon(ft.Icons.LOCK_OPEN, size=24, color=COR_SUCCESS), on_click=lambda e, a=aluno: liberar_aluno(a, "ENTRADA"), padding=10, border_radius=10, ink=True)
 
             lista_alunos_col.controls.append(ft.Container(
                 content=ft.Row([ft.Row([avatar, info], spacing=12), ft.Row([badge, btn_liberar, btn_digital], spacing=4)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
@@ -1774,7 +1832,7 @@ def main(page: ft.Page):
 
     # --- HISTÓRICO ---
     # Componentes de Histórico Reforçados (Industrial Premium - FULL WIDTH)
-    historico_items = ft.Column(spacing=0, expand=True, scroll=ft.ScrollMode.AUTO)
+    historico_items = ft.Column(spacing=0, expand=True, scroll="auto")
     
     # Cabeçalho da Tabela (Fixed)
     historico_header = ft.Container(
@@ -1895,27 +1953,27 @@ def main(page: ft.Page):
                     content=ft.Column([
                         ft.Row([
                             ft.Row([
-                                ft.Icon("history", color=COR_PRIMARY, size=30),
+                                ft.Icon(ft.Icons.HISTORY, color=COR_PRIMARY, size=30),
                                 ft.Column([
                                     ft.Text("AUDITORIA DE ACESSOS", size=22, weight="bold"),
                                     ft.Text("LOGS EM TEMPO REAL • FORMATO INDUSTRIAL", size=11, color=COR_TEXT_SEC),
                                 ], spacing=0)
                             ], spacing=15),
-                            ft.Container(content=ft.Icon(ft.icons.CLOSE, color="#555555", size=20), on_click=lambda _: close_hist(), padding=5, border_radius=5, ink=True)
+                            ft.Container(content=ft.Icon(ft.Icons.CLOSE, color="#555555", size=20), on_click=lambda _: close_hist(), padding=5, border_radius=5, ink=True)
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                         ft.Divider(height=30, color="#ffffff10"),
                         ft.Row([
                             search_hist,
                             date_hist,
                             ft.Container(
-                                content=ft.Container(content=ft.Icon(ft.icons.REFRESH, color="white", size=20), on_click=lambda _: render_historico(), padding=8, border_radius=12, ink=True),
+                                content=ft.Container(content=ft.Icon(ft.Icons.REFRESH, color="white", size=20), on_click=lambda _: render_historico(), padding=8, border_radius=12, ink=True),
                                 bgcolor=COR_PRIMARY,
                                 border_radius=12
                             )
                         ], spacing=15),
                         ft.Divider(height=20, color="transparent"),
                         ft.Container(
-                            content=ft.Column([historico_header, historico_items], scroll=ft.ScrollMode.AUTO, expand=True),
+                            content=ft.Column([historico_header, historico_items], scroll="auto", expand=True),
                             expand=True,
                             border_radius=15,
                             bgcolor="#00000030",
@@ -1927,7 +1985,7 @@ def main(page: ft.Page):
                     border_radius=30, 
                     width=950, 
                     height=700, 
-                    border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"))
+                    border=ft.Border.all(1, "#ffffff10")
                 ), 
                 alignment=ft.Alignment(0, 0), 
                 bgcolor="#000000ee", 
@@ -1951,17 +2009,20 @@ def main(page: ft.Page):
     lista_alunos_col = ft.ListView(expand=True, spacing=8, padding=ft.Padding(0, 10, 0, 0))
 
     # Painel Direito: Monitor de Acesso em Tempo Real (Industrial)
-    last_access_img = ft.Image(src="", width=120, height=120, border_radius=60, fit="cover", visible=False)
+    last_access_img = ft.Image(src=TRANSPARENT_PIXEL, width=120, height=120, border_radius=60, fit="cover", visible=False)
     last_access_placeholder = ft.Container(
-        content=ft.Icon("person", color="#444444", size=60), 
+        content=ft.Column([
+            ft.Icon(ft.Icons.PERSON_OUTLINE, color=COR_PRIMARY, size=50),
+            ft.Text("AGUARDANDO...", size=10, color=COR_TEXT_SEC, weight="bold"),
+        ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
         bgcolor="#1a1a1a", width=120, height=120, border_radius=60, 
         alignment=ft.Alignment(0, 0), 
-        border=ft.Border(ft.BorderSide(2, "#333333"), ft.BorderSide(2, "#333333"), ft.BorderSide(2, "#333333"), ft.BorderSide(2, "#333333")),
+        border=ft.Border.all(2, COR_PRIMARY + "40"),
         shadow=ft.BoxShadow(blur_radius=20, color="#00000050")
     )
     last_access_nome = ft.Text("AGUARDANDO...", weight="bold", size=18, text_align="center")
     last_access_matricula = ft.Text("", size=13, color=COR_TEXT_SEC)
-    last_access_vencimento = ft.Text("", size=14, weight="w600", color=COR_PRIMARY)
+    last_access_vencimento = ft.Text("", size=14, weight="bold", color=COR_PRIMARY)
     last_access_status_txt = ft.Text("STANDBY", size=12, weight="bold", color="white")
     
     last_access_status_box = ft.Container(
@@ -1981,7 +2042,7 @@ def main(page: ft.Page):
         width=300,
         bgcolor="#0f0f0f",
         padding=ft.Padding(20, 20, 20, 20),
-        border=ft.Border(ft.BorderSide(1, "#ffffff08"), None, None, None), 
+        border=ft.Border(top=ft.BorderSide(1, "#ffffff08")), 
         content=ft.Column(
             [
                 ft.Text("ÚLTIMO ACESSO", size=11, weight="bold", color=COR_TEXT_SEC, opacity=0.7),
@@ -1993,13 +2054,13 @@ def main(page: ft.Page):
                         last_access_nome,
                         last_access_matricula,
                         ft.Container(height=5),
-                        ft.Row([ft.Icon("calendar_today", size=16, color=COR_TEXT_SEC), last_access_vencimento], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
+                        ft.Row([ft.Icon(ft.Icons.CALENDAR_TODAY, size=16, color=COR_TEXT_SEC), last_access_vencimento], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
                     padding=ft.Padding(20, 20, 20, 20),
                     bgcolor="#161616",
                     border_radius=20,
                     # blur=ft.Blur(10, 10),
-                    border=ft.Border(ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05")),
+                    border=ft.Border.all(1, "#ffffff05"),
                 ),
                 ft.Container(height=15),
                 last_access_status_box,
@@ -2013,11 +2074,12 @@ def main(page: ft.Page):
                     padding=15,
                     bgcolor="#111111",
                     border_radius=12,
-                    border=ft.Border(ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05"), ft.BorderSide(1, "#ffffff05")),
+                    border=ft.Border.all(1, "#ffffff05"),
                 )
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             width=260, # Largura útil (300 - padding)
+            scroll="auto",
         ),
         animate_offset=ft.Animation(500, "decelerate"),
         offset=ft.Offset(0, 0)
@@ -2105,10 +2167,10 @@ def main(page: ft.Page):
                             ft.Text(title, size=13, weight="bold", color=COR_TEXT_SEC),
                             ft.Text(detail, size=11, color=COR_TEXT_SEC),
                         ], spacing=2, expand=True),
-                        ft.Icon("check_circle" if is_ok else "error", color=color, size=32),
+                        ft.Icon(ft.Icons.CHECK_CIRCLE if is_ok else "error", color=color, size=32),
                     ], spacing=15),
                     padding=15, bgcolor="#000000", border_radius=12,
-                    border=ft.Border(ft.BorderSide(1, color + "40"), ft.BorderSide(1, color + "40"), ft.BorderSide(1, color + "40"), ft.BorderSide(1, color + "40"))
+                    border=ft.Border.all(1, color + "40")
                 )
 
             # Cards de carregamento inicial
@@ -2120,8 +2182,8 @@ def main(page: ft.Page):
                 content=ft.Container(
                     content=ft.Column([
                         ft.Row([
-                            ft.Row([ft.Icon("analytics", color=COR_PRIMARY), ft.Text("DIAGNÓSTICO ROCKS-FIT", size=20, weight="bold")], spacing=10),
-                            ft.Container(content=ft.Icon(ft.icons.CLOSE, size=20), on_click=lambda _: close_diag(), padding=5, border_radius=5, ink=True)
+                            ft.Row([ft.Icon(ft.Icons.ANALYTICS, color=COR_PRIMARY), ft.Text("DIAGNÓSTICO ROCKS-FIT", size=20, weight="bold")], spacing=10),
+                            ft.Container(content=ft.Icon(ft.Icons.CLOSE, size=20), on_click=lambda _: close_diag(), padding=5, border_radius=5, ink=True)
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                         ft.Divider(height=1, color="#ffffff10"),
                         ft.Column([
@@ -2130,7 +2192,7 @@ def main(page: ft.Page):
                             card_bio,
                             diag_card("CÂMERA BIOMÉTRICA", True, "Dispositivo USB Ativo", "videocam"),
                             diag_card("MOTOR NEURAL", DEEPFACE_ONLINE, "DeepFace: " + ("ATIVO" if DEEPFACE_ONLINE else "DESATIVADO"), "memory"),
-                        ], spacing=10, scroll=ft.ScrollMode.AUTO, height=400),
+                        ], spacing=10, scroll="auto", height=400),
                         ft.Row([
                             ft.ElevatedButton("LIMPAR HARDWARE", on_click=lambda _: nuclear_cleanup(), expand=True, style=ft.ButtonStyle(bgcolor=COR_PRIMARY, color="white")),
                             ft.ElevatedButton("TESTAR ENTRADA", on_click=lambda _: trigger_catraca("ENTRADA"), expand=True, bgcolor=COR_SUCCESS, color="white"),
@@ -2138,7 +2200,7 @@ def main(page: ft.Page):
                         ], spacing=10)
                     ], spacing=20, tight=True),
                     bgcolor="black", padding=ft.Padding(25, 25, 25, 25), border_radius=20, width=500,
-                    border=ft.Border(ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"))
+                    border=ft.Border.all(1, "#ffffff20")
                 ),
                 alignment=ft.Alignment(0, 0), bgcolor="#000000dd", expand=True, visible=True
             )
@@ -2293,7 +2355,7 @@ def main(page: ft.Page):
                 ),
                 ft.ElevatedButton(
                     content=ft.Row([
-                        ft.Icon("auto_fix_high", color="white", size=18),
+                        ft.Icon(ft.Icons.AUTO_FIX_HIGH, color="white", size=18),
                         ft.Text("  CALIBRAR AGORA", color="white", weight="bold", size=13)
                     ], tight=True),
                     style=ft.ButtonStyle(
@@ -2311,7 +2373,7 @@ def main(page: ft.Page):
                 ft.Divider(height=10),
                 ft.ElevatedButton(
                     content=ft.Row([
-                        ft.Icon("save", color="white", size=18),
+                        ft.Icon(ft.Icons.SAVE, color="white", size=18),
                         ft.Text("  SALVAR PARÂMETROS FACIAIS", color="white", weight="bold", size=13)
                     ], tight=True),
                     style=ft.ButtonStyle(
@@ -2326,7 +2388,7 @@ def main(page: ft.Page):
                         page.update()
                     ),
                 ),
-            ], scroll=ft.ScrollMode.AUTO, spacing=10)
+            ], scroll="auto", spacing=10)
 
             # TAB 2: Catraca & Rede
             tab_catraca = ft.Column([
@@ -2360,7 +2422,7 @@ def main(page: ft.Page):
                               update_config("cooldown_facial", int(e.control.value))
                           )),
                 ft.Text("Tempo mínimo entre uma identificação e outra para o mesmo aluno.", size=10, italic=True, color=COR_TEXT_SEC),
-            ], scroll=ft.ScrollMode.AUTO, spacing=15)
+            ], scroll="auto", spacing=15)
 
             # TAB 3: Digital & Câmera
             tab_hardware = ft.Column([
@@ -2377,14 +2439,14 @@ def main(page: ft.Page):
                 ft.Switch(label="Câmera Ativada", value=CONFIG['camera_enabled'], 
                           on_change=lambda e: update_config("camera_enabled", e.control.value)),
                 ft.Text("Desative para usar apenas a digital e economizar recursos.", size=10, italic=True),
-            ], scroll=ft.ScrollMode.AUTO, spacing=15)
+            ], scroll="auto", spacing=15)
 
             overlay_config = ft.Container(
                 content=ft.Container(
                     content=ft.Column([
                         ft.Row([
                             ft.Text("CONFIGURAÇÕES TÉCNICAS", size=20, weight="bold", color="white"),
-                            ft.Container(content=ft.Icon(ft.icons.CLOSE, size=20), on_click=lambda _: close_config(), padding=5, border_radius=5, ink=True)
+                            ft.Container(content=ft.Icon(ft.Icons.CLOSE, size=20), on_click=lambda _: close_config(), padding=5, border_radius=5, ink=True)
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                         ft.Divider(height=1, color="#ffffff10"),
                         ft.Tabs(
@@ -2399,7 +2461,7 @@ def main(page: ft.Page):
                         )
                     ], expand=True),
                     bgcolor=COR_BG, padding=30, border_radius=20, width=600, height=750,
-                    border=ft.Border(ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"), ft.BorderSide(1, "#ffffff20"))
+                    border=ft.Border.all(1, "#ffffff20")
                 ),
                 alignment=ft.Alignment(0, 0), bgcolor="#000000dd", expand=True
             )
@@ -2448,7 +2510,7 @@ def main(page: ft.Page):
                     ft.WindowDragArea(
                         content=ft.Container(
                             content=ft.Row([
-                                ft.Image(src="media/imagens/rkslogo.png", height=20) if os.path.exists("media/imagens/rkslogo.png") else ft.Icon("fitness_center", color=COR_PRIMARY, size=20),
+                                ft.Image(src="media/imagens/rkslogo.png", height=20) if os.path.exists("media/imagens/rkslogo.png") else ft.Icon(ft.Icons.FITNESS_CENTER, color=COR_PRIMARY, size=20),
                                 ft.Text(title_text, size=11, weight="bold", color=COR_TEXT_SEC, font_family="Space Grotesk"),
                             ], spacing=10),
                             padding=ft.Padding(left=20, right=0, top=0, bottom=0),
@@ -2457,9 +2519,9 @@ def main(page: ft.Page):
                     ),
                     ft.Row(
                         [
-                            ft.Container(content=ft.Icon(ft.icons.REMOVE, size=20, color="#adaaaa"), on_click=minimize_app, padding=6, border_radius=6, ink=True),
-                            ft.Container(content=ft.Icon(ft.icons.CROP_SQUARE, size=20, color="#adaaaa"), on_click=maximize_app, padding=6, border_radius=6, ink=True),
-                            ft.Container(content=ft.Icon(ft.icons.CLOSE, color="#e74c3c", size=20), on_click=close_app, padding=6, border_radius=6, ink=True),
+                            ft.Container(content=ft.Icon(ft.Icons.REMOVE, size=20, color="#adaaaa"), on_click=minimize_app, padding=6, border_radius=6, ink=True),
+                            ft.Container(content=ft.Icon(ft.Icons.CROP_SQUARE, size=20, color="#adaaaa"), on_click=maximize_app, padding=6, border_radius=6, ink=True),
+                            ft.Container(content=ft.Icon(ft.Icons.CLOSE, color="#e74c3c", size=20), on_click=close_app, padding=6, border_radius=6, ink=True),
                         ],
                         spacing=0,
                     ),
@@ -2539,7 +2601,7 @@ def main(page: ft.Page):
             if caminho_existente:
                 try:
                     with open(caminho_existente, "rb") as image_file:
-                        foto_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+                        foto_base64 = "data:image/jpeg;base64," + base64.b64encode(image_file.read()).decode('utf-8')
                 except Exception as ex:
                     print(f"⚠️ [UI] Erro base64 no painel: {ex}")
             
@@ -2553,11 +2615,13 @@ def main(page: ft.Page):
 
             if profile_img:
                 if foto_base64:
-                    profile_img.src_base64 = foto_base64
-                    profile_img.src = None
+                    profile_img.src = foto_base64
                 else:
-                    profile_img.src_base64 = None
-                    profile_img.src = "media/imagens/rkslogo.png"
+                    logo_path = "media/imagens/rkslogo.png"
+                    if os.path.exists(logo_path):
+                        profile_img.src = logo_path
+                    else:
+                        profile_img.src = TRANSPARENT_PIXEL
             
             # 2. ATUALIZA O MONITOR DE ACESSO DIREITO (MIRROR DO MONITOR DO ALUNO)
             try:
@@ -2578,13 +2642,11 @@ def main(page: ft.Page):
                 
                 if last_access_img:
                     if foto_base64:
-                        last_access_img.src_base64 = foto_base64
-                        last_access_img.src = None
+                        last_access_img.src = foto_base64
                         last_access_img.visible = True
                         if last_access_placeholder: last_access_placeholder.visible = False
                     else:
-                        last_access_img.src_base64 = None
-                        last_access_img.src = None
+                        last_access_img.src = TRANSPARENT_PIXEL
                         last_access_img.visible = False
                         if last_access_placeholder: last_access_placeholder.visible = True
             except Exception as ex:
@@ -2609,7 +2671,7 @@ def main(page: ft.Page):
         
         # Placeholder transparente para evitar TransformLayer error no primeiro frame (JPEG)
         transparent_pixel = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD+f+iiigD/2Q=="
-        img_cam = ft.Image(src_base64=transparent_pixel, width=640, height=480, fit="cover", border_radius=16)
+        img_cam = ft.Image(src=TRANSPARENT_PIXEL, width=640, height=480, fit="cover", border_radius=16)
         img_perfil = ft.Image(src="", width=180, height=180, border_radius=90, fit="cover", visible=False)
         
         # QR Code para suporte (WhatsApp)
@@ -2624,10 +2686,10 @@ def main(page: ft.Page):
                 img = qr.make_image(fill_color="black", back_color="white")
                 buf = io.BytesIO()
                 img.save(buf, format="PNG")
-                return base64.b64encode(buf.getvalue()).decode("utf-8")
+                return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
             except: return ""
             
-        img_qr = ft.Image(src_base64=get_qr(), width=180, height=180, border_radius=12, visible=False)
+        img_qr = ft.Image(src=get_qr(), width=180, height=180, border_radius=12, visible=False)
         
         status_container = ft.Container(
             content=ft.Row([ft.Container(width=10, height=10, border_radius=5, bgcolor="#ff7351"), lbl_status_tag], spacing=8, alignment=ft.MainAxisAlignment.CENTER),
@@ -2696,7 +2758,7 @@ def main(page: ft.Page):
                                 ft.Container(content=img_cam, expand=True, alignment=ft.Alignment(0, 0)),
                                 ft.Container(content=badge_cam_status, alignment=ft.Alignment(0, 1))
                             ]), 
-                            expand=True, bgcolor="#000000", border_radius=16, border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10")), clip_behavior=ft.ClipBehavior.HARD_EDGE
+                            expand=True, bgcolor="#000000", border_radius=16, border=ft.Border.all(1, "#ffffff10"), clip_behavior=ft.ClipBehavior.HARD_EDGE
                         )
                     ], col={"sm": 12, "md": 7, "lg": 8}),
                     ft.Column([
@@ -2737,7 +2799,7 @@ def main(page: ft.Page):
                         if len(current_frame) > 128:
                             with PAGE_LOCK:
                                 if not page._engine_alive: break
-                                img_cam.src_base64 = current_frame
+                                img_cam.src = current_frame
                                 last_frame = current_frame
                                 try:
                                     img_cam.update()
@@ -3194,7 +3256,7 @@ def loop_camera():
             success, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
             if not success: continue
             
-            img_b64 = base64.b64encode(buffer).decode('utf-8')
+            img_b64 = "data:image/jpeg;base64," + base64.b64encode(buffer).decode('utf-8')
 
             # Shared Frame Service (Feed para o monitor do aluno) - Otimizado para não travar I/O
             if GLOBAL_FRAME_COUNT % 3 == 0:
