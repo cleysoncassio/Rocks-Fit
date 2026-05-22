@@ -2167,7 +2167,7 @@ def main(page: ft.Page):
                             ft.Text(title, size=13, weight="bold", color=COR_TEXT_SEC),
                             ft.Text(detail, size=11, color=COR_TEXT_SEC),
                         ], spacing=2, expand=True),
-                        ft.Icon(ft.Icons.CHECK_CIRCLE if is_ok else "error", color=color, size=32),
+                        ft.Icon(ft.Icons.CHECK_CIRCLE if is_ok else ft.Icons.ERROR, color=color, size=32),
                     ], spacing=15),
                     padding=15, bgcolor="#000000", border_radius=12,
                     border=ft.Border.all(1, color + "40")
@@ -2190,8 +2190,8 @@ def main(page: ft.Page):
                             card_crm,
                             card_cat,
                             card_bio,
-                            diag_card("CÂMERA BIOMÉTRICA", True, "Dispositivo USB Ativo", "videocam"),
-                            diag_card("MOTOR NEURAL", DEEPFACE_ONLINE, "DeepFace: " + ("ATIVO" if DEEPFACE_ONLINE else "DESATIVADO"), "memory"),
+                            diag_card("CÂMERA BIOMÉTRICA", True, "Dispositivo USB Ativo", ft.Icons.VIDEOCAM),
+                            diag_card("MOTOR NEURAL", True, "DeepFace: " + ("API REMOTA" if DEEPFACE_ONLINE else "LOCAL (ATIVO)"), ft.Icons.MEMORY),
                         ], spacing=10, scroll="auto", height=400),
                         ft.Row([
                             ft.ElevatedButton("LIMPAR HARDWARE", on_click=lambda _: nuclear_cleanup(), expand=True, style=ft.ButtonStyle(bgcolor=COR_PRIMARY, color="white")),
@@ -2210,15 +2210,15 @@ def main(page: ft.Page):
                     s_cat = check_catraca()
                     s_bio = check_biometria()
                     
-                    res_crm = diag_card("SERVIDOR CRM", s_crm, "IP: academiarocksfit.com.br", "cloud_done")
+                    res_crm = diag_card("SERVIDOR CRM", s_crm, "IP: academiarocksfit.com.br", ft.Icons.CLOUD_DONE)
                     card_crm.content = res_crm.content
                     card_crm.border = res_crm.border
                     
-                    res_cat = diag_card("CATRACA (RELÉ)", s_cat, f"IP: {CONFIG.get('catraca_ip')}", "dashboard")
+                    res_cat = diag_card("CATRACA (RELÉ)", s_cat, f"IP: {CONFIG.get('catraca_ip')}", ft.Icons.DASHBOARD)
                     card_cat.content = res_cat.content
                     card_cat.border = res_cat.border
                     
-                    res_bio = diag_card("LEITOR DIGITAL", s_bio, "Scanner fprintd Ativo", "fingerprint")
+                    res_bio = diag_card("LEITOR DIGITAL", s_bio, "Scanner fprintd Ativo", ft.Icons.FINGERPRINT)
                     card_bio.content = res_bio.content
                     card_bio.border = res_bio.border
                     
@@ -2249,9 +2249,6 @@ def main(page: ft.Page):
             if state.get("close_enroll"):
                 try: state["close_enroll"]()
                 except: pass
-                
-            PAUSE_BIOMETRIA = True
-            if biometria_manager_global: biometria_manager_global.pause()
 
             def update_config(key, value):
                 CONFIG[key] = value
@@ -2267,8 +2264,8 @@ def main(page: ft.Page):
             lbl_face_thr = ft.Text(f"Sensibilidade (Threshold): {CONFIG['face_threshold']}", size=12, weight="bold")
             lbl_face_streak = ft.Text(f"Ciclos de Confirmação (Streak): {CONFIG['face_streak']}", size=12, weight="bold")
             lbl_face_skip = ft.Text(f"Frequência de Análise (Frames): {CONFIG['face_frame_skip']}", size=12, weight="bold")
-            lbl_fprint_timeout = ft.Text(f"Tempo Limite (Timeout): {CONFIG['fprint_timeout']}s", size=12, weight="bold")
-            lbl_cooldown_facial = ft.Text(f"Carência de Reconhecimento: {CONFIG.get('cooldown_facial', 30)}s", size=12, weight="bold")
+            lbl_fprint_timeout = ft.Text(f"Tempo Limite (Timeout): {max(1, CONFIG.get('fprint_timeout', 30))}s", size=12, weight="bold")
+            lbl_cooldown_facial = ft.Text(f"Carência de Reconhecimento: {max(1, CONFIG.get('cooldown_facial', 30))}s", size=12, weight="bold")
 
             lbl_face_model = ft.Text(f"Modelo de Deteção: {CONFIG.get('face_model', 'hog').upper()}", size=12, weight="bold")
             lbl_face_scale = ft.Text(f"Escala de Análise: {int(CONFIG.get('face_scale', 0.5)*100)}%", size=12, weight="bold")
@@ -2319,7 +2316,7 @@ def main(page: ft.Page):
                         ft.dropdown.Option("hog", "HOG – Rápido (CPU, recomendado)"),
                         ft.dropdown.Option("cnn", "CNN – Preciso (GPU/CUDA, lento sem GPU)"),
                     ],
-                    on_change=lambda e: (
+                    on_select=lambda e: (
                         setattr(lbl_face_model, "value", f"Modelo de Deteção: {e.control.value.upper()}"),
                         update_config("face_model", e.control.value)
                     ),
@@ -2339,9 +2336,9 @@ def main(page: ft.Page):
                 ft.Divider(height=20),
                 ft.Text("🔬 STATUS DO MOTOR NEURAL", size=12, weight="bold", color=COR_PRIMARY),
                 ft.Row([
-                    ft.Container(width=8, height=8, border_radius=4, bgcolor=COR_SUCCESS if DEEPFACE_ONLINE else COR_ERROR),
+                    ft.Container(width=8, height=8, border_radius=4, bgcolor=COR_SUCCESS),
                     ft.Text(
-                        f"DeepFace API {'ATIVA' if DEEPFACE_ONLINE else 'NÃO DISPONÍVEL (Verifique o servidor Django)'}",
+                        f"DeepFace Engine: {'API Remota (Alta Perf.)' if DEEPFACE_ONLINE else 'Motor Local (Ativo)'}",
                         size=11, color=COR_TEXT_SEC
                     )
                 ], spacing=8),
@@ -2405,18 +2402,18 @@ def main(page: ft.Page):
                     label="Sentido Entrada",
                     value=str(CONFIG['catraca_sentido_entrada']),
                     options=[ft.dropdown.Option("0", "Horário (Comando 0)"), ft.dropdown.Option("1", "Anti-Horário (Comando 1)")],
-                    on_change=lambda e: update_config("catraca_sentido_entrada", int(e.control.value))
+                    on_select=lambda e: update_config("catraca_sentido_entrada", int(e.control.value))
                 ),
                 ft.Dropdown(
                     label="Sentido Saída",
                     value=str(CONFIG['catraca_sentido_saida']),
                     options=[ft.dropdown.Option("0", "Horário (Comando 0)"), ft.dropdown.Option("1", "Anti-Horário (Comando 1)")],
-                    on_change=lambda e: update_config("catraca_sentido_saida", int(e.control.value))
+                    on_select=lambda e: update_config("catraca_sentido_saida", int(e.control.value))
                 ),
                 ft.Divider(height=20),
                 ft.Text("REGRAS DE ACESSO", size=14, weight="bold", color=COR_PRIMARY),
                 lbl_cooldown_facial,
-                ft.Slider(min=5, max=120, divisions=115, value=CONFIG.get('cooldown_facial', 30),
+                ft.Slider(min=1, max=120, divisions=119, value=max(1, CONFIG.get('cooldown_facial', 30)),
                           on_change=lambda e: (
                               setattr(lbl_cooldown_facial, "value", f"Carência de Reconhecimento: {int(e.control.value)}s"),
                               update_config("cooldown_facial", int(e.control.value))
@@ -2428,7 +2425,7 @@ def main(page: ft.Page):
             tab_hardware = ft.Column([
                 ft.Text("BIOMETRIA DIGITAL", size=14, weight="bold", color=COR_PRIMARY),
                 lbl_fprint_timeout,
-                ft.Slider(min=5, max=60, value=CONFIG['fprint_timeout'], 
+                ft.Slider(min=1, max=60, value=max(1, CONFIG.get('fprint_timeout', 30)), 
                           on_change=lambda e: (
                               setattr(lbl_fprint_timeout, "value", f"Tempo Limite (Timeout): {int(e.control.value)}s"),
                               update_config("fprint_timeout", int(e.control.value))
@@ -2441,40 +2438,52 @@ def main(page: ft.Page):
                 ft.Text("Desative para usar apenas a digital e economizar recursos.", size=10, italic=True),
             ], scroll="auto", spacing=15)
 
-            overlay_config = ft.Container(
-                content=ft.Container(
-                    content=ft.Column([
-                        ft.Row([
-                            ft.Text("CONFIGURAÇÕES TÉCNICAS", size=20, weight="bold", color="white"),
-                            ft.Container(content=ft.Icon(ft.Icons.CLOSE, size=20), on_click=lambda _: close_config(), padding=5, border_radius=5, ink=True)
-                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                        ft.Divider(height=1, color="#ffffff10"),
-                        ft.Tabs(
-                            selected_index=0,
-                            animation_duration=300,
-                            tabs=[
-                                ft.Tab(text="FACIAL", content=ft.Container(tab_facial, padding=20)),
-                                ft.Tab(text="CATRACA", content=ft.Container(tab_catraca, padding=20)),
-                                ft.Tab(text="HARDWARE", content=ft.Container(tab_hardware, padding=20)),
-                            ],
-                            expand=True
-                        )
-                    ], expand=True),
-                    bgcolor=COR_BG, padding=30, border_radius=20, width=600, height=750,
-                    border=ft.Border.all(1, "#ffffff20")
-                ),
-                alignment=ft.Alignment(0, 0), bgcolor="#000000dd", expand=True
-            )
-
-            def close_config():
-                global PAUSE_BIOMETRIA
-                if overlay_config in page.overlay:
-                    page.overlay.remove(overlay_config)
-                PAUSE_BIOMETRIA = False
-                if biometria_manager_global: biometria_manager_global.resume()
+            def close_config(e=None):
+                dlg_config.open = False
                 page.update()
 
-            page.overlay.append(overlay_config)
+            dlg_config = ft.AlertDialog(
+                modal=True,
+                title=ft.Row([
+                    ft.Text("CONFIGURAÇÕES TÉCNICAS", size=20, weight="bold", color="white"),
+                    ft.Container(content=ft.Icon(ft.Icons.CLOSE, size=20), on_click=close_config, padding=5, border_radius=5, ink=True)
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                content=ft.Container(
+                    width=600, height=550,
+                    content=ft.Tabs(
+                        selected_index=0,
+                        animation_duration=300,
+                        length=3,
+                        expand=True,
+                        content=ft.Column(
+                            expand=True,
+                            controls=[
+                                ft.TabBar(
+                                    tabs=[
+                                        ft.Tab(label="FACIAL"),
+                                        ft.Tab(label="CATRACA"),
+                                        ft.Tab(label="HARDWARE"),
+                                    ]
+                                ),
+                                ft.TabBarView(
+                                    expand=True,
+                                    controls=[
+                                        ft.Container(tab_facial, padding=10),
+                                        ft.Container(tab_catraca, padding=10),
+                                        ft.Container(tab_hardware, padding=10),
+                                    ]
+                                )
+                            ]
+                        )
+                    )
+                ),
+                content_padding=20,
+                bgcolor=COR_BG,
+                shape=ft.RoundedRectangleBorder(radius=20),
+            )
+
+            page.dialog = dlg_config
+            dlg_config.open = True
             page.update()
             print("✅ [UI] Configurações abertas.")
         except Exception as ex:
@@ -2484,25 +2493,8 @@ def main(page: ft.Page):
     # BARRA DE TÍTULO CUSTOMIZADA (PREMIUM) - FUNÇÃO GERADORA
     # ==========================
     def create_title_bar(title_text="ROCKS FIT - SISTEMA DE RECEPÇÃO"):
-        def close_app(e):
-            if hasattr(page, "_cam_estado") and page._cam_estado:
-                page._cam_estado["rodando"] = False
-            if state in GLOBAL_SESSION_STATES:
-                GLOBAL_SESSION_STATES.remove(state)
-            try:
-                page.window.close()
-            except:
-                pass
-
-        def minimize_app(e): 
-            try: page.window.minimized = True
-            except: pass
-
         def maximize_app(e): 
-            try:
-                page.window.maximized = not page.window.maximized
-                rocksfit_core_update(page)
-            except: pass
+            pass
 
         return ft.Container(
             content=ft.Row(
@@ -2517,13 +2509,14 @@ def main(page: ft.Page):
                         ),
                         expand=True,
                     ),
-                    ft.Row(
-                        [
-                            ft.Container(content=ft.Icon(ft.Icons.REMOVE, size=20, color="#adaaaa"), on_click=minimize_app, padding=6, border_radius=6, ink=True),
-                            ft.Container(content=ft.Icon(ft.Icons.CROP_SQUARE, size=20, color="#adaaaa"), on_click=maximize_app, padding=6, border_radius=6, ink=True),
-                            ft.Container(content=ft.Icon(ft.Icons.CLOSE, color="#e74c3c", size=20), on_click=close_app, padding=6, border_radius=6, ink=True),
-                        ],
-                        spacing=0,
+                    ft.Container(
+                        content=ft.Row(
+                            [
+                                ft.Container(content=ft.Icon(ft.Icons.SETTINGS, size=20, color="#adaaaa"), on_click=lambda _: abrir_configuracoes(), padding=6, border_radius=6, ink=True),
+                            ],
+                            spacing=0,
+                        ),
+                        padding=ft.Padding(right=10, left=0, top=0, bottom=0)
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,

@@ -7,8 +7,8 @@ import dj_database_url
 from decouple import config
 from .base import *
 
-# Configurações de segurança: DEBUG deve ser False em produção
-DEBUG = config("DEBUG", default=False, cast=bool)
+# Forçado para False para garantir segurança e impedir vazamento de Traceback
+DEBUG = False
 
 # ============================================
 # ALLOWED_HOSTS CORRIGIDO - NÃO usar '*' em produção!

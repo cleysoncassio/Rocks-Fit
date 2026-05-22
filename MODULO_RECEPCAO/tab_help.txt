@@ -1,0 +1,163 @@
+Help on class Tab in module flet.controls.material.tabs:
+
+class Tab(flet.controls.adaptive_control.AdaptiveControl)
+ |  Tab(label: Union[str, ForwardRef('Control'), NoneType] = None, icon: Union[flet.controls.icon_data.IconData, ForwardRef('Control'), NoneType] = None, height: Union[int, float, NoneType] = None, icon_margin: Union[int, float, flet.controls.margin.Margin, NoneType] = None, *, data: Any = None, key: Optional[ForwardRef('KeyValue')] = None, ref: dataclasses.InitVar[typing.Optional[flet.controls.ref.Ref[ForwardRef('BaseControl')]]] = None, expand: Annotated[Union[bool, int, NoneType], FieldRule(_check=<function V.instance_of.<locals>._check at 0x7f5969d432e0>)] = None, expand_loose: bool = False, col: Union[dict[Union[str, flet.controls.types.ResponsiveRowBreakpoint], Union[int, float]], int, float] = 12, opacity: Annotated[Union[int, float], FieldRule(_check=<function V.between.<locals>._check at 0x7f5969b0d300>)] = 1.0, tooltip: Union[str, flet.controls.material.tooltip.Tooltip, NoneType] = None, badge: Union[str, flet.controls.material.badge.Badge, NoneType] = None, visible: bool = True, disabled: bool = False, rtl: bool = False, adaptive: Optional[bool] = None) -> None
+ |
+ |  A Material Design :class:`~flet.TabBar` tab.
+ |
+ |  Method resolution order:
+ |      Tab
+ |      flet.controls.adaptive_control.AdaptiveControl
+ |      flet.controls.control.Control
+ |      flet.controls.base_control.BaseControl
+ |      builtins.object
+ |
+ |  Methods defined here:
+ |
+ |  __eq__(self, other)
+ |      Return self==value.
+ |
+ |  __init__(self, label: Union[str, ForwardRef('Control'), NoneType] = None, icon: Union[flet.controls.icon_data.IconData, ForwardRef('Control'), NoneType] = None, height: Union[int, float, NoneType] = None, icon_margin: Union[int, float, flet.controls.margin.Margin, NoneType] = None, *, data: Any = None, key: Optional[ForwardRef('KeyValue')] = None, ref: dataclasses.InitVar[typing.Optional[flet.controls.ref.Ref[ForwardRef('BaseControl')]]] = None, expand: Annotated[Union[bool, int, NoneType], FieldRule(_check=<function V.instance_of.<locals>._check at 0x7f5969d432e0>)] = None, expand_loose: bool = False, col: Union[dict[Union[str, flet.controls.types.ResponsiveRowBreakpoint], Union[int, float]], int, float] = 12, opacity: Annotated[Union[int, float], FieldRule(_check=<function V.between.<locals>._check at 0x7f5969b0d300>)] = 1.0, tooltip: Union[str, flet.controls.material.tooltip.Tooltip, NoneType] = None, badge: Union[str, flet.controls.material.badge.Badge, NoneType] = None, visible: bool = True, disabled: bool = False, rtl: bool = False, adaptive: Optional[bool] = None) -> None
+ |      Initialize self.  See help(type(self)) for accurate signature.
+ |
+ |  __post_init__ = new_post_init(self: ~T, *args) from flet.controls.base_control._apply_control.<locals>
+ |      Set the type and isolation only if explicitly provided.
+ |
+ |  __repr__(self)
+ |      Return repr(self).
+ |
+ |  before_update(self)
+ |      This method is called every time when this control is being updated.
+ |
+ |      Note:
+ |          Make sure not to call/request an `update()` here.
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |
+ |  height
+ |
+ |  icon
+ |
+ |  icon_margin
+ |
+ |  label
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes defined here:
+ |
+ |  __annotations__ = {'height': typing.Union[int, float, NoneType], 'icon...
+ |
+ |  __dataclass_fields__ = {'_c': Field(name='_c',type=<class 'str'>,defau...
+ |
+ |  __dataclass_params__ = _DataclassParams(init=True,repr=True,eq=True,or...
+ |
+ |  __hash__ = None
+ |
+ |  __match_args__ = ('label', 'icon', 'height', 'icon_margin')
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from flet.controls.adaptive_control.AdaptiveControl:
+ |
+ |  adaptive
+ |
+ |  badge
+ |
+ |  expand
+ |
+ |  tooltip
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from flet.controls.adaptive_control.AdaptiveControl:
+ |
+ |  col = 12
+ |
+ |  disabled = False
+ |
+ |  expand_loose = False
+ |
+ |  opacity = 1.0
+ |
+ |  rtl = False
+ |
+ |  visible = True
+ |
+ |  ----------------------------------------------------------------------
+ |  Methods inherited from flet.controls.base_control.BaseControl:
+ |
+ |  __str__(self)
+ |      Return a debug-friendly control identifier string.
+ |
+ |  before_event(self, e: flet.controls.control_event.Event[typing.Any])
+ |      Intercept an event before its handler is executed.
+ |
+ |      Return `False` to cancel dispatch. Return `True` or `None` to continue
+ |      normal event processing.
+ |
+ |  build(self)
+ |      Called once during control initialization to define its child controls.
+ |      `page` property is available/usable in this method.
+ |
+ |  did_mount(self)
+ |      Called after the control is mounted into the page tree.
+ |
+ |      Override to start resources that require an attached page, for example
+ |      subscriptions, timers, or service listeners.
+ |
+ |  init(self)
+ |      Called after control instance initialization and before         the first build / update cycle.
+ |
+ |      Override this hook to perform lightweight setup that depends on initialized
+ |      fields. Do not call `update()` here.
+ |
+ |  is_isolated(self)
+ |      Return whether this control is marked as isolated.
+ |
+ |      Isolated controls are excluded from parent-driven update traversal and
+ |      are expected to manage their own update boundaries.
+ |
+ |  update(self) -> None
+ |      Request a UI update for this control.
+ |
+ |      Call after changing control state or properties. The control must be
+ |      attached to a page and not marked as frozen.
+ |
+ |  will_unmount(self)
+ |      Called before the control is removed from the page tree.
+ |
+ |      Override to dispose resources created in `did_mount()`, such as
+ |      subscriptions, timers, or external handles.
+ |
+ |  ----------------------------------------------------------------------
+ |  Readonly properties inherited from flet.controls.base_control.BaseControl:
+ |
+ |  page
+ |      The page to which this control belongs to.
+ |
+ |  parent
+ |      The direct ancestor(parent) of this control.
+ |
+ |      It defaults to `None` and will only have a value when this control is mounted
+ |      (added to the page tree).
+ |
+ |      The `Page` control (which is the root of the tree) is an exception - it always
+ |      has `parent=None`.
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from flet.controls.base_control.BaseControl:
+ |
+ |  __dict__
+ |      dictionary for instance variables
+ |
+ |  __weakref__
+ |      list of weak references to the object
+ |
+ |  key
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from flet.controls.base_control.BaseControl:
+ |
+ |  data = None
+ |
+ |  ref = None
+

@@ -1,0 +1,310 @@
+Help on class Dropdown in module flet.controls.material.dropdown:
+
+class Dropdown(flet.controls.layout_control.LayoutControl)
+ |  Dropdown(value: Optional[str] = None, options: list[flet.controls.material.dropdown.DropdownOption] = <factory>, text: Optional[str] = None, autofocus: bool = False, text_align: flet.controls.types.TextAlign = <TextAlign.START: 'start'>, elevation: Union[int, float, NoneType, dict[flet.controls.control_state.ControlState, Union[int, float, NoneType]]] = 8, enable_filter: bool = False, enable_search: bool = True, editable: bool = False, menu_height: Union[int, float, NoneType] = None, menu_width: Union[int, float, NoneType] = None, menu_style: Optional[flet.controls.material.menu_bar.MenuStyle] = None, expanded_insets: Union[int, float, flet.controls.padding.Padding, NoneType] = None, selected_suffix: Optional[flet.controls.control.Control] = None, input_filter: Optional[flet.controls.material.textfield.InputFilter] = None, capitalization: Optional[flet.controls.material.textfield.TextCapitalization] = None, trailing_icon: Union[flet.controls.icon_data.IconData, ForwardRef('Control'), NoneType] = None, leading_icon: Union[flet.controls.icon_data.IconData, ForwardRef('Control'), NoneType] = None, selected_trailing_icon: Union[flet.controls.icon_data.IconData, ForwardRef('Control'), NoneType] = None, bgcolor: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, dict[flet.controls.control_state.ControlState, Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors]], NoneType] = None, on_select: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Dropdown')]], Any], NoneType] = None, on_text_change: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Dropdown')]], Any], NoneType] = None, on_focus: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Dropdown')]], Any], NoneType] = None, on_blur: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Dropdown')]], Any], NoneType] = None, error_style: Optional[flet.controls.text_style.TextStyle] = None, error_text: Optional[str] = None, text_size: Union[int, float, NoneType] = None, text_style: Optional[flet.controls.text_style.TextStyle] = None, label: Union[str, ForwardRef('Control'), NoneType] = None, label_style: Optional[flet.controls.text_style.TextStyle] = None, border: Optional[flet.controls.material.form_field_control.InputBorder] = None, color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, border_width: Union[int, float] = 1, border_color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, border_radius: Union[int, float, flet.controls.border_radius.BorderRadius, NoneType] = None, focused_border_width: Union[int, float, NoneType] = None, focused_border_color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, content_padding: Union[int, float, flet.controls.padding.Padding, NoneType] = None, dense: bool = False, filled: bool = False, fill_color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, hover_color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, hint_text: Optional[str] = None, hint_style: Optional[flet.controls.text_style.TextStyle] = None, helper_text: Optional[str] = None, helper_style: Optional[flet.controls.text_style.TextStyle] = None, *, data: Any = None, key: Optional[ForwardRef('KeyValue')] = None, ref: dataclasses.InitVar[typing.Optional[flet.controls.ref.Ref[ForwardRef('BaseControl')]]] = None, expand: Annotated[Union[bool, int, NoneType], FieldRule(_check=<function V.instance_of.<locals>._check at 0x7f3b8eedb2e0>)] = None, expand_loose: bool = False, col: Union[dict[Union[str, flet.controls.types.ResponsiveRowBreakpoint], Union[int, float]], int, float] = 12, opacity: Annotated[Union[int, float], FieldRule(_check=<function V.between.<locals>._check at 0x7f3b8eca5300>)] = 1.0, tooltip: Union[str, flet.controls.material.tooltip.Tooltip, NoneType] = None, badge: Union[str, flet.controls.material.badge.Badge, NoneType] = None, visible: bool = True, disabled: bool = False, rtl: bool = False, width: Union[int, float, NoneType] = None, height: Union[int, float, NoneType] = None, left: Union[int, float, NoneType] = None, top: Union[int, float, NoneType] = None, right: Union[int, float, NoneType] = None, bottom: Union[int, float, NoneType] = None, align: Optional[flet.controls.alignment.Alignment] = None, margin: Union[int, float, flet.controls.margin.Margin, NoneType] = None, rotate: Union[int, float, flet.controls.transform.Rotate, NoneType] = None, scale: Union[int, float, flet.controls.transform.Scale, NoneType] = None, offset: Union[flet.controls.transform.Offset, tuple[Union[int, float], Union[int, float]], NoneType] = None, flip: Optional[flet.controls.transform.Flip] = None, transform: Optional[flet.controls.transform.Transform] = None, aspect_ratio: Union[int, float, NoneType] = None, animate_opacity: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_size: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_position: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_align: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_margin: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_rotation: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_scale: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_offset: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, size_change_interval: int = 10, on_size_change: Union[Callable[[], Any], Callable[[flet.controls.layout_control.LayoutSizeChangeEvent[ForwardRef('LayoutControl')]], Any], NoneType] = None, on_animation_end: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('LayoutControl')]], Any], NoneType] = None) -> None
+ |
+ |  A dropdown control that allows users to select a single option from a list of     :attr:`options`.
+ |
+ |  Example:
+ |  ```python
+ |  ft.Dropdown(
+ |      width=220,
+ |      value="alice",
+ |      options=[
+ |          ft.DropdownOption(key="alice", text="Alice"),
+ |          ft.DropdownOption(key="bob", text="Bob"),
+ |      ],
+ |  )
+ |  ```
+ |
+ |  Method resolution order:
+ |      Dropdown
+ |      flet.controls.layout_control.LayoutControl
+ |      flet.controls.control.Control
+ |      flet.controls.base_control.BaseControl
+ |      builtins.object
+ |
+ |  Methods defined here:
+ |
+ |  __contains__(self, item)
+ |
+ |  __eq__(self, other)
+ |      Return self==value.
+ |
+ |  __init__(self, value: Optional[str] = None, options: list[flet.controls.material.dropdown.DropdownOption] = <factory>, text: Optional[str] = None, autofocus: bool = False, text_align: flet.controls.types.TextAlign = <TextAlign.START: 'start'>, elevation: Union[int, float, NoneType, dict[flet.controls.control_state.ControlState, Union[int, float, NoneType]]] = 8, enable_filter: bool = False, enable_search: bool = True, editable: bool = False, menu_height: Union[int, float, NoneType] = None, menu_width: Union[int, float, NoneType] = None, menu_style: Optional[flet.controls.material.menu_bar.MenuStyle] = None, expanded_insets: Union[int, float, flet.controls.padding.Padding, NoneType] = None, selected_suffix: Optional[flet.controls.control.Control] = None, input_filter: Optional[flet.controls.material.textfield.InputFilter] = None, capitalization: Optional[flet.controls.material.textfield.TextCapitalization] = None, trailing_icon: Union[flet.controls.icon_data.IconData, ForwardRef('Control'), NoneType] = None, leading_icon: Union[flet.controls.icon_data.IconData, ForwardRef('Control'), NoneType] = None, selected_trailing_icon: Union[flet.controls.icon_data.IconData, ForwardRef('Control'), NoneType] = None, bgcolor: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, dict[flet.controls.control_state.ControlState, Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors]], NoneType] = None, on_select: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Dropdown')]], Any], NoneType] = None, on_text_change: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Dropdown')]], Any], NoneType] = None, on_focus: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Dropdown')]], Any], NoneType] = None, on_blur: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Dropdown')]], Any], NoneType] = None, error_style: Optional[flet.controls.text_style.TextStyle] = None, error_text: Optional[str] = None, text_size: Union[int, float, NoneType] = None, text_style: Optional[flet.controls.text_style.TextStyle] = None, label: Union[str, ForwardRef('Control'), NoneType] = None, label_style: Optional[flet.controls.text_style.TextStyle] = None, border: Optional[flet.controls.material.form_field_control.InputBorder] = None, color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, border_width: Union[int, float] = 1, border_color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, border_radius: Union[int, float, flet.controls.border_radius.BorderRadius, NoneType] = None, focused_border_width: Union[int, float, NoneType] = None, focused_border_color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, content_padding: Union[int, float, flet.controls.padding.Padding, NoneType] = None, dense: bool = False, filled: bool = False, fill_color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, hover_color: Union[str, flet.controls.colors.Colors, flet.controls.cupertino.cupertino_colors.CupertinoColors, NoneType] = None, hint_text: Optional[str] = None, hint_style: Optional[flet.controls.text_style.TextStyle] = None, helper_text: Optional[str] = None, helper_style: Optional[flet.controls.text_style.TextStyle] = None, *, data: Any = None, key: Optional[ForwardRef('KeyValue')] = None, ref: dataclasses.InitVar[typing.Optional[flet.controls.ref.Ref[ForwardRef('BaseControl')]]] = None, expand: Annotated[Union[bool, int, NoneType], FieldRule(_check=<function V.instance_of.<locals>._check at 0x7f3b8eedb2e0>)] = None, expand_loose: bool = False, col: Union[dict[Union[str, flet.controls.types.ResponsiveRowBreakpoint], Union[int, float]], int, float] = 12, opacity: Annotated[Union[int, float], FieldRule(_check=<function V.between.<locals>._check at 0x7f3b8eca5300>)] = 1.0, tooltip: Union[str, flet.controls.material.tooltip.Tooltip, NoneType] = None, badge: Union[str, flet.controls.material.badge.Badge, NoneType] = None, visible: bool = True, disabled: bool = False, rtl: bool = False, width: Union[int, float, NoneType] = None, height: Union[int, float, NoneType] = None, left: Union[int, float, NoneType] = None, top: Union[int, float, NoneType] = None, right: Union[int, float, NoneType] = None, bottom: Union[int, float, NoneType] = None, align: Optional[flet.controls.alignment.Alignment] = None, margin: Union[int, float, flet.controls.margin.Margin, NoneType] = None, rotate: Union[int, float, flet.controls.transform.Rotate, NoneType] = None, scale: Union[int, float, flet.controls.transform.Scale, NoneType] = None, offset: Union[flet.controls.transform.Offset, tuple[Union[int, float], Union[int, float]], NoneType] = None, flip: Optional[flet.controls.transform.Flip] = None, transform: Optional[flet.controls.transform.Transform] = None, aspect_ratio: Union[int, float, NoneType] = None, animate_opacity: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_size: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_position: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_align: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_margin: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_rotation: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_scale: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_offset: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, size_change_interval: int = 10, on_size_change: Union[Callable[[], Any], Callable[[flet.controls.layout_control.LayoutSizeChangeEvent[ForwardRef('LayoutControl')]], Any], NoneType] = None, on_animation_end: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('LayoutControl')]], Any], NoneType] = None) -> None
+ |      Initialize self.  See help(type(self)) for accurate signature.
+ |
+ |  __post_init__ = new_post_init(self: ~T, *args) from flet.controls.base_control._apply_control.<locals>
+ |      Set the type and isolation only if explicitly provided.
+ |
+ |  __repr__(self)
+ |      Return repr(self).
+ |
+ |  async focus(self)
+ |      Requests focus for this control.
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |
+ |  bgcolor
+ |
+ |  border
+ |
+ |  border_color
+ |
+ |  border_radius
+ |
+ |  capitalization
+ |
+ |  color
+ |
+ |  content_padding
+ |
+ |  error_style
+ |
+ |  error_text
+ |
+ |  expanded_insets
+ |
+ |  fill_color
+ |
+ |  focused_border_color
+ |
+ |  focused_border_width
+ |
+ |  helper_style
+ |
+ |  helper_text
+ |
+ |  hint_style
+ |
+ |  hint_text
+ |
+ |  hover_color
+ |
+ |  input_filter
+ |
+ |  label
+ |
+ |  label_style
+ |
+ |  leading_icon
+ |
+ |  menu_height
+ |
+ |  menu_style
+ |
+ |  menu_width
+ |
+ |  on_blur
+ |
+ |  on_focus
+ |
+ |  on_select
+ |
+ |  on_text_change
+ |
+ |  selected_suffix
+ |
+ |  selected_trailing_icon
+ |
+ |  text
+ |
+ |  text_size
+ |
+ |  text_style
+ |
+ |  trailing_icon
+ |
+ |  value
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes defined here:
+ |
+ |  __annotations__ = {'autofocus': <class 'bool'>, 'bgcolor': typing.Unio...
+ |
+ |  __dataclass_fields__ = {'_c': Field(name='_c',type=<class 'str'>,defau...
+ |
+ |  __dataclass_params__ = _DataclassParams(init=True,repr=True,eq=True,or...
+ |
+ |  __hash__ = None
+ |
+ |  __match_args__ = ('value', 'options', 'text', 'autofocus', 'text_align...
+ |
+ |  autofocus = False
+ |
+ |  border_width = 1
+ |
+ |  dense = False
+ |
+ |  editable = False
+ |
+ |  elevation = 8
+ |
+ |  enable_filter = False
+ |
+ |  enable_search = True
+ |
+ |  filled = False
+ |
+ |  text_align = <TextAlign.START: 'start'>
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from flet.controls.layout_control.LayoutControl:
+ |
+ |  align
+ |
+ |  animate_align
+ |
+ |  animate_margin
+ |
+ |  animate_offset
+ |
+ |  animate_opacity
+ |
+ |  animate_position
+ |
+ |  animate_rotation
+ |
+ |  animate_scale
+ |
+ |  animate_size
+ |
+ |  aspect_ratio
+ |
+ |  badge
+ |
+ |  bottom
+ |
+ |  expand
+ |
+ |  flip
+ |
+ |  height
+ |
+ |  left
+ |
+ |  margin
+ |
+ |  offset
+ |
+ |  on_animation_end
+ |
+ |  on_size_change
+ |
+ |  right
+ |
+ |  rotate
+ |
+ |  scale
+ |
+ |  tooltip
+ |
+ |  top
+ |
+ |  transform
+ |
+ |  width
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from flet.controls.layout_control.LayoutControl:
+ |
+ |  col = 12
+ |
+ |  disabled = False
+ |
+ |  expand_loose = False
+ |
+ |  opacity = 1.0
+ |
+ |  rtl = False
+ |
+ |  size_change_interval = 10
+ |
+ |  visible = True
+ |
+ |  ----------------------------------------------------------------------
+ |  Methods inherited from flet.controls.base_control.BaseControl:
+ |
+ |  __str__(self)
+ |      Return a debug-friendly control identifier string.
+ |
+ |  before_event(self, e: flet.controls.control_event.Event[typing.Any])
+ |      Intercept an event before its handler is executed.
+ |
+ |      Return `False` to cancel dispatch. Return `True` or `None` to continue
+ |      normal event processing.
+ |
+ |  before_update(self)
+ |      This method is called every time when this control is being updated.
+ |
+ |      Note:
+ |          Make sure not to call/request an `update()` here.
+ |
+ |  build(self)
+ |      Called once during control initialization to define its child controls.
+ |      `page` property is available/usable in this method.
+ |
+ |  did_mount(self)
+ |      Called after the control is mounted into the page tree.
+ |
+ |      Override to start resources that require an attached page, for example
+ |      subscriptions, timers, or service listeners.
+ |
+ |  init(self)
+ |      Called after control instance initialization and before         the first build / update cycle.
+ |
+ |      Override this hook to perform lightweight setup that depends on initialized
+ |      fields. Do not call `update()` here.
+ |
+ |  is_isolated(self)
+ |      Return whether this control is marked as isolated.
+ |
+ |      Isolated controls are excluded from parent-driven update traversal and
+ |      are expected to manage their own update boundaries.
+ |
+ |  update(self) -> None
+ |      Request a UI update for this control.
+ |
+ |      Call after changing control state or properties. The control must be
+ |      attached to a page and not marked as frozen.
+ |
+ |  will_unmount(self)
+ |      Called before the control is removed from the page tree.
+ |
+ |      Override to dispose resources created in `did_mount()`, such as
+ |      subscriptions, timers, or external handles.
+ |
+ |  ----------------------------------------------------------------------
+ |  Readonly properties inherited from flet.controls.base_control.BaseControl:
+ |
+ |  page
+ |      The page to which this control belongs to.
+ |
+ |  parent
+ |      The direct ancestor(parent) of this control.
+ |
+ |      It defaults to `None` and will only have a value when this control is mounted
+ |      (added to the page tree).
+ |
+ |      The `Page` control (which is the root of the tree) is an exception - it always
+ |      has `parent=None`.
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from flet.controls.base_control.BaseControl:
+ |
+ |  __dict__
+ |      dictionary for instance variables
+ |
+ |  __weakref__
+ |      list of weak references to the object
+ |
+ |  key
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from flet.controls.base_control.BaseControl:
+ |
+ |  data = None
+ |
+ |  ref = None
+

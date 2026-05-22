@@ -17,7 +17,7 @@ echo "=== INICIANDO BUILD DE PRODUÇÃO ==="
 # 1. Instala dependências do sistema (necessárias para OpenCV / DeepFace)
 echo "Passo 1: Instalando dependências do sistema..."
 apt-get update
-apt-get install -y libxcb1 libgl1 libsm6
+apt-get install -y libxcb1 libgl1 libsm6 libglib2.0-0
 
 # 2. Instala dependências Python
 echo "Passo 2: Instalando dependências Python..."

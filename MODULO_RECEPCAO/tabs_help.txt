@@ -1,0 +1,238 @@
+Help on class Tabs in module flet.controls.material.tabs:
+
+class Tabs(flet.controls.layout_control.LayoutControl, flet.controls.adaptive_control.AdaptiveControl)
+ |  Tabs(content: flet.controls.control.Control, length: Annotated[int, FieldRule(_check=<function V.ge.<locals>._check at 0x7f545df4e340>)], selected_index: int = 0, animation_duration: Union[flet.controls.duration.Duration, int] = <factory>, on_change: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Tabs')]], Any], NoneType] = None, *, data: Any = None, key: Optional[ForwardRef('KeyValue')] = None, ref: dataclasses.InitVar[typing.Optional[flet.controls.ref.Ref[ForwardRef('BaseControl')]]] = None, expand: Annotated[Union[bool, int, NoneType], FieldRule(_check=<function V.instance_of.<locals>._check at 0x7f545e3d72e0>)] = None, expand_loose: bool = False, col: Union[dict[Union[str, flet.controls.types.ResponsiveRowBreakpoint], Union[int, float]], int, float] = 12, opacity: Annotated[Union[int, float], FieldRule(_check=<function V.between.<locals>._check at 0x7f545e1a5300>)] = 1.0, tooltip: Union[str, flet.controls.material.tooltip.Tooltip, NoneType] = None, badge: Union[str, flet.controls.material.badge.Badge, NoneType] = None, visible: bool = True, disabled: bool = False, rtl: bool = False, adaptive: Optional[bool] = None, width: Union[int, float, NoneType] = None, height: Union[int, float, NoneType] = None, left: Union[int, float, NoneType] = None, top: Union[int, float, NoneType] = None, right: Union[int, float, NoneType] = None, bottom: Union[int, float, NoneType] = None, align: Optional[flet.controls.alignment.Alignment] = None, margin: Union[int, float, flet.controls.margin.Margin, NoneType] = None, rotate: Union[int, float, flet.controls.transform.Rotate, NoneType] = None, scale: Union[int, float, flet.controls.transform.Scale, NoneType] = None, offset: Union[flet.controls.transform.Offset, tuple[Union[int, float], Union[int, float]], NoneType] = None, flip: Optional[flet.controls.transform.Flip] = None, transform: Optional[flet.controls.transform.Transform] = None, aspect_ratio: Union[int, float, NoneType] = None, animate_opacity: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_size: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_position: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_align: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_margin: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_rotation: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_scale: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_offset: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, size_change_interval: int = 10, on_size_change: Union[Callable[[], Any], Callable[[flet.controls.layout_control.LayoutSizeChangeEvent[ForwardRef('LayoutControl')]], Any], NoneType] = None, on_animation_end: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('LayoutControl')]], Any], NoneType] = None) -> None
+ |
+ |  Used for navigating frequently accessed, distinct content categories. Tabs allow     for navigation between two or more content views and relies on text headers to     articulate the different sections of content.
+ |
+ |  Method resolution order:
+ |      Tabs
+ |      flet.controls.layout_control.LayoutControl
+ |      flet.controls.adaptive_control.AdaptiveControl
+ |      flet.controls.control.Control
+ |      flet.controls.base_control.BaseControl
+ |      builtins.object
+ |
+ |  Methods defined here:
+ |
+ |  __eq__(self, other)
+ |      Return self==value.
+ |
+ |  __init__(self, content: flet.controls.control.Control, length: Annotated[int, FieldRule(_check=<function V.ge.<locals>._check at 0x7f545df4e340>)], selected_index: int = 0, animation_duration: Union[flet.controls.duration.Duration, int] = <factory>, on_change: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('Tabs')]], Any], NoneType] = None, *, data: Any = None, key: Optional[ForwardRef('KeyValue')] = None, ref: dataclasses.InitVar[typing.Optional[flet.controls.ref.Ref[ForwardRef('BaseControl')]]] = None, expand: Annotated[Union[bool, int, NoneType], FieldRule(_check=<function V.instance_of.<locals>._check at 0x7f545e3d72e0>)] = None, expand_loose: bool = False, col: Union[dict[Union[str, flet.controls.types.ResponsiveRowBreakpoint], Union[int, float]], int, float] = 12, opacity: Annotated[Union[int, float], FieldRule(_check=<function V.between.<locals>._check at 0x7f545e1a5300>)] = 1.0, tooltip: Union[str, flet.controls.material.tooltip.Tooltip, NoneType] = None, badge: Union[str, flet.controls.material.badge.Badge, NoneType] = None, visible: bool = True, disabled: bool = False, rtl: bool = False, adaptive: Optional[bool] = None, width: Union[int, float, NoneType] = None, height: Union[int, float, NoneType] = None, left: Union[int, float, NoneType] = None, top: Union[int, float, NoneType] = None, right: Union[int, float, NoneType] = None, bottom: Union[int, float, NoneType] = None, align: Optional[flet.controls.alignment.Alignment] = None, margin: Union[int, float, flet.controls.margin.Margin, NoneType] = None, rotate: Union[int, float, flet.controls.transform.Rotate, NoneType] = None, scale: Union[int, float, flet.controls.transform.Scale, NoneType] = None, offset: Union[flet.controls.transform.Offset, tuple[Union[int, float], Union[int, float]], NoneType] = None, flip: Optional[flet.controls.transform.Flip] = None, transform: Optional[flet.controls.transform.Transform] = None, aspect_ratio: Union[int, float, NoneType] = None, animate_opacity: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_size: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_position: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_align: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_margin: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_rotation: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_scale: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, animate_offset: Union[bool, int, flet.controls.animation.Animation, NoneType] = None, size_change_interval: int = 10, on_size_change: Union[Callable[[], Any], Callable[[flet.controls.layout_control.LayoutSizeChangeEvent[ForwardRef('LayoutControl')]], Any], NoneType] = None, on_animation_end: Union[Callable[[], Any], Callable[[flet.controls.control_event.Event[ForwardRef('LayoutControl')]], Any], NoneType] = None) -> None
+ |      Initialize self.  See help(type(self)) for accurate signature.
+ |
+ |  __post_init__ = new_post_init(self: ~T, *args) from flet.controls.base_control._apply_control.<locals>
+ |      Set the type and isolation only if explicitly provided.
+ |
+ |  __repr__(self)
+ |      Return repr(self).
+ |
+ |  before_update(self)
+ |      This method is called every time when this control is being updated.
+ |
+ |      Note:
+ |          Make sure not to call/request an `update()` here.
+ |
+ |  async move_to(self, index: int, animation_curve: flet.controls.animation.AnimationCurve = <AnimationCurve.EASE_IN: 'easeIn'>, animation_duration: Union[flet.controls.duration.Duration, int, NoneType] = None)
+ |      Selects the tab at the given `index`.
+ |
+ |      Additionally, it triggers :attr:`on_change` event and updates
+ |      :attr:`selected_index`.
+ |
+ |      Note:
+ |          If `index` is negative, it is interpreted as a Python-style negative index
+ |          (e.g., -1 refers to the last tab). If the resolved index is already the
+ |          currently selected tab, the method returns immediately and does nothing.
+ |
+ |      Args:
+ |          index: The index of the tab to select. Must be between in range
+ |              `[-length, length - 1]`.
+ |          animation_curve: The curve to apply to the animation.
+ |          animation_duration: The duration of the animation. If `None` (the default),
+ |              :attr:`flet.Tabs.animation_duration` will be used.
+ |
+ |      Raises:
+ |          IndexError: If the `index` is outside the range `[-length, length - 1]`.
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |
+ |  content
+ |
+ |  length
+ |
+ |  on_change
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes defined here:
+ |
+ |  __annotations__ = {'animation_duration': typing.Union[flet.controls.du...
+ |
+ |  __dataclass_fields__ = {'_c': Field(name='_c',type=<class 'str'>,defau...
+ |
+ |  __dataclass_params__ = _DataclassParams(init=True,repr=True,eq=True,or...
+ |
+ |  __hash__ = None
+ |
+ |  __match_args__ = ('content', 'length', 'selected_index', 'animation_du...
+ |
+ |  selected_index = 0
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from flet.controls.layout_control.LayoutControl:
+ |
+ |  align
+ |
+ |  animate_align
+ |
+ |  animate_margin
+ |
+ |  animate_offset
+ |
+ |  animate_opacity
+ |
+ |  animate_position
+ |
+ |  animate_rotation
+ |
+ |  animate_scale
+ |
+ |  animate_size
+ |
+ |  aspect_ratio
+ |
+ |  badge
+ |
+ |  bottom
+ |
+ |  expand
+ |
+ |  flip
+ |
+ |  height
+ |
+ |  left
+ |
+ |  margin
+ |
+ |  offset
+ |
+ |  on_animation_end
+ |
+ |  on_size_change
+ |
+ |  right
+ |
+ |  rotate
+ |
+ |  scale
+ |
+ |  tooltip
+ |
+ |  top
+ |
+ |  transform
+ |
+ |  width
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from flet.controls.layout_control.LayoutControl:
+ |
+ |  col = 12
+ |
+ |  disabled = False
+ |
+ |  expand_loose = False
+ |
+ |  opacity = 1.0
+ |
+ |  rtl = False
+ |
+ |  size_change_interval = 10
+ |
+ |  visible = True
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from flet.controls.adaptive_control.AdaptiveControl:
+ |
+ |  adaptive
+ |
+ |  ----------------------------------------------------------------------
+ |  Methods inherited from flet.controls.base_control.BaseControl:
+ |
+ |  __str__(self)
+ |      Return a debug-friendly control identifier string.
+ |
+ |  before_event(self, e: flet.controls.control_event.Event[typing.Any])
+ |      Intercept an event before its handler is executed.
+ |
+ |      Return `False` to cancel dispatch. Return `True` or `None` to continue
+ |      normal event processing.
+ |
+ |  build(self)
+ |      Called once during control initialization to define its child controls.
+ |      `page` property is available/usable in this method.
+ |
+ |  did_mount(self)
+ |      Called after the control is mounted into the page tree.
+ |
+ |      Override to start resources that require an attached page, for example
+ |      subscriptions, timers, or service listeners.
+ |
+ |  init(self)
+ |      Called after control instance initialization and before         the first build / update cycle.
+ |
+ |      Override this hook to perform lightweight setup that depends on initialized
+ |      fields. Do not call `update()` here.
+ |
+ |  is_isolated(self)
+ |      Return whether this control is marked as isolated.
+ |
+ |      Isolated controls are excluded from parent-driven update traversal and
+ |      are expected to manage their own update boundaries.
+ |
+ |  update(self) -> None
+ |      Request a UI update for this control.
+ |
+ |      Call after changing control state or properties. The control must be
+ |      attached to a page and not marked as frozen.
+ |
+ |  will_unmount(self)
+ |      Called before the control is removed from the page tree.
+ |
+ |      Override to dispose resources created in `did_mount()`, such as
+ |      subscriptions, timers, or external handles.
+ |
+ |  ----------------------------------------------------------------------
+ |  Readonly properties inherited from flet.controls.base_control.BaseControl:
+ |
+ |  page
+ |      The page to which this control belongs to.
+ |
+ |  parent
+ |      The direct ancestor(parent) of this control.
+ |
+ |      It defaults to `None` and will only have a value when this control is mounted
+ |      (added to the page tree).
+ |
+ |      The `Page` control (which is the root of the tree) is an exception - it always
+ |      has `parent=None`.
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from flet.controls.base_control.BaseControl:
+ |
+ |  __dict__
+ |      dictionary for instance variables
+ |
+ |  __weakref__
+ |      list of weak references to the object
+ |
+ |  key
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from flet.controls.base_control.BaseControl:
+ |
+ |  data = None
+ |
+ |  ref = None
+
