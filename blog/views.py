@@ -1501,15 +1501,15 @@ def crm_aluno_detail(request, aluno_id):
         vencimento_calculado = base_data_calculo + timedelta(days=ultimo_pago.plano.duration_days)
         
         # Se for diária, a gente força o vencimento calculado (sem somar)
-        # Se for mensal, a gente só atualiza se estiver vazio ou se o novo cálculo for MAIOR
+        # Se for mensal, a gente só atualiza se estiver vazio
         if ultimo_pago.plano.plan_type == 'diaria':
-            if ac.data_vencimento != vencimento_calculado:
+            if not ac.data_vencimento:
                 ac.data_vencimento = vencimento_calculado
                 ac.status_catraca = 'liberado'
                 ac.save()
                 acesso = ac
         else:
-            if not ac.data_vencimento or ac.data_vencimento < vencimento_calculado:
+            if not ac.data_vencimento:
                 ac.data_vencimento = vencimento_calculado
                 ac.status_catraca = 'liberado'
                 ac.save()
