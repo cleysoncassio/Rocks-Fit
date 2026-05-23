@@ -155,7 +155,9 @@
                             {% elif aluno.acesso.dias_vencimento <= 7 %}text-warning
                             {% else %}text-success{% endif %}">
                             {% if aluno.acesso.data_vencimento %}
-                                {% if aluno.acesso.dias_vencimento == 0 or aluno.acesso.dias_vencimento == 1 %}
+                                {% if aluno.acesso.dias_vencimento < 0 %}
+                                    VENCIDO HÁ {{ aluno.acesso.dias_vencimento|stringformat:"s"|slice:"1:" }} DIAS
+                                {% elif aluno.acesso.dias_vencimento == 0 or aluno.acesso.dias_vencimento == 1 %}
                                     DIÁRIA LIBERADA
                                 {% else %}
                                     EXPIRA EM {{ aluno.acesso.dias_vencimento }} DIAS
@@ -169,14 +171,18 @@
                             {% endif %}
                         </h3>
                     </div>
-                    <div class="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 flex gap-12">
+                    <div class="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 flex justify-between gap-2">
                         <div>
                             <p class="text-[8px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-widest leading-none mb-1">Validade</p>
-                            <p class="text-xs font-black font-headline uppercase text-slate-900 dark:text-white">{{ aluno.acesso.data_vencimento|date:"d M Y"|default:"----" }}</p>
+                            <p class="text-[10px] sm:text-xs font-black font-headline uppercase text-slate-900 dark:text-white">{% if ultimo_pago and ultimo_pago.plano %}{{ ultimo_pago.plano.duration_days }} DIAS{% else %}----{% endif %}</p>
                         </div>
                         <div>
-                            <p class="text-[8px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-widest leading-none mb-1">Último Ingresso</p>
-                            <p class="text-xs font-black font-headline uppercase italic text-slate-900 dark:text-white">{{ aluno.acesso.ultimo_acesso|date:"d/m H:i"|default:"----" }}</p>
+                            <p class="text-[8px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-widest leading-none mb-1">Vencimento</p>
+                            <p class="text-[10px] sm:text-xs font-black font-headline uppercase text-slate-900 dark:text-white">{{ aluno.acesso.data_vencimento|date:"d/m/Y"|default:"----" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[8px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-widest leading-none mb-1">Último Acesso</p>
+                            <p class="text-[10px] sm:text-xs font-black font-headline uppercase italic text-slate-900 dark:text-white">{{ aluno.acesso.ultimo_acesso|date:"d/m H:i"|default:"----" }}</p>
                         </div>
                     </div>
                 </div>
