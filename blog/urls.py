@@ -40,6 +40,7 @@ urlpatterns = [
     path('crm/aluno/<int:aluno_id>/edit/', views.crm_aluno_edit, name='crm_aluno_edit'),
     path('crm/aluno/<int:aluno_id>/delete/', views.crm_aluno_delete, name='crm_aluno_delete'),
     path('crm/aluno/<int:aluno_id>/pagamento/<int:pagamento_id>/delete/', views.crm_pagamento_delete, name='crm_pagamento_delete'),
+    path('crm/aluno/<int:aluno_id>/pagamento/<int:pagamento_id>/edit/', views.crm_pagamento_edit, name='crm_pagamento_edit'),
 
     path('crm/caixa/', views.crm_caixa, name='crm_caixa'),
     

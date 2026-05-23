@@ -1718,6 +1718,40 @@ def crm_pagamento_delete(request, aluno_id, pagamento_id):
     return redirect('crm_aluno_detail', aluno_id=aluno_id)
 
 @login_required
+def crm_pagamento_edit(request, aluno_id, pagamento_id):
+    """Edição de pagamento (Correção de valor ou método)"""
+    if not request.user.has_perm('blog.can_access_financial') and not request.user.is_superuser:
+        messages.error(request, "Acesso Negado: Permissão insuficiente para edição financeira.")
+        return redirect('crm_aluno_detail', aluno_id=aluno_id)
+        
+    from blog.models import PagamentoHistorico
+    from django.shortcuts import get_object_or_404
+    
+    if request.method == 'POST':
+        pagamento = get_object_or_404(PagamentoHistorico, id=pagamento_id, aluno_id=aluno_id)
+        
+        valor_raw = request.POST.get('valor', '').strip()
+        if ',' in valor_raw:
+            valor = valor_raw.replace('.', '').replace(',', '.')
+        else:
+            valor = valor_raw
+            
+        metodo = request.POST.get('metodo')
+        plano_id = request.POST.get('plano')
+        
+        if valor:
+            pagamento.valor = float(valor)
+        if metodo:
+            pagamento.metodo_pagamento = metodo
+        if plano_id:
+            pagamento.plano_id = plano_id
+            
+        pagamento.save()
+        messages.success(request, "Histórico financeiro atualizado com sucesso.")
+        
+    return redirect('crm_aluno_detail', aluno_id=aluno_id)
+
+@login_required
 def crm_aluno_create(request):
     """Criação de novos alunos com dados completos"""
     if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:

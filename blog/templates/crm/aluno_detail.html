@@ -231,17 +231,22 @@
                                     <p class="text-[9px] font-black uppercase tracking-widest text-neutral-400 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-6">
-                                <div class="text-right">
+                            <div class="flex items-center gap-3">
+                                <div class="text-right pr-3 border-r border-white/5">
                                     <p class="text-xl font-black font-headline tracking-tighter text-on-surface">R$ {{ pg.valor|floatformat:2 }}</p>
                                     <span class="text-[8px] font-black font-headline uppercase tracking-[0.2em] px-3 py-1 bg-primary/10 text-primary rounded-full">{{ pg.status }}</span>
                                 </div>
-                                <form action="{% url 'crm_pagamento_delete' aluno.id pg.id %}" method="POST" onsubmit="return confirm('ALERTA: Deseja realmente EXCLUIR este pagamento e ESTORNAR os dias de crédito vinculados a ele?\n\nEsta ação descontará o prazo correspondente do vencimento atual do aluno e não pode ser desfeita.');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="w-10 h-10 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100" title="Excluir e Estornar">
-                                        <span class="material-symbols-outlined text-lg">delete</span>
+                                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                    <button type="button" onclick="openEditPaymentModal('{{ pg.id }}', '{{ pg.valor|floatformat:2 }}', '{{ pg.plano.id|default:'' }}', '{{ pg.metodo_pagamento }}')" class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all" title="Editar Recebimento">
+                                        <span class="material-symbols-outlined text-lg">edit</span>
                                     </button>
-                                </form>
+                                    <form action="{% url 'crm_pagamento_delete' aluno.id pg.id %}" method="POST" onsubmit="return confirm('ALERTA: Deseja realmente EXCLUIR este pagamento e ESTORNAR os dias de crédito vinculados a ele?\n\nEsta ação descontará o prazo correspondente do vencimento atual do aluno e não pode ser desfeita.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-10 h-10 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all" title="Excluir e Estornar">
+                                            <span class="material-symbols-outlined text-lg">delete</span>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                         {% empty %}
@@ -265,11 +270,27 @@
                 <div class="col-span-12 lg:col-span-5 space-y-8">
                     <div class="bg-surface-container-low p-10 rounded-[40px] border border-white/5 min-h-[300px] flex flex-col justify-between">
                         <div>
-                            <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-400 italic mb-8">Tags de Caracterização</h3>
-                            <div class="flex flex-wrap gap-3">
-                                <span class="px-6 py-2.5 bg-surface-container-highest rounded-full text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 text-neutral-400 hover:text-primary hover:border-primary/40 cursor-default transition-all">Hipertrofia</span>
-                                <span class="px-6 py-2.5 bg-surface-container-highest rounded-full text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 text-neutral-400">Regular Member</span>
-                                <button class="px-6 py-2.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[9px] font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-black transition-all">+ Analisar Perfil</button>
+                            <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-400 italic mb-6">Histórico Financeiro</h3>
+                            <div class="space-y-3 max-h-[220px] overflow-y-auto no-scrollbar pr-2">
+                                {% for pg in pagamentos %}
+                                <div class="group flex items-center justify-between p-4 bg-surface-container-highest/30 rounded-2xl border border-white/5 hover:border-primary/20 transition-all">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary">
+                                            <span class="material-symbols-outlined text-sm">receipt_long</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-black font-headline uppercase tracking-tight text-on-surface">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
+                                            <p class="text-[8px] font-black uppercase tracking-widest text-neutral-400 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-black font-headline tracking-tighter text-on-surface">R$ {{ pg.valor|floatformat:2 }}</p>
+                                        <span class="text-[7px] font-black font-headline uppercase tracking-[0.2em] px-2 py-1 bg-primary/10 text-primary rounded-full">{{ pg.status }}</span>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <p class="py-10 text-center text-neutral-500 font-headline uppercase text-[9px] font-black tracking-widest italic">Nenhum histórico registrado.</p>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
@@ -342,6 +363,51 @@
         </div>
     </div>
 
+    <!-- Modal Editar Pagamento -->
+    <div id="modal-editar-pagamento" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-6 bg-surface/80 backdrop-blur-md">
+        <div class="bg-surface-container-high w-full max-w-md rounded-[40px] p-12 border border-white/5 shadow-2xl relative">
+            <button onclick="document.getElementById('modal-editar-pagamento').classList.add('hidden')" class="absolute top-8 right-8 text-neutral-600 hover:text-on-surface transition-all"><span class="material-symbols-outlined">close</span></button>
+            <h2 class="text-3xl font-black font-headline tracking-tighter mb-4 uppercase italic leading-none">Corrigir Aporte</h2>
+            <p class="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-10">Alterar valor recebido ou forma de pagamento.</p>
+            
+            <form id="form-edit-payment" method="POST" action="" class="space-y-6">
+                {% csrf_token %}
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Montante (R$)</label>
+                    <div class="relative group">
+                        <span class="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-neutral-800 transition-colors group-focus-within:text-blue-500">R$</span>
+                        <input type="text" name="valor" id="edit_valor" oninput="formatarMoedaReal(this)" class="w-full bg-surface-container-low border-none rounded-2xl py-6 pl-20 pr-8 font-black font-headline text-3xl text-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all shadow-inner" placeholder="0,00" required>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Modalidade Vinculada</label>
+                    <select name="plano" id="edit_plano" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-8 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-blue-500 outline-none appearance-none cursor-pointer uppercase tracking-widest">
+                        <option value="">Apenas Taxa/Avulso</option>
+                        {% for p in planos %}
+                        <option value="{{ p.id }}">{{ p.name }} - R$ {{ p.price }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Gateway de Recebimento</label>
+                    <select name="metodo" id="edit_metodo" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-8 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-blue-500 outline-none appearance-none cursor-pointer uppercase tracking-widest">
+                        <option value="DINHEIRO">Dinheiro (Industrial RKS)</option>
+                        <option value="PIX">Protocolo PIX</option>
+                        <option value="CREDITO">Cartão de Crédito</option>
+                        <option value="DEBITO">Cartão de Débito</option>
+                    </select>
+                </div>
+
+                <div class="pt-6">
+                    <button type="submit" class="w-full bg-blue-500 text-white py-5 rounded-2xl font-black font-headline text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-[1.02] transition-all">Salvar Alterações</button>
+                    <p class="text-center text-[8px] text-neutral-600 font-bold mt-6 uppercase tracking-widest italic">Isso manterá o histórico sem apagar a transação original.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal da Câmera (Biometria Facial) -->
     <div id="modal-camera" class="hidden fixed inset-0 z-[300] flex items-center justify-center p-6 bg-surface/90 backdrop-blur-xl">
         <div class="bg-surface-container-high w-full max-w-xl rounded-[40px] p-12 border border-white/5 shadow-2xl relative overflow-hidden">
@@ -396,6 +462,28 @@
     </div>
 
     <script>
+        // --- Edit Payment Modal ---
+        function openEditPaymentModal(id, valor, plano_id, metodo) {
+            const form = document.getElementById('form-edit-payment');
+            form.action = `/crm/aluno/{{ aluno.id }}/pagamento/${id}/edit/`;
+            
+            document.getElementById('edit_valor').value = valor;
+            
+            const planoSelect = document.getElementById('edit_plano');
+            if(plano_id) {
+                planoSelect.value = plano_id;
+            } else {
+                planoSelect.value = "";
+            }
+            
+            const metodoSelect = document.getElementById('edit_metodo');
+            if(metodo) {
+                metodoSelect.value = metodo;
+            }
+            
+            document.getElementById('modal-editar-pagamento').classList.remove('hidden');
+        }
+
         // --- Currency Mask (BRL) ---
         function formatarMoedaReal(input) {
             let value = input.value.replace(/\D/g, '');
