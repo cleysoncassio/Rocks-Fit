@@ -955,18 +955,6 @@ def whatsapp_webhook(request):
     """Endpoint 'buraco negro' para silenciar as insistentes requisições de webhook do WhatsApp que geram erro 400."""
     return JsonResponse({'status': 'ok'})
 
-@login_required
-def crm_dashboard(request):
-    """Dashboard com Inteligência Artificial, Demografia e Plano de Ação Estratégico"""
-    from blog.models import Aluno, Plan, PagamentoHistorico, ControleAcesso
-    from django.db.models import Avg, Sum, Count
-    from django.utils import timezone
-    from datetime import date, timedelta
-    import datetime
-
-    # 0. Sincronização Automática de Status
-    sincronizar_estados_alunos()
-
 def processar_pagamento(aluno, plano, valor_pago, metodo, user=None):
     """Lógica centralizada para pagamentos, dívidas proporcionais e cálculo de dias."""
     from django.utils import timezone
@@ -1014,6 +1002,18 @@ def processar_pagamento(aluno, plano, valor_pago, metodo, user=None):
             dias = int(round((valor_pago / valor_plano) * plano.duration_days))
             
     return dias
+
+@login_required
+def crm_dashboard(request):
+    """Dashboard com Inteligência Artificial, Demografia e Plano de Ação Estratégico"""
+    from blog.models import Aluno, Plan, PagamentoHistorico, ControleAcesso
+    from django.db.models import Avg, Sum, Count
+    from django.utils import timezone
+    from datetime import date, timedelta
+    import datetime
+
+    # 0. Sincronização Automática de Status
+    sincronizar_estados_alunos()
 
     # 1. Aporte Rápido (Lógica de Recebimento Direto)
     if request.method == 'POST' and 'faturar_rapido' in request.POST:
