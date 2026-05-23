@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from pgvector.django import VectorField
 from ordered_model.models import OrderedModel
+from django.conf import settings
 
 
 class User(AbstractUser):
@@ -338,6 +339,7 @@ class PagamentoHistorico(models.Model):
     data_pagamento = models.DateTimeField(auto_now_add=True, verbose_name="Data do Pagamento")
     valor = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Valor Total")
     metodo_pagamento = models.CharField(max_length=50, blank=True, null=True, verbose_name="Método de Pagamento")
+    operador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Recebido por")
 
     def __str__(self):
         return f"{self.aluno.nome_completo} - {self.plano.name if self.plano else 'Sem Plano'} ({self.status})"

@@ -967,6 +967,54 @@ def crm_dashboard(request):
     # 0. Sincronização Automática de Status
     sincronizar_estados_alunos()
 
+def processar_pagamento(aluno, plano, valor_pago, metodo, user=None):
+    """Lógica centralizada para pagamentos, dívidas proporcionais e cálculo de dias."""
+    from django.utils import timezone
+    from blog.models import PagamentoHistorico
+    
+    if not plano:
+        PagamentoHistorico.objects.create(aluno=aluno, plano=None, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+        aluno.status = 'ATIVO'
+        return 0
+        
+    valor_plano = float(plano.price)
+    if valor_plano <= 0:
+        PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+        aluno.status = 'ATIVO'
+        return plano.duration_days
+        
+    dias = 0
+    pendente = PagamentoHistorico.objects.filter(aluno=aluno, plano=plano, status='pendente').order_by('id').first()
+    
+    if pendente:
+        valor_pendente_atual = float(pendente.valor)
+        if valor_pago >= valor_pendente_atual:
+            # Quitou a dívida
+            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pendente_atual, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+            pendente.delete()
+            aluno.status = 'ATIVO'
+            dias = max(1, int(round((valor_pendente_atual / valor_plano) * plano.duration_days)))
+        else:
+            # Abateu parte da dívida
+            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+            pendente.valor = valor_pendente_atual - valor_pago
+            pendente.save()
+            aluno.status = 'AGUARDANDO'
+            dias = max(1, int(round((valor_pago / valor_plano) * plano.duration_days)))
+    else:
+        # Nova compra
+        if valor_pago < valor_plano:
+            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_plano - valor_pago, status='pendente', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+            aluno.status = 'AGUARDANDO'
+            dias = max(1, int(round((valor_pago / valor_plano) * plano.duration_days)))
+        else:
+            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+            aluno.status = 'ATIVO'
+            dias = int(round((valor_pago / valor_plano) * plano.duration_days))
+            
+    return dias
+
     # 1. Aporte Rápido (Lógica de Recebimento Direto)
     if request.method == 'POST' and 'faturar_rapido' in request.POST:
         aluno_id = request.POST.get('aluno_id')
@@ -977,18 +1025,16 @@ def crm_dashboard(request):
         valor = valor_raw.replace('.', '').replace(',', '.') if ',' in valor_raw else valor_raw
             
         try:
+            valor_pago = float(valor)
             aluno = Aluno.objects.get(id=aluno_id)
-            PagamentoHistorico.objects.create(
-                aluno=aluno,
-                plano_id=plano_id if plano_id else None,
-                valor=valor,
-                status='pago',
-                data_pagamento=timezone.now(),
-                metodo_pagamento=metodo
-            )
             
+            plano = None
             if plano_id:
                 plano = Plan.objects.get(id=plano_id)
+                
+            dias_adicionais = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user)
+            
+            if plano and dias_adicionais > 0:
                 acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
                 hoje_local = timezone.localtime(timezone.now()).date()
                 base_data = hoje_local
@@ -996,14 +1042,11 @@ def crm_dashboard(request):
                     base_data = hoje_local + timedelta(days=1)
                     
                 start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > hoje_local and plano.plan_type != 'diaria') else base_data
-                acesso.data_vencimento = start_date + timedelta(days=plano.duration_days)
+                acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
                 acesso.status_catraca = 'liberado'
                 acesso.save()
                 
-            registrar_venda_no_caixa(float(valor), f"Aporte Rápido: {aluno.nome_completo}", metodo, 'MANUAL')
-            
-            # Ativa o aluno automaticamente
-            aluno.status = 'ATIVO'
+            registrar_venda_no_caixa(valor_pago, f"Aporte Rápido: {aluno.nome_completo}", metodo, 'MANUAL')
             aluno.save()
             
             messages.success(request, f"Aporte de R$ {valor} processado para {aluno.nome_completo}. Aluno Ativado!")
@@ -1350,23 +1393,17 @@ def crm_aluno_detail(request, aluno_id):
             
         metodo = request.POST.get('metodo', 'DINHEIRO')
         plano_id = request.POST.get('plano', '')
+        valor_pago = float(valor)
         
-        # 1. Registrar no Histórico do Aluno
-        pagamento = PagamentoHistorico.objects.create(
-            aluno=aluno,
-            plano_id=plano_id if plano_id else None,
-            valor=valor,
-            status='pago',
-            data_pagamento=timezone.now(),
-            metodo_pagamento=metodo
-        )
+        plano = None
+        if plano_id:
+            plano = Plan.objects.get(id=plano_id)
+            
+        dias_adicionais = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user)
         
         # 2. Atualizar Controle de Acesso Automaticamente
-        if plano_id:
+        if plano and dias_adicionais > 0:
             from datetime import timedelta
-            plano = Plan.objects.get(id=plano_id)
-            dias = plano.duration_days
-            
             from blog.models import ControleAcesso
             acesso, created = ControleAcesso.objects.get_or_create(aluno=aluno)
             
@@ -1377,11 +1414,11 @@ def crm_aluno_detail(request, aluno_id):
 
             # Se for DIÁRIA, não acumula (reseta para o prazo do plano)
             if plano.plan_type == 'diaria':
-                acesso.data_vencimento = base_data + timedelta(days=dias)
+                acesso.data_vencimento = base_data + timedelta(days=dias_adicionais)
             else:
                 # Se for Mensal/etc, acumula se o vencimento for futuro
                 start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > hoje_local) else base_data
-                acesso.data_vencimento = start_date + timedelta(days=dias)
+                acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
 
             acesso.status_catraca = 'liberado'
             acesso.esta_dentro = False
@@ -1390,14 +1427,13 @@ def crm_aluno_detail(request, aluno_id):
 
         # 3. Registrar no Caixa (se houver turno aberto)
         registrar_venda_no_caixa(
-            valor=float(valor),
-            descricao=f"Pagamento: {aluno.nome_completo} ({plano.name if plano_id else 'Taxa'})",
+            valor=valor_pago,
+            descricao=f"Pagamento: {aluno.nome_completo} ({plano.name if plano else 'Taxa'})",
             metodo=metodo,
             origem='MANUAL'
         )
         
-        # Ativa o aluno automaticamente
-        aluno.status = 'ATIVO'
+        # Salva o status do aluno
         aluno.save()
         
         messages.success(request, f"Pagamento de R$ {valor} processado. Aluno Ativado!")
@@ -1807,25 +1843,19 @@ def crm_aluno_create(request):
                 except (ValueError, TypeError):
                     valor_final = float(plano.price)
 
-                # 1. Registrar Histórico
-                PagamentoHistorico.objects.create(
-                    aluno=aluno,
-                    plano=plano,
-                    valor=valor_final,
-                    status='pago',
-                    metodo_pagamento=metodo
-                )
+                dias_adicionais = processar_pagamento(aluno, plano, valor_final, metodo, user=request.user)
                 
                 # 2. Configurar Acesso
-                from datetime import timedelta
-                hoje_local = timezone.localtime(timezone.now()).date()
-                base_data = hoje_local
-                if hoje_local.weekday() == 6: # Domingo
-                    base_data = hoje_local + timedelta(days=1)
-                
-                acesso.data_vencimento = base_data + timedelta(days=plano.duration_days)
-                acesso.status_catraca = 'liberado'
-                acesso.save()
+                if dias_adicionais > 0:
+                    from datetime import timedelta
+                    hoje_local = timezone.localtime(timezone.now()).date()
+                    base_data = hoje_local
+                    if hoje_local.weekday() == 6: # Domingo
+                        base_data = hoje_local + timedelta(days=1)
+                    
+                    acesso.data_vencimento = base_data + timedelta(days=dias_adicionais)
+                    acesso.status_catraca = 'liberado'
+                    acesso.save()
                 
                 # 3. Registrar no Caixa (Se possível)
                 try:
