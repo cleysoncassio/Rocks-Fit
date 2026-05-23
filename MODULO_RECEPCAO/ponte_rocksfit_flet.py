@@ -2370,7 +2370,7 @@ def main(page: ft.Page):
                         page.update()
                     ),
                 ),
-            ], scroll="auto", spacing=10)
+            ], scroll="auto", spacing=10, expand=True)
 
             # TAB 2: Catraca & Rede
             tab_catraca = ft.Column([
@@ -2404,7 +2404,7 @@ def main(page: ft.Page):
                               update_config("cooldown_facial", int(e.control.value))
                           )),
                 ft.Text("Tempo mínimo entre uma identificação e outra para o mesmo aluno.", size=10, italic=True, color=COR_TEXT_SEC),
-            ], scroll="auto", spacing=15)
+            ], scroll="auto", spacing=15, expand=True)
 
             # TAB 3: Digital & Câmera
             tab_hardware = ft.Column([
@@ -2421,7 +2421,23 @@ def main(page: ft.Page):
                 ft.Switch(label="Câmera Ativada", value=CONFIG['camera_enabled'], 
                           on_change=lambda e: update_config("camera_enabled", e.control.value)),
                 ft.Text("Desative para usar apenas a digital e economizar recursos.", size=10, italic=True),
-            ], scroll="auto", spacing=15)
+            ], scroll="auto", spacing=15, expand=True)
+
+            # TAB 4: Mensagens
+            tab_mensagens = ft.Column([
+                ft.Text("MENSAGENS DO MONITOR", size=14, weight="bold", color=COR_PRIMARY),
+                ft.TextField(label="Liberado - Entrada", value=CONFIG.get('msg_liberado_entrada', 'BOM TREINO!'), on_blur=lambda e: update_config("msg_liberado_entrada", e.control.value), bgcolor="#111111"),
+                ft.TextField(label="Liberado - Saída", value=CONFIG.get('msg_liberado_saida', 'ATÉ AMANHÃ!'), on_blur=lambda e: update_config("msg_liberado_saida", e.control.value), bgcolor="#111111"),
+                ft.TextField(label="Acesso Negado / Bloqueado", value=CONFIG.get('msg_bloqueado', 'FALE CONOSCO'), on_blur=lambda e: update_config("msg_bloqueado", e.control.value), bgcolor="#111111"),
+                ft.Divider(height=20),
+                ft.Text("QR CODE FIXO (SUBSTITUI LOTAÇÃO)", size=14, weight="bold", color=COR_PRIMARY),
+                ft.TextField(label="Título do QR Code", value=CONFIG.get('qr_fixo_titulo', 'DÚVIDAS? FALE CONOSCO'), on_blur=lambda e: update_config("qr_fixo_titulo", e.control.value), bgcolor="#111111"),
+                ft.TextField(label="URL do QR Code Fixo", value=CONFIG.get('qr_fixo_url', 'https://wa.me/5584999470586'), on_blur=lambda e: update_config("qr_fixo_url", e.control.value), bgcolor="#111111"),
+                ft.Divider(height=20),
+                ft.Text("TEMPO DO QR CODE DE SUPORTE (BLOQUEIO)", size=14, weight="bold", color=COR_PRIMARY),
+                ft.Slider(min=2, max=30, divisions=28, label="{value} segundos", value=CONFIG.get('qr_whatsapp_timeout', 5), on_change=lambda e: update_config("qr_whatsapp_timeout", int(e.control.value))),
+                ft.Text("Tempo de tela (em segundos) que o QR Code do WhatsApp de suporte fica exposto quando o aluno é bloqueado.", size=10, italic=True, color=COR_TEXT_SEC),
+            ], scroll="auto", spacing=15, expand=True)
 
             def close_config(e=None):
                 dlg_config.visible = False
@@ -2436,11 +2452,11 @@ def main(page: ft.Page):
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                         ft.Divider(height=10),
                         ft.Container(
-                            width=600, height=550,
+                            expand=True,
                             content=ft.Tabs(
                                 selected_index=0,
                                 animation_duration=300,
-                                length=3,
+                                length=4,
                                 expand=True,
                                 content=ft.Column(
                                     expand=True,
@@ -2450,6 +2466,7 @@ def main(page: ft.Page):
                                                 ft.Tab(label="FACIAL"),
                                                 ft.Tab(label="CATRACA"),
                                                 ft.Tab(label="HARDWARE"),
+                                                ft.Tab(label="MENSAGENS"),
                                             ]
                                         ),
                                         ft.TabBarView(
@@ -2458,6 +2475,7 @@ def main(page: ft.Page):
                                                 tab_facial,
                                                 tab_catraca,
                                                 tab_hardware,
+                                                tab_mensagens,
                                             ]
                                         )
                                     ]
@@ -2468,12 +2486,14 @@ def main(page: ft.Page):
                     bgcolor=COR_BG,
                     padding=ft.Padding(25, 25, 25, 25),
                     border_radius=20,
-                    width=650,
+                    width=850,
+                    height=650,
                     border=ft.Border.all(1, "#ffffff20")
                 ),
                 alignment=ft.Alignment(0, 0),
                 bgcolor="#000000dd",
                 expand=True,
+                padding=ft.Padding(20, 20, 20, 20),
                 visible=True,
                 on_click=lambda _: None  # Bloqueia cliques para os elementos abaixo do overlay
             )
@@ -2514,7 +2534,7 @@ def main(page: ft.Page):
                     ft.Container(
                         content=ft.Row(
                             [
-                                ft.Container(content=ft.Icon(ft.Icons.SETTINGS, size=20, color="#adaaaa"), on_click=lambda _: abrir_configuracoes(), padding=6, border_radius=6, ink=True),
+                                ft.Container(content=ft.Icon(ft.Icons.SETTINGS, size=16, color="#adaaaa"), on_click=lambda _: abrir_configuracoes(), padding=4, border_radius=6, ink=True),
                             ],
                             spacing=0,
                         ),
@@ -2684,7 +2704,7 @@ def main(page: ft.Page):
                 return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
             except: return ""
             
-        img_qr = ft.Image(src=get_qr(), width=180, height=180, border_radius=12, visible=False)
+        img_qr = ft.Image(src=get_qr(), width=280, height=280, border_radius=12, visible=False)
         
         status_container = ft.Container(
             content=ft.Row([ft.Container(width=10, height=10, border_radius=5, bgcolor="#ff7351"), lbl_status_tag], spacing=8, alignment=ft.MainAxisAlignment.CENTER),
@@ -2703,7 +2723,7 @@ def main(page: ft.Page):
             lbl_msg.value = "AGUARDANDO BIOMETRIA..."; lbl_msg.color = "#adaaaa"
             lbl_status_tag.value = "INATIVO"; status_container.bgcolor = "#ff735133"
             img_perfil.visible = False; img_qr.visible = False
-            lbl_cam_status.value = "APROXIME-SE"; badge_cam_status.bgcolor = COR_PRIMARY
+            lbl_cam_status.value = "APROXIME-SE"; lbl_cam_status.color = "#000000"; badge_cam_status.bgcolor = COR_PRIMARY
             rocksfit_core_update(page)
 
         def _set_identificado(data, liberado, metodo="FACIAL", sentido="ENTRADA"):
@@ -2726,14 +2746,15 @@ def main(page: ft.Page):
                 cor = "#2ecc71"
                 status_container.bgcolor = cor; badge_cam_status.bgcolor = cor
                 lbl_cam_status.value = "Olá, bom treino" if sentido == "ENTRADA" else "Até logo"
-                lbl_msg.value = "BOM TREINO!" if sentido == "ENTRADA" else "ATÉ AMANHÃ!"
+                lbl_cam_status.color = "#000000"
+                lbl_msg.value = CONFIG.get('msg_liberado_entrada', "BOM TREINO!") if sentido == "ENTRADA" else CONFIG.get('msg_liberado_saida', "ATÉ AMANHÃ!")
                 lbl_msg.color = cor
                 threading.Thread(target=registrar_acesso_crm, args=(mat, metodo), daemon=True).start()
                 trigger_catraca(sentido)
             else:
-                lbl_status_tag.value = "✖ BLOQUEADO"; status_container.bgcolor = "#e74c3c"
-                lbl_cam_status.value = "ACESSO NEGADO"; badge_cam_status.bgcolor = "#e74c3c"
-                lbl_msg.value = "FALE CONOSCO"; lbl_msg.color = "#e74c3c"
+                lbl_status_tag.value = "✖ BLOQUEADO"; lbl_status_tag.color = "#ffffff"; status_container.bgcolor = COR_PRIMARY
+                lbl_cam_status.value = "ACESSO NEGADO"; lbl_cam_status.color = "#ffffff"; badge_cam_status.bgcolor = COR_PRIMARY
+                lbl_msg.value = CONFIG.get('msg_bloqueado', "FALE CONOSCO"); lbl_msg.color = "#e74c3c"
                 img_perfil.visible = False; img_qr.visible = True
                 lbl_matricula.value = "Aponte o celular para o QR Code"
             
@@ -2746,7 +2767,9 @@ def main(page: ft.Page):
         monitor_layout = ft.Container(
             content=ft.Column([
                 create_title_bar("MONITOR DE ACESSO - ROCKS FIT"),
-                ft.ResponsiveRow([
+                # Main Content (Aligned)
+                ft.Row([
+                    # Camera Column
                     ft.Column([
                         ft.Container(
                             content=ft.Stack([
@@ -2755,17 +2778,19 @@ def main(page: ft.Page):
                             ]), 
                             expand=True, bgcolor="#000000", border_radius=16, border=ft.Border.all(1, "#ffffff10"), clip_behavior=ft.ClipBehavior.HARD_EDGE
                         )
-                    ], col={"sm": 12, "md": 7, "lg": 8}),
+                    ], expand=7),
+                    
+                    # Sidebar
                     ft.Column([
                         ft.Container(content=ft.Column([
-                            ft.Stack([img_perfil, img_qr], width=180, height=180),
+                            ft.Stack([img_perfil, img_qr], alignment=ft.Alignment(0, 0)),
                             lbl_nome, lbl_matricula, status_container, ft.Divider(height=20, color="#ffffff10"), 
                             ft.Row([ft.Text("UNIDADE", size=12, color="#adaaaa"), ft.Text("ROCKS FIT #01", size=13, weight="bold", color="#ffffff")], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                             ft.Row([ft.Text("VENCIMENTO", size=12, color="#adaaaa"), lbl_vencimento], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                             ft.Container(content=lbl_msg, margin=ft.Padding(left=0, right=0, top=20, bottom=0))
-                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15), bgcolor=COR_CARD, padding=30, border_radius=20)
-                    ], col={"sm": 12, "md": 5, "lg": 4})
-                ], spacing=20, run_spacing=20, expand=True)
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15), bgcolor=COR_CARD, padding=30, border_radius=20, expand=True)
+                    ], expand=4)
+                ], spacing=20, expand=True, vertical_alignment=ft.CrossAxisAlignment.STRETCH)
             ], expand=True),
             expand=True, bgcolor=COR_BG, padding=30
         )

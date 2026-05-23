@@ -52,11 +52,17 @@ HEADERS = {"Authorization": f"Token {SYNC_TOKEN}"}
 CONFIG_PATH = "BIOMETRIA_DATA/config.json"
 # --- CONFIGURAÇÕES DINÂMICAS ---
 CONFIG_PATH = "BIOMETRIA_DATA/config.json"
-THRESHOLD_FACIAL = 0.52
-FACE_FRAME_SKIP = 5
+MSG_LIBERADO_ENTRADA = "BOM TREINO!"
+MSG_LIBERADO_SAIDA = "ATÉ AMANHÃ!"
+MSG_BLOQUEADO = "FALE CONOSCO"
+QR_FIXO_TITULO = "DÚVIDAS? FALE CONOSCO"
+QR_FIXO_URL = "https://wa.me/5584999470586"
+QR_WHATSAPP_TIMEOUT = 5
 
 def load_local_config():
     global THRESHOLD_FACIAL, FACE_FRAME_SKIP
+    global MSG_LIBERADO_ENTRADA, MSG_LIBERADO_SAIDA, MSG_BLOQUEADO
+    global QR_FIXO_TITULO, QR_FIXO_URL, QR_WHATSAPP_TIMEOUT
     try:
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, "r") as f:
@@ -64,6 +70,12 @@ def load_local_config():
                 THRESHOLD_FACIAL = cfg.get("face_threshold", 0.52)
                 # O monitor é otimizado para ser mais fluído que a ponte
                 FACE_FRAME_SKIP = max(2, cfg.get("face_frame_skip", 10) // 2)
+                MSG_LIBERADO_ENTRADA = cfg.get("msg_liberado_entrada", "BOM TREINO!")
+                MSG_LIBERADO_SAIDA = cfg.get("msg_liberado_saida", "ATÉ AMANHÃ!")
+                MSG_BLOQUEADO = cfg.get("msg_bloqueado", "FALE CONOSCO")
+                QR_FIXO_TITULO = cfg.get("qr_fixo_titulo", "DÚVIDAS? FALE CONOSCO")
+                QR_FIXO_URL = cfg.get("qr_fixo_url", "https://wa.me/5584999470586")
+                QR_WHATSAPP_TIMEOUT = cfg.get("qr_whatsapp_timeout", 5)
     except: pass
 
 load_local_config()
@@ -111,12 +123,10 @@ except:
     DEEPFACE_ONLINE = False
     print("⚠️ [MONITOR] DeepFace API indisponível. Usando apenas detecção básica.")
 
-def get_whatsapp_qr_base64():
+def get_qr_base64(url):
     try:
-        import urllib.parse
+        import qrcode, io, base64
         qr = qrcode.QRCode(version=1, box_size=10, border=2)
-        msg = "Estou com problemas no meu acesso, pode verificar por favor?"
-        url = f"https://wa.me/5584999470586?text={urllib.parse.quote(msg)}"
         qr.add_data(url)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
@@ -125,7 +135,8 @@ def get_whatsapp_qr_base64():
         return "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode("utf-8")
     except: return ""
 
-QR_WPP_BASE64 = get_whatsapp_qr_base64()
+QR_WPP_BASE64 = get_qr_base64("https://wa.me/5584999470586?text=Estou%20com%20problemas%20no%20meu%20acesso%2C%20pode%20verificar%20por%20favor%3F")
+QR_FIXO_BASE64 = get_qr_base64(QR_FIXO_URL)
 
 def detectar_sentido_acesso(matricula):
     """
@@ -337,7 +348,7 @@ def main(page: ft.Page):
     
     qr_whatsapp_img = ft.Image(src=transparent_pixel, width=120, height=120)
     img_perfil = ft.Image(src=transparent_pixel, width=180, height=180, border_radius=90, fit="cover", visible=False)
-    img_qr = ft.Image(src=QR_WPP_BASE64, width=180, height=180, border_radius=12, visible=False)
+    img_qr = ft.Image(src=QR_WPP_BASE64, width=280, height=280, border_radius=12, visible=False)
     icon_placeholder = ft.Container(content=ft.Icon(ft.Icons.PERSON, color="#adaaaa", size=80), width=180, height=180, border_radius=90, bgcolor=surf_highest, border=ft.Border(ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333"), ft.BorderSide(3, "#333333")), alignment=ft.Alignment(0, 0))
     
     lbl_status_tag = ft.Text("INATIVO", size=14, weight="bold", color="#ff7351")
@@ -365,13 +376,14 @@ def main(page: ft.Page):
         animate=ft.Animation(400, "decelerate")
     )
     
-    card_capacidade = ft.Container(
+    # Card QR Code Fixo (Substitui Lotação)
+    card_qr_fixo = ft.Container(
         content=ft.Column([
-            ft.Row([ft.Text("CAPACIDADE", size=18, weight="bold", italic=True, color="#000000"), ft.Icon(ft.Icons.PEOPLE, color="#000000")], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.Row([ft.Text("74%", size=48, weight="bold", color="#000000"), ft.Text("LOTADO", size=12, weight="bold", color="#000000")], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, vertical_alignment=ft.CrossAxisAlignment.END),
-            ft.ProgressBar(value=0.74, color="#000000", bgcolor="#ffffff40", height=8)
-        ]),
-        gradient=ft.LinearGradient(colors=["#ff9159", "#ff7a2f"]), padding=30, border_radius=20, margin=ft.Padding(0, 16, 0, 0)
+            ft.Text(QR_FIXO_TITULO, size=16, weight="bold", color="#ffffff", text_align="center"),
+            ft.Container(content=ft.Image(src=QR_FIXO_BASE64, width=120, height=120, border_radius=8), bgcolor="#ffffff", padding=10, border_radius=12)
+        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10),
+        bgcolor="#161616cc", padding=20, border_radius=20, margin=ft.Padding(0, 16, 0, 0),
+        border=ft.Border(ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10"), ft.BorderSide(1, "#ffffff10")),
     )
 
     page.add(
@@ -386,21 +398,21 @@ def main(page: ft.Page):
                     ], spacing=15)
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 
-                # Main Content (Responsive)
-                ft.ResponsiveRow([
+                # Main Content (Aligned)
+                ft.Row([
                     # Camera Column
                     ft.Column([
                         ft.Text("BIOMETRIA ATIVA", size=32, italic=True, weight="bold", color=primary),
                         ft.Text("APROXIME-SE PARA VALIDAR", color="#adaaaa"),
                         cam_container
-                    ], col={"sm": 12, "md": 7, "lg": 8}),
+                    ], expand=7),
                     
                     # Sidebar
                     ft.Column([
                         card_perfil,
-                        card_capacidade
-                    ], col={"sm": 12, "md": 5, "lg": 4})
-                ], expand=True, spacing=20, run_spacing=20),
+                        card_qr_fixo
+                    ], expand=4)
+                ], expand=True, spacing=20, vertical_alignment=ft.CrossAxisAlignment.STRETCH),
                 
                 # Bottom Bar
                 ft.Row([
@@ -432,7 +444,7 @@ def main(page: ft.Page):
                 img_perfil.src = transparent_pixel
                 img_perfil.visible = False
                 img_qr.visible = False; icon_placeholder.visible = True
-                lbl_cam_status.value = "APROXIME-SE"; badge_cam_status.bgcolor = primary
+                lbl_cam_status.value = "APROXIME-SE"; lbl_cam_status.color = "#000000"; badge_cam_status.bgcolor = primary
                 lbl_vencimento.value = ""
                 monitor_safe_update()
         except (RuntimeError, Exception):
@@ -522,21 +534,21 @@ def main(page: ft.Page):
                     img_perfil.visible = False; icon_placeholder.visible = True
 
                 if liberado:
-                    lbl_status_tag.value = f"✔ {sentido}"; status_container.bgcolor = success
+                    lbl_status_tag.value = f"✔ {sentido}"; lbl_status_tag.color = "#000000"; status_container.bgcolor = success
                     lbl_vencimento.value = f"VENCIMENTO: {data.get('vencimento', 'N/D')}"
                     lbl_vencimento.color = "#ffffff"
                     if sentido == "ENTRADA":
-                        lbl_cam_status.value = "Olá, bom treino"; lbl_msg.value = "BOM TREINO!"
+                        lbl_cam_status.value = "Olá, bom treino"; lbl_cam_status.color = "#000000"; lbl_msg.value = MSG_LIBERADO_ENTRADA
                     else:
-                        lbl_cam_status.value = "Até amanhã"; lbl_msg.value = "ATÉ AMANHÃ!"
+                        lbl_cam_status.value = "Até amanhã"; lbl_cam_status.color = "#000000"; lbl_msg.value = MSG_LIBERADO_SAIDA
                     
                     badge_cam_status.bgcolor = success; lbl_msg.color = success
                 else:
-                    lbl_status_tag.value = "✖ BLOQUEADO"; status_container.bgcolor = error
+                    lbl_status_tag.value = "✖ BLOQUEADO"; lbl_status_tag.color = "#ffffff"; status_container.bgcolor = primary
                     lbl_vencimento.value = f"VENCIMENTO: {data.get('vencimento', 'PENDENTE')}"
-                    lbl_vencimento.color = error
-                    lbl_cam_status.value = "ACESSO NEGADO"; badge_cam_status.bgcolor = error
-                    lbl_msg.value = "FALE CONOSCO"; lbl_msg.color = error
+                    lbl_vencimento.color = "#ffffff"
+                    lbl_cam_status.value = "ACESSO NEGADO"; lbl_cam_status.color = "#ffffff"; badge_cam_status.bgcolor = primary
+                    lbl_msg.value = MSG_BLOQUEADO; lbl_msg.color = error
                     img_perfil.visible = False; icon_placeholder.visible = False; img_qr.visible = True
                     lbl_matricula.value = "Escaneie o QR Code para suporte"
                     
@@ -562,8 +574,9 @@ def main(page: ft.Page):
             if liberado:
                 threading.Thread(target=trigger_catraca, kwargs={"sentido": sentido}, daemon=True).start()
             
-            # Delay de visualização de 5 segundos do perfil antes de resetar para standby
-            time.sleep(5)
+            # Delay de visualização antes de resetar para standby
+            time_wait = 5 if liberado else QR_WHATSAPP_TIMEOUT
+            time.sleep(time_wait)
         except Exception as e:
             print(f"❌ [IDENTIFY ERROR] {e}")
         finally:
