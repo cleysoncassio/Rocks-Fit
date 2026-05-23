@@ -1687,6 +1687,37 @@ def crm_aluno_delete(request, aluno_id):
     return redirect('crm_alunos_list')
 
 @login_required
+def crm_pagamento_delete(request, aluno_id, pagamento_id):
+    """Estorno/Exclusão de pagamento e redução de dias de crédito"""
+    if not request.user.has_perm('blog.can_access_financial') and not request.user.is_superuser:
+        messages.error(request, "Acesso Negado: Permissão insuficiente para exclusão financeira.")
+        return redirect('crm_aluno_detail', aluno_id=aluno_id)
+        
+    from blog.models import PagamentoHistorico, ControleAcesso
+    from django.shortcuts import get_object_or_404
+    from datetime import timedelta
+    
+    if request.method == 'POST':
+        pagamento = get_object_or_404(PagamentoHistorico, id=pagamento_id, aluno_id=aluno_id)
+        
+        # Reduzir dias de crédito se houver um plano vinculado
+        if pagamento.plano:
+            try:
+                acesso = ControleAcesso.objects.get(aluno_id=aluno_id)
+                if acesso.data_vencimento:
+                    dias = pagamento.plano.duration_days
+                    acesso.data_vencimento -= timedelta(days=dias)
+                    acesso.save()
+            except ControleAcesso.DoesNotExist:
+                pass
+                
+        # Excluir histórico de pagamento (ou marcar como estornado)
+        pagamento.delete()
+        messages.success(request, "Pagamento excluído e dias de crédito estornados com sucesso.")
+        
+    return redirect('crm_aluno_detail', aluno_id=aluno_id)
+
+@login_required
 def crm_aluno_create(request):
     """Criação de novos alunos com dados completos"""
     if not request.user.has_perm('blog.can_manage_students') and not request.user.is_superuser:

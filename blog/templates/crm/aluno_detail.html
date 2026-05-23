@@ -231,9 +231,17 @@
                                     <p class="text-[9px] font-black uppercase tracking-widest text-neutral-400 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}</p>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <p class="text-xl font-black font-headline tracking-tighter text-on-surface">R$ {{ pg.valor|floatformat:2 }}</p>
-                                <span class="text-[8px] font-black font-headline uppercase tracking-[0.2em] px-3 py-1 bg-primary/10 text-primary rounded-full">{{ pg.status }}</span>
+                            <div class="flex items-center gap-6">
+                                <div class="text-right">
+                                    <p class="text-xl font-black font-headline tracking-tighter text-on-surface">R$ {{ pg.valor|floatformat:2 }}</p>
+                                    <span class="text-[8px] font-black font-headline uppercase tracking-[0.2em] px-3 py-1 bg-primary/10 text-primary rounded-full">{{ pg.status }}</span>
+                                </div>
+                                <form action="{% url 'crm_pagamento_delete' aluno.id pg.id %}" method="POST" onsubmit="return confirm('ALERTA: Deseja realmente EXCLUIR este pagamento e ESTORNAR os dias de crédito vinculados a ele?\n\nEsta ação descontará o prazo correspondente do vencimento atual do aluno e não pode ser desfeita.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-10 h-10 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100" title="Excluir e Estornar">
+                                        <span class="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                         {% empty %}
