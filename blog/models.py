@@ -341,6 +341,43 @@ class PagamentoHistorico(models.Model):
     metodo_pagamento = models.CharField(max_length=50, blank=True, null=True, verbose_name="Método de Pagamento")
     operador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Recebido por")
 
+    @property
+    def juros_multa_calculado(self):
+        from datetime import date
+        
+        if self.status != 'pendente':
+            return 0.0
+
+        if not hasattr(self.aluno, 'acesso') or not self.aluno.acesso.data_vencimento:
+            return 0.0
+            
+        hoje = date.today()
+        vencimento = self.aluno.acesso.data_vencimento
+        if vencimento >= hoje:
+            return 0.0
+            
+        dias_atraso = (hoje - vencimento).days
+        
+        # Safe import to avoid circular dependencies
+        from blog.models import GymSetting 
+        gym_settings = GymSetting.objects.first()
+        
+        if not gym_settings:
+            return 0.0
+            
+        multa_pct = float(gym_settings.multa_atraso) / 100.0
+        juros_diario_pct = (float(gym_settings.juros_mensal) / 30.0) / 100.0
+        
+        valor_original = float(self.valor)
+        valor_multa = valor_original * multa_pct
+        valor_juros = valor_original * juros_diario_pct * dias_atraso
+        
+        return round(valor_multa + valor_juros, 2)
+
+    @property
+    def valor_total_atualizado(self):
+        return float(self.valor) + self.juros_multa_calculado
+
     def __str__(self):
         return f"{self.aluno.nome_completo} - {self.plano.name if self.plano else 'Sem Plano'} ({self.status})"
 

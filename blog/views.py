@@ -46,6 +46,14 @@ def sincronizar_estados_alunos():
     Aluno.objects.filter(
         acesso__ultimo_acesso__lt=timezone.now() - timedelta(days=30)
     ).exclude(status='INATIVO').update(status='INATIVO')
+    
+    # 4. INADIMPLENTE: Tem pagamento pendente e o vencimento da catraca passou.
+    alunos_inadimplentes = Aluno.objects.filter(
+        status__in=['ATIVO', 'AGUARDANDO', 'SUSPENSO'],
+        acesso__data_vencimento__lt=hoje,
+        pagamentos__status='pendente'
+    ).distinct()
+    alunos_inadimplentes.update(status='INADIMPLENTE')
 
 def registrar_venda_no_caixa(valor, descricao, metodo='PIX', origem='SITE'):
     """Helper para registrar vendas automáticas vindas do Site ou App no caixa aberto."""
@@ -960,48 +968,59 @@ def processar_pagamento(aluno, plano, valor_pago, metodo, user=None):
     from django.utils import timezone
     from blog.models import PagamentoHistorico
     
+    # 1. Busca por pendência existente (independente do plano enviado pelo UI)
+    pendente = PagamentoHistorico.objects.filter(aluno=aluno, status='pendente').order_by('id').first()
+    
+    if pendente:
+        plano_pendente = pendente.plano
+        if plano_pendente:
+            valor_plano = float(plano_pendente.price)
+            dias_totais = plano_pendente.duration_days
+        else:
+            valor_plano = float(pendente.valor)
+            dias_totais = 30
+            
+        valor_pendente_atual = float(pendente.valor)
+        
+        if valor_pago >= valor_pendente_atual:
+            # Quitou a dívida
+            PagamentoHistorico.objects.create(aluno=aluno, plano=plano_pendente, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+            pendente.delete()
+            aluno.status = 'ATIVO'
+            dias_credito = max(1, int(round((valor_pendente_atual / valor_plano) * dias_totais)))
+            return dias_credito, plano_pendente
+        else:
+            # Abateu parte da dívida
+            PagamentoHistorico.objects.create(aluno=aluno, plano=plano_pendente, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+            pendente.valor = valor_pendente_atual - valor_pago
+            pendente.save()
+            aluno.status = 'AGUARDANDO'
+            dias_credito = max(1, int(round((valor_pago / valor_plano) * dias_totais)))
+            return dias_credito, plano_pendente
+
+    # 2. Nova Compra
     if not plano:
         PagamentoHistorico.objects.create(aluno=aluno, plano=None, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
         aluno.status = 'ATIVO'
-        return 0
+        return 0, None
         
     valor_plano = float(plano.price)
     if valor_plano <= 0:
         PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
         aluno.status = 'ATIVO'
-        return plano.duration_days
+        return plano.duration_days, plano
         
-    dias = 0
-    pendente = PagamentoHistorico.objects.filter(aluno=aluno, plano=plano, status='pendente').order_by('id').first()
-    
-    if pendente:
-        valor_pendente_atual = float(pendente.valor)
-        if valor_pago >= valor_pendente_atual:
-            # Quitou a dívida
-            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pendente_atual, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
-            pendente.delete()
-            aluno.status = 'ATIVO'
-            dias = max(1, int(round((valor_pendente_atual / valor_plano) * plano.duration_days)))
-        else:
-            # Abateu parte da dívida
-            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
-            pendente.valor = valor_pendente_atual - valor_pago
-            pendente.save()
-            aluno.status = 'AGUARDANDO'
-            dias = max(1, int(round((valor_pago / valor_plano) * plano.duration_days)))
+    if valor_pago < valor_plano:
+        PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+        PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_plano - valor_pago, status='pendente', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+        aluno.status = 'AGUARDANDO'
+        dias = max(1, int(round((valor_pago / valor_plano) * plano.duration_days)))
+        return dias, plano
     else:
-        # Nova compra
-        if valor_pago < valor_plano:
-            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
-            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_plano - valor_pago, status='pendente', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
-            aluno.status = 'AGUARDANDO'
-            dias = max(1, int(round((valor_pago / valor_plano) * plano.duration_days)))
-        else:
-            PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
-            aluno.status = 'ATIVO'
-            dias = int(round((valor_pago / valor_plano) * plano.duration_days))
-            
-    return dias
+        PagamentoHistorico.objects.create(aluno=aluno, plano=plano, valor=valor_pago, status='pago', data_pagamento=timezone.now(), metodo_pagamento=metodo, operador=user)
+        aluno.status = 'ATIVO'
+        dias = int(round((valor_pago / valor_plano) * plano.duration_days))
+        return dias, plano
 
 @login_required
 def crm_dashboard(request):
@@ -1032,7 +1051,7 @@ def crm_dashboard(request):
             if plano_id:
                 plano = Plan.objects.get(id=plano_id)
                 
-            dias_adicionais = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user)
+            dias_adicionais, plano = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user)
             
             if plano and dias_adicionais > 0:
                 acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
@@ -1399,7 +1418,7 @@ def crm_aluno_detail(request, aluno_id):
         if plano_id:
             plano = Plan.objects.get(id=plano_id)
             
-        dias_adicionais = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user)
+        dias_adicionais, plano = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user)
         
         # 2. Atualizar Controle de Acesso Automaticamente
         if plano and dias_adicionais > 0:
@@ -1458,7 +1477,7 @@ def crm_aluno_detail(request, aluno_id):
     acesso = getattr(aluno, 'acesso', None)
     pagamentos = aluno.pagamentos.all().order_by('-data_pagamento')
     total_investido = sum(p.valor for p in pagamentos if p.status == 'pago')
-    debitos = sum(p.valor for p in pagamentos if p.status == 'pendente')
+    debitos = sum(p.valor_total_atualizado for p in pagamentos if p.status == 'pendente')
     rockspoints = int(total_investido)
     credito = 0.00
     planos = Plan.objects.all()
@@ -1843,7 +1862,7 @@ def crm_aluno_create(request):
                 except (ValueError, TypeError):
                     valor_final = float(plano.price)
 
-                dias_adicionais = processar_pagamento(aluno, plano, valor_final, metodo, user=request.user)
+                dias_adicionais, plano = processar_pagamento(aluno, plano, valor_final, metodo, user=request.user)
                 
                 # 2. Configurar Acesso
                 if dias_adicionais > 0:
