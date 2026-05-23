@@ -1621,7 +1621,6 @@ def main(page: ft.Page):
                 create_section_title("SISTEMA"),
                 create_menu_item("Histórico", ft.Icons.HISTORY, on_click=lambda _: abrir_historico()),
                 create_menu_item("Diagnóstico", ft.Icons.TROUBLESHOOT, on_click=lambda _: abrir_diagnostico()),
-                create_menu_item("Configurações", ft.Icons.SETTINGS, on_click=lambda _: abrir_configuracoes()),
                 
                 ft.Container(expand=True),
                 ft.Container(
@@ -1937,13 +1936,9 @@ def main(page: ft.Page):
 
     def abrir_historico(e=None):
         try:
-            global PAUSE_BIOMETRIA
             if state.get("close_enroll"):
                 try: state["close_enroll"]()
                 except: pass
-            
-            PAUSE_BIOMETRIA = True
-            if biometria_manager_global: biometria_manager_global.pause()
             
             print("📜 [UI] Preparando Histórico...")
             render_historico()
@@ -1992,11 +1987,8 @@ def main(page: ft.Page):
                 expand=True
             )
             def close_hist():
-                global PAUSE_BIOMETRIA
                 if overlay_hist in page.overlay:
                     page.overlay.remove(overlay_hist)
-                PAUSE_BIOMETRIA = False
-                if biometria_manager_global: biometria_manager_global.resume()
                 page.update()
 
             page.overlay.append(overlay_hist)
@@ -2125,13 +2117,9 @@ def main(page: ft.Page):
 
     def abrir_diagnostico(e=None):
         try:
-            global PAUSE_BIOMETRIA
             if state.get("close_enroll"):
                 try: state["close_enroll"]()
                 except: pass
-            
-            PAUSE_BIOMETRIA = True
-            if biometria_manager_global: biometria_manager_global.pause()
             
             print("🔍 [UI] Preparando Diagnóstico...")
             
@@ -2226,11 +2214,8 @@ def main(page: ft.Page):
                 except: pass
 
             def close_diag():
-                global PAUSE_BIOMETRIA
                 if overlay_diag in page.overlay:
                     page.overlay.remove(overlay_diag)
-                PAUSE_BIOMETRIA = False
-                if biometria_manager_global: biometria_manager_global.resume()
                 page.update()
 
             page.overlay.append(overlay_diag)
@@ -2439,51 +2424,68 @@ def main(page: ft.Page):
             ], scroll="auto", spacing=15)
 
             def close_config(e=None):
-                dlg_config.open = False
+                dlg_config.visible = False
                 page.update()
 
-            dlg_config = ft.AlertDialog(
-                modal=True,
-                title=ft.Row([
-                    ft.Text("CONFIGURAÇÕES TÉCNICAS", size=20, weight="bold", color="white"),
-                    ft.Container(content=ft.Icon(ft.Icons.CLOSE, size=20), on_click=close_config, padding=5, border_radius=5, ink=True)
-                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            dlg_config = ft.Container(
                 content=ft.Container(
-                    width=600, height=550,
-                    content=ft.Tabs(
-                        selected_index=0,
-                        animation_duration=300,
-                        length=3,
-                        expand=True,
-                        content=ft.Column(
-                            expand=True,
-                            controls=[
-                                ft.TabBar(
-                                    tabs=[
-                                        ft.Tab(label="FACIAL"),
-                                        ft.Tab(label="CATRACA"),
-                                        ft.Tab(label="HARDWARE"),
-                                    ]
-                                ),
-                                ft.TabBarView(
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Text("CONFIGURAÇÕES TÉCNICAS", size=20, weight="bold", color="white"),
+                            ft.Container(content=ft.Icon(ft.Icons.CLOSE, size=20), on_click=close_config, padding=5, border_radius=5, ink=True)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        ft.Divider(height=10),
+                        ft.Container(
+                            width=600, height=550,
+                            content=ft.Tabs(
+                                selected_index=0,
+                                animation_duration=300,
+                                length=3,
+                                expand=True,
+                                content=ft.Column(
                                     expand=True,
                                     controls=[
-                                        ft.Container(tab_facial, padding=10),
-                                        ft.Container(tab_catraca, padding=10),
-                                        ft.Container(tab_hardware, padding=10),
+                                        ft.TabBar(
+                                            tabs=[
+                                                ft.Tab(label="FACIAL"),
+                                                ft.Tab(label="CATRACA"),
+                                                ft.Tab(label="HARDWARE"),
+                                            ]
+                                        ),
+                                        ft.TabBarView(
+                                            expand=True,
+                                            controls=[
+                                                tab_facial,
+                                                tab_catraca,
+                                                tab_hardware,
+                                            ]
+                                        )
                                     ]
                                 )
-                            ]
+                            )
                         )
-                    )
+                    ]),
+                    bgcolor=COR_BG,
+                    padding=ft.Padding(25, 25, 25, 25),
+                    border_radius=20,
+                    width=650,
+                    border=ft.Border.all(1, "#ffffff20")
                 ),
-                content_padding=20,
-                bgcolor=COR_BG,
-                shape=ft.RoundedRectangleBorder(radius=20),
+                alignment=ft.Alignment(0, 0),
+                bgcolor="#000000dd",
+                expand=True,
+                visible=True,
+                on_click=lambda _: None  # Bloqueia cliques para os elementos abaixo do overlay
             )
 
-            page.dialog = dlg_config
-            dlg_config.open = True
+            # Para evitar sobreposições infinitas, removemos os antigos
+            for o in list(page.overlay):
+                if getattr(o, "data", "") == "config_modal":
+                    try: page.overlay.remove(o)
+                    except: pass
+            dlg_config.data = "config_modal"
+            
+            page.overlay.append(dlg_config)
             page.update()
             print("✅ [UI] Configurações abertas.")
         except Exception as ex:
