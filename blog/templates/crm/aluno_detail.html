@@ -182,7 +182,7 @@
                 </div>
 
                 <!-- Financial Bento -->
-                <div class="col-span-12 lg:col-span-8 grid grid-cols-3 gap-8">
+                <div class="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div class="bg-white dark:bg-gradient-to-br dark:from-[#2a2d31] dark:to-[#1e2124] p-8 rounded-[32px] border border-slate-200 dark:border-white/10 hover:border-primary/20 transition-all shadow-xl dark:shadow-2xl group hover:-translate-y-1 duration-500">
                         <p class="text-[9px] font-black text-slate-400 dark:text-neutral-400 uppercase tracking-[0.4em] mb-6 font-headline italic group-hover:text-primary transition-colors">Investimento</p>
                         <h4 class="text-4xl font-black font-headline tracking-tighter text-slate-900 dark:text-white">R$ {{ total_pago|floatformat:2 }}</h4>
@@ -221,29 +221,29 @@
                     </div>
                     <div class="space-y-4">
                         {% for pg in pagamentos %}
-                        <div class="group flex items-center justify-between p-6 bg-surface-container-highest/30 rounded-2xl border border-white/5 hover:border-primary/20 transition-all">
-                            <div class="flex items-center gap-6">
-                                <div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary">
-                                    <span class="material-symbols-outlined">receipt_long</span>
+                        <div class="group flex flex-col md:flex-row md:items-center justify-between p-6 bg-surface-container-highest/30 rounded-2xl border border-white/5 hover:border-primary/20 transition-all gap-4 md:gap-0">
+                            <div class="flex items-center gap-4 md:gap-6">
+                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary shrink-0">
+                                    <span class="material-symbols-outlined text-sm md:text-base">receipt_long</span>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-black font-headline uppercase tracking-tight text-on-surface">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
-                                    <p class="text-[9px] font-black uppercase tracking-widest text-neutral-400 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}{% if pg.operador %} • Rec. {{ pg.operador.first_name|default:pg.operador.username }}{% endif %}</p>
+                                    <p class="text-xs md:text-sm font-black font-headline uppercase tracking-tight text-on-surface">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
+                                    <p class="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-neutral-400 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}{% if pg.operador %} • Rec. {{ pg.operador.first_name|default:pg.operador.username }}{% endif %}</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <div class="text-right pr-3 border-r border-white/5">
-                                    <p class="text-xl font-black font-headline tracking-tighter text-on-surface">R$ {{ pg.valor|floatformat:2 }}</p>
-                                    <span class="text-[8px] font-black font-headline uppercase tracking-[0.2em] px-3 py-1 bg-primary/10 text-primary rounded-full">{{ pg.status }}</span>
+                            <div class="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto mt-2 md:mt-0">
+                                <div class="text-left md:text-right md:pr-3 md:border-r md:border-white/5">
+                                    <p class="text-lg md:text-xl font-black font-headline tracking-tighter text-on-surface">R$ {{ pg.valor|floatformat:2 }}</p>
+                                    <span class="text-[7px] md:text-[8px] font-black font-headline uppercase tracking-[0.2em] px-3 py-1 bg-primary/10 text-primary rounded-full">{{ pg.status }}</span>
                                 </div>
-                                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                    <button type="button" onclick="openEditPaymentModal('{{ pg.id }}', '{{ pg.valor|floatformat:2 }}', '{{ pg.plano.id|default:'' }}', '{{ pg.metodo_pagamento }}')" class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all" title="Editar Recebimento">
-                                        <span class="material-symbols-outlined text-lg">edit</span>
+                                <div class="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
+                                    <button type="button" onclick="openEditPaymentModal('{{ pg.id }}', '{{ pg.valor|floatformat:2 }}', '{{ pg.plano.id|default:'' }}', '{{ pg.metodo_pagamento }}')" class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all" title="Editar Recebimento">
+                                        <span class="material-symbols-outlined text-base md:text-lg">edit</span>
                                     </button>
                                     <form action="{% url 'crm_pagamento_delete' aluno.id pg.id %}" method="POST" onsubmit="return confirm('ALERTA: Deseja realmente EXCLUIR este pagamento e ESTORNAR os dias de crédito vinculados a ele?\n\nEsta ação descontará o prazo correspondente do vencimento atual do aluno e não pode ser desfeita.');">
                                         {% csrf_token %}
-                                        <button type="submit" class="w-10 h-10 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all" title="Excluir e Estornar">
-                                            <span class="material-symbols-outlined text-lg">delete</span>
+                                        <button type="submit" class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all" title="Excluir e Estornar">
+                                            <span class="material-symbols-outlined text-base md:text-lg">delete</span>
                                         </button>
                                     </form>
                                 </div>
@@ -273,19 +273,19 @@
                             <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-400 italic mb-6">Histórico Financeiro</h3>
                             <div class="space-y-3 max-h-[220px] overflow-y-auto no-scrollbar pr-2">
                                 {% for pg in pagamentos %}
-                                <div class="group flex items-center justify-between p-4 bg-surface-container-highest/30 rounded-2xl border border-white/5 hover:border-primary/20 transition-all">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary">
-                                            <span class="material-symbols-outlined text-sm">receipt_long</span>
+                                <div class="group flex flex-col md:flex-row md:items-center justify-between p-4 bg-surface-container-highest/30 rounded-2xl border border-white/5 hover:border-primary/20 transition-all gap-2 md:gap-0">
+                                    <div class="flex items-center gap-3 md:gap-4">
+                                        <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary shrink-0">
+                                            <span class="material-symbols-outlined text-xs md:text-sm">receipt_long</span>
                                         </div>
                                         <div>
-                                            <p class="text-xs font-black font-headline uppercase tracking-tight text-on-surface">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
-                                            <p class="text-[8px] font-black uppercase tracking-widest text-neutral-400 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}{% if pg.operador %} • Rec. {{ pg.operador.first_name|default:pg.operador.username }}{% endif %}</p>
+                                            <p class="text-[10px] md:text-xs font-black font-headline uppercase tracking-tight text-on-surface">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
+                                            <p class="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-neutral-400 mt-1">{{ pg.data_pagamento|date:"d M Y" }} • {{ pg.get_metodo_pagamento_display }}{% if pg.operador %} • Rec. {{ pg.operador.first_name|default:pg.operador.username }}{% endif %}</p>
                                         </div>
                                     </div>
-                                    <div class="text-right">
+                                    <div class="flex items-center justify-between md:block text-left md:text-right mt-1 md:mt-0 w-full md:w-auto">
                                         <p class="text-sm font-black font-headline tracking-tighter text-on-surface">R$ {{ pg.valor|floatformat:2 }}</p>
-                                        <span class="text-[7px] font-black font-headline uppercase tracking-[0.2em] px-2 py-1 bg-primary/10 text-primary rounded-full">{{ pg.status }}</span>
+                                        <span class="text-[6px] md:text-[7px] font-black font-headline uppercase tracking-[0.2em] px-2 py-1 bg-primary/10 text-primary rounded-full">{{ pg.status }}</span>
                                     </div>
                                 </div>
                                 {% empty %}
