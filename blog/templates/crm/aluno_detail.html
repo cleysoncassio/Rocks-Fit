@@ -227,6 +227,7 @@
                     </div>
                     <div class="space-y-4">
                         {% for pg in pagamentos %}
+                        {% if pg.status != 'cancelado' %}
                         <div class="group flex flex-col md:flex-row md:items-center justify-between p-6 bg-surface-container-highest/30 rounded-2xl border border-white/5 hover:border-primary/20 transition-all gap-4 md:gap-0">
                             <div class="flex items-center gap-4 md:gap-6">
                                 <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary shrink-0">
@@ -258,6 +259,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                         {% empty %}
                         <p class="py-20 text-center text-neutral-500 font-headline uppercase text-[10px] font-black tracking-widest italic">Nenhum evento financeiro logado.</p>
                         {% endfor %}
@@ -280,25 +282,25 @@
                     <div class="bg-surface-container-low p-10 rounded-[40px] border border-white/5 min-h-[300px] flex flex-col justify-between">
                         <div>
                             <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-400 italic mb-6">Histórico Financeiro</h3>
-                            <div class="flex flex-col divide-y divide-white/10 max-h-[450px] overflow-y-auto pr-4 custom-scrollbar">
+                            <div class="flex flex-col max-h-[600px] overflow-y-auto pr-4 custom-scrollbar space-y-2">
                                 {% for pg in pagamentos %}
-                                <div class="py-4 flex flex-col gap-2 hover:bg-white/5 transition-all px-3 -mx-3 rounded-xl group">
+                                <div class="py-5 flex flex-col gap-2 hover:bg-white/5 transition-all px-4 -mx-4 rounded-xl group border-b border-slate-200 dark:border-white/10 last:border-b-0">
                                     <div class="flex justify-between items-start">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary shrink-0">
+                                            <div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary shrink-0 {% if pg.status == 'cancelado' %}opacity-50 grayscale{% endif %}">
                                                 <span class="material-symbols-outlined text-xs">receipt_long</span>
                                             </div>
-                                            <div>
-                                                <p class="text-[11px] font-black font-headline uppercase tracking-tight text-on-surface">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
+                                            <div class="{% if pg.status == 'cancelado' %}opacity-50{% endif %}">
+                                                <p class="text-[11px] font-black font-headline uppercase tracking-tight text-on-surface {% if pg.status == 'cancelado' %}line-through{% endif %}">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
                                                 <p class="text-[8px] font-bold uppercase tracking-widest text-neutral-500 mt-1">Data: <span class="text-neutral-300">{{ pg.data_pagamento|date:"d/m/Y H:i" }}</span></p>
                                             </div>
                                         </div>
                                         <div class="text-right">
-                                            <p class="text-sm font-black font-headline tracking-tighter text-primary">R$ {{ pg.valor_total_atualizado|floatformat:2 }}</p>
-                                            <span class="text-[7px] font-black font-headline uppercase tracking-[0.2em] px-2 py-0.5 mt-1 inline-block bg-surface-container-highest text-neutral-300 rounded-sm">{{ pg.status }}</span>
+                                            <p class="text-sm font-black font-headline tracking-tighter {% if pg.status == 'cancelado' %}text-neutral-500 line-through{% else %}text-primary{% endif %}">R$ {{ pg.valor_total_atualizado|floatformat:2 }}</p>
+                                            <span class="text-[7px] font-black font-headline uppercase tracking-[0.2em] px-2 py-0.5 mt-1 inline-block {% if pg.status == 'cancelado' %}bg-red-500/10 text-red-500{% else %}bg-surface-container-highest text-neutral-300{% endif %} rounded-sm">{{ pg.status }}</span>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-4 text-[8px] font-bold uppercase tracking-widest text-neutral-500 pl-11">
+                                    <div class="flex items-center gap-4 text-[8px] font-bold uppercase tracking-widest text-neutral-500 pl-11 {% if pg.status == 'cancelado' %}opacity-50{% endif %}">
                                         <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">payments</span> {{ pg.get_metodo_pagamento_display }}</span>
                                         {% if pg.operador %}
                                         <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">person</span> {{ pg.operador.first_name|default:pg.operador.username }}</span>
@@ -312,18 +314,18 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-6">
-                        <button class="bg-surface-container-low aspect-square rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">fitness_center</span>
-                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Treinos</span>
+                    <div class="grid grid-cols-3 gap-4 md:gap-6 mt-4">
+                        <button class="bg-surface-container-low py-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/40 transition-all">
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-xl">fitness_center</span>
+                            <span class="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-400">Treinos</span>
                         </button>
-                        <button class="bg-surface-container-low aspect-square rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">monitor_heart</span>
-                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Saúde</span>
+                        <button class="bg-surface-container-low py-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/40 transition-all">
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-xl">monitor_heart</span>
+                            <span class="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-400">Saúde</span>
                         </button>
-                        <button class="bg-surface-container-low aspect-square rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">query_stats</span>
-                             <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Evolução</span>
+                        <button class="bg-surface-container-low py-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/40 transition-all">
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-xl">query_stats</span>
+                             <span class="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-400">Evolução</span>
                         </button>
                     </div>
                 </div>
