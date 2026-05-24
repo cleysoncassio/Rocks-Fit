@@ -345,10 +345,21 @@
                 <input type="hidden" name="faturar" value="true">
                 
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Montante (R$)</label>
+                    <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Montante Líquido a Pagar (R$)</label>
                     <div class="relative group">
                         <span class="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-neutral-800 transition-colors group-focus-within:text-primary">R$</span>
-                        <input type="text" name="valor" id="valor_aporte" oninput="formatarMoedaReal(this)" class="w-full bg-surface-container-low border-none rounded-2xl py-6 pl-20 pr-8 font-black font-headline text-3xl text-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner" placeholder="0,00" required>
+                        <input type="text" name="valor" id="valor_aporte" oninput="formatarMoedaReal(this); syncBaseFromLíquido()" class="w-full bg-surface-container-low border-none rounded-2xl py-6 pl-20 pr-8 font-black font-headline text-3xl text-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner" placeholder="0,00" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Desconto (%)</label>
+                        <input type="number" id="desc_perc" oninput="aplicarDesconto('perc')" max="100" min="0" step="0.1" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-6 font-black font-headline text-sm text-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner" placeholder="0%">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Desconto (R$)</label>
+                        <input type="text" name="desconto" id="desc_valor" oninput="formatarMoedaReal(this); aplicarDesconto('valor')" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-6 font-black font-headline text-sm text-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner" placeholder="0,00">
                     </div>
                 </div>
 
@@ -514,23 +525,56 @@
             input.value = value;
         }
 
-        // --- Sync Plan Price ---
+        // --- Sync Plan Price & Discounts ---
+        let currentBasePrice = 0;
+
         function updateAportePrice() {
             const select = document.getElementById('plano_aporte');
-            const priceInput = document.getElementById('valor_aporte');
             const selectedOption = select.options[select.selectedIndex];
-            const price = selectedOption.getAttribute('data-price');
+            currentBasePrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
             
-            if (price) {
-                // Convert price to BRL format (0.00 -> 0,00)
-                let cleanPrice = price.toString().replace('.', ',');
-                // Force two decimals if missing
+            document.getElementById('desc_perc').value = '';
+            document.getElementById('desc_valor').value = '';
+            
+            aplicarDesconto('none');
+        }
+        
+        function syncBaseFromLíquido() {
+            // Se o usuário digitar manualmente o valor final e não for plano com desconto
+            const select = document.getElementById('plano_aporte');
+            if (select.value === "") {
+                const valStr = document.getElementById('valor_aporte').value.replace(/\D/g, '');
+                currentBasePrice = (parseFloat(valStr) / 100) || 0;
+            }
+        }
+
+        function aplicarDesconto(origem) {
+            const descPercInput = document.getElementById('desc_perc');
+            const descValorInput = document.getElementById('desc_valor');
+            const finalInput = document.getElementById('valor_aporte');
+            
+            let descontoReais = (parseFloat(descValorInput.value.replace(/\D/g, '')) / 100) || 0;
+            let descontoPerc = parseFloat(descPercInput.value) || 0;
+            
+            if(origem === 'perc') {
+                descontoReais = currentBasePrice * (descontoPerc / 100);
+                let valStr = descontoReais.toFixed(2).replace('.', ',');
+                if (!valStr.includes(',')) valStr += ',00';
+                else if (valStr.split(',')[1].length === 1) valStr += '0';
+                descValorInput.value = valStr.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+            } else if (origem === 'valor' && currentBasePrice > 0) {
+                descontoPerc = (descontoReais / currentBasePrice) * 100;
+                descPercInput.value = descontoPerc.toFixed(1);
+            }
+            
+            let finalPrice = currentBasePrice - descontoReais;
+            if(finalPrice < 0) finalPrice = 0;
+            
+            if (currentBasePrice > 0 || (currentBasePrice === 0 && finalPrice === 0)) {
+                let cleanPrice = finalPrice.toFixed(2).replace('.', ',');
                 if (!cleanPrice.includes(',')) cleanPrice += ',00';
                 else if (cleanPrice.split(',')[1].length === 1) cleanPrice += '0';
-                
-                priceInput.value = cleanPrice;
-            } else {
-                priceInput.value = '';
+                finalInput.value = cleanPrice.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
             }
         }
 
