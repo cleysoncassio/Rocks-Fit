@@ -3,6 +3,7 @@ from django.db import models
 from pgvector.django import VectorField
 from ordered_model.models import OrderedModel
 from django.conf import settings
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -336,7 +337,7 @@ class PagamentoHistorico(models.Model):
     plano = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, verbose_name="Plano")
     transacao_id = models.CharField(max_length=100, blank=True, null=True, verbose_name="ID da Transação (Referência)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente', verbose_name="Status")
-    data_pagamento = models.DateTimeField(auto_now_add=True, verbose_name="Data do Pagamento")
+    data_pagamento = models.DateTimeField(default=timezone.now, verbose_name="Data do Pagamento")
     valor = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Valor Total")
     metodo_pagamento = models.CharField(max_length=50, blank=True, null=True, verbose_name="Método de Pagamento")
     operador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Recebido por")
