@@ -372,6 +372,11 @@
                     </select>
                 </div>
 
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Data do Recebimento</label>
+                    <input type="date" name="data_pagamento" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-8 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer tracking-widest" value="{% now 'Y-m-d' %}">
+                </div>
+
                 <div class="pt-6">
                     <button type="submit" class="w-full bg-primary text-black py-5 rounded-2xl font-black font-headline text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-[1.02] transition-all">Confirmar Recebimento</button>
                     <p class="text-center text-[8px] text-neutral-600 font-bold mt-6 uppercase tracking-widest italic">O saldo será sincronizado com o fluxo de caixa real-time.</p>
