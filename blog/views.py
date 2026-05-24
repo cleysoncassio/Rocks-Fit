@@ -54,6 +54,28 @@ def sincronizar_estados_alunos():
         pagamentos__status='pendente'
     ).distinct()
     alunos_inadimplentes.update(status='INADIMPLENTE')
+    
+    # 5. GERAR DÉBITO PENDENTE: Cria automaticamente um pagamento pendente para o mês vigente se o plano expirou recentemente
+    from blog.models import PagamentoHistorico
+    from datetime import datetime
+    alunos_vencidos = Aluno.objects.filter(
+        status__in=['ATIVO', 'SUSPENSO', 'INADIMPLENTE'],
+        acesso__data_vencimento__lt=hoje,
+        acesso__data_vencimento__gte=limite_inativo
+    )
+    for a in alunos_vencidos:
+        # Se ainda não gerou cobrança pendente
+        if not PagamentoHistorico.objects.filter(aluno=a, status='pendente').exists():
+            ultimo_pago = PagamentoHistorico.objects.filter(aluno=a, status='pago').order_by('-data_pagamento').first()
+            if ultimo_pago and ultimo_pago.plano and ultimo_pago.plano.plan_type != 'diaria':
+                data_vencimento_dt = timezone.make_aware(datetime.combine(a.acesso.data_vencimento, datetime.min.time()))
+                PagamentoHistorico.objects.create(
+                    aluno=a,
+                    plano=ultimo_pago.plano,
+                    valor=ultimo_pago.plano.price,
+                    status='pendente',
+                    data_pagamento=data_vencimento_dt
+                )
 
 def registrar_venda_no_caixa(valor, descricao, metodo='PIX', origem='SITE'):
     """Helper para registrar vendas automáticas vindas do Site ou App no caixa aberto."""

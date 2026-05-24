@@ -348,12 +348,10 @@ class PagamentoHistorico(models.Model):
         
         if self.status != 'pendente':
             return 0.0
-
-        if not hasattr(self.aluno, 'acesso') or not self.aluno.acesso.data_vencimento:
-            return 0.0
             
         hoje = date.today()
-        vencimento = self.aluno.acesso.data_vencimento
+        vencimento = self.data_pagamento.date() if self.data_pagamento else hoje
+        
         if vencimento >= hoje:
             return 0.0
             
