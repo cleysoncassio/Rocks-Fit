@@ -986,7 +986,27 @@ def whatsapp_webhook(request):
     return JsonResponse({'status': 'ok'})
 
 def processar_pagamento(aluno, plano, valor_pago, metodo, user=None, data_pagamento=None, desconto=0.0):
-    """Lógica centralizada para pagamentos, dívidas proporcionais e cálculo de dias."""
+    """
+    Lógica centralizada para processamento de pagamentos, amortização de dívidas e cálculo de dias de crédito.
+    
+    Regras de Negócio Implementadas:
+    --------------------------------
+    TIPO A (Dívida de Matrícula Parcial): 
+        O aluno comprou um plano, não pagou o valor integral, e a pendência tem `valor > 0`.
+        - Quando paga: O sistema entende que ele está comprando o restante dos dias daquele plano ativo.
+        - Dias Extras: Concede dias proporcionais ao valor investido (mantendo a lógica do crédito).
+        - Status: Vai para ATIVO (se quitou) ou AGUARDANDO (se abateu só uma parte).
+    
+    TIPO B (Atrasado Pós-Vencimento / Taxas e Multas):
+        O plano do aluno expirou, o sistema gerou uma dívida automática de atraso (valor base = 0.0, cresce com juros).
+        - Quando paga: O sistema entende que ele está apenas quitando uma penalidade pelo abandono/atraso.
+        - Dias Extras: NÃO concede nenhum dia de acesso (retorna 0 dias).
+        - Status: Vai para INATIVO imediatamente. Para voltar a treinar, exige nova matrícula/lançamento.
+        
+    Descontos:
+        Valores de desconto concedidos pela recepção abatem o débito sem prejudicar a quantidade de dias
+        a que o aluno tem direito (no caso do TIPO A), sendo somados ao `valor_pago` na proporção.
+    """
     from django.utils import timezone
     from blog.models import PagamentoHistorico
     
@@ -1007,27 +1027,38 @@ def processar_pagamento(aluno, plano, valor_pago, metodo, user=None, data_pagame
             
         valor_pendente_atual = float(pendente.valor)
         
-        if (valor_pago + desconto) >= valor_pendente_atual:
-            # Quitou a dívida
+        if valor_pendente_atual > 0:
+            # =========================================================
+            # TIPO A: Pagamento de parte da matrícula (Dívida de plano)
+            # =========================================================
+            # Cenário: O aluno adquiriu um plano (ex: 80,00) mas pagou apenas um sinal (ex: 50,00).
+            # A dívida registrada foi 30,00. Esse pagamento é referente aos dias restantes do plano.
+            if (valor_pago + desconto) >= valor_pendente_atual:
+                # Quitou a dívida da matrícula: Concede o restante dos dias de acesso e ativa o aluno.
+                PagamentoHistorico.objects.create(aluno=aluno, plano=plano_pendente, valor=valor_pago, status='pago', data_pagamento=data_pagamento, metodo_pagamento=metodo, operador=user)
+                pendente.delete()
+                aluno.status = 'ATIVO'
+                dias_credito = max(1, int(round((valor_pendente_atual / valor_plano) * dias_totais)))
+                return dias_credito, plano_pendente
+            else:
+                # Abateu apenas uma parte da matrícula: Concede dias proporcionais e o mantém aguardando o restante.
+                PagamentoHistorico.objects.create(aluno=aluno, plano=plano_pendente, valor=valor_pago, status='pago', data_pagamento=data_pagamento, metodo_pagamento=metodo, operador=user)
+                pendente.valor = valor_pendente_atual - (valor_pago + desconto)
+                pendente.save()
+                aluno.status = 'AGUARDANDO'
+                dias_credito = max(1, int(round(((valor_pago + desconto) / valor_plano) * dias_totais)))
+                return dias_credito, plano_pendente
+        else:
+            # ============================================================================
+            # TIPO B: Pagamento de Atrasado Pós-Vencimento (Multas geradas automaticamente)
+            # ============================================================================
+            # Cenário: O prazo de validade expirou. A automação gerou um débito onde o 
+            # valor base é 0.00 e o débito real consiste apenas nos juros e multas calculados.
+            # Regra: NÃO SE DÁ DIAS EXTRAS! É apenas quitação de dívida de abandono.
             PagamentoHistorico.objects.create(aluno=aluno, plano=plano_pendente, valor=valor_pago, status='pago', data_pagamento=data_pagamento, metodo_pagamento=metodo, operador=user)
             pendente.delete()
-            aluno.status = 'ATIVO'
-            
-            # Se a dívida principal era 0 (apenas multa), o valor investido em plano é o próprio valor_pago.
-            if valor_pendente_atual > 0:
-                dias_credito = max(1, int(round((valor_pendente_atual / valor_plano) * dias_totais)))
-            else:
-                dias_credito = max(1, min(dias_totais, int(round(((valor_pago + desconto) / valor_plano) * dias_totais))))
-            
-            return dias_credito, plano_pendente
-        else:
-            # Abateu parte da dívida
-            PagamentoHistorico.objects.create(aluno=aluno, plano=plano_pendente, valor=valor_pago, status='pago', data_pagamento=data_pagamento, metodo_pagamento=metodo, operador=user)
-            pendente.valor = valor_pendente_atual - valor_pago
-            pendente.save()
-            aluno.status = 'AGUARDANDO'
-            dias_credito = max(1, int(round(((valor_pago + desconto) / valor_plano) * dias_totais)))
-            return dias_credito, plano_pendente
+            aluno.status = 'INATIVO' # Zera o status com a academia. Para treinar precisa renovar.
+            return 0, plano_pendente
 
     # 2. Nova Compra
     if not plano:
