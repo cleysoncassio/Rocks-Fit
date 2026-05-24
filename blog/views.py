@@ -1858,9 +1858,10 @@ def crm_pagamento_delete(request, aluno_id, pagamento_id):
             except ControleAcesso.DoesNotExist:
                 pass
                 
-        # Excluir histórico de pagamento (ou marcar como estornado)
-        pagamento.delete()
-        messages.success(request, "Pagamento excluído e dias de crédito estornados com sucesso.")
+        # Excluir histórico de pagamento do card principal (marcar como cancelado para manter histórico real)
+        pagamento.status = 'cancelado'
+        pagamento.save()
+        messages.success(request, "Pagamento excluído e dias de crédito estornados com sucesso. O log permanecerá no Histórico Financeiro.")
         
     return redirect('crm_aluno_detail', aluno_id=aluno_id)
 
