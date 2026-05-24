@@ -72,7 +72,7 @@ def sincronizar_estados_alunos():
                 PagamentoHistorico.objects.create(
                     aluno=a,
                     plano=ultimo_pago.plano,
-                    valor=ultimo_pago.plano.price,
+                    valor=0.0,
                     status='pendente',
                     data_pagamento=data_vencimento_dt
                 )
@@ -1012,7 +1012,13 @@ def processar_pagamento(aluno, plano, valor_pago, metodo, user=None, data_pagame
             PagamentoHistorico.objects.create(aluno=aluno, plano=plano_pendente, valor=valor_pago, status='pago', data_pagamento=data_pagamento, metodo_pagamento=metodo, operador=user)
             pendente.delete()
             aluno.status = 'ATIVO'
-            dias_credito = max(1, int(round((valor_pendente_atual / valor_plano) * dias_totais)))
+            
+            # Se a dívida principal era 0 (apenas multa), o valor investido em plano é o próprio valor_pago.
+            if valor_pendente_atual > 0:
+                dias_credito = max(1, int(round((valor_pendente_atual / valor_plano) * dias_totais)))
+            else:
+                dias_credito = max(1, min(dias_totais, int(round((valor_pago / valor_plano) * dias_totais))))
+            
             return dias_credito, plano_pendente
         else:
             # Abateu parte da dívida

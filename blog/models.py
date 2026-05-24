@@ -366,10 +366,11 @@ class PagamentoHistorico(models.Model):
             
         multa_pct = float(gym_settings.multa_atraso) / 100.0
         juros_diario_pct = (float(gym_settings.juros_mensal) / 30.0) / 100.0
+        # Se o valor principal for 0 (gerado automaticamente apenas para cobrança de atraso), usa o valor do plano como base de cálculo
+        valor_base = float(self.plano.price) if self.plano and float(self.valor) == 0 else float(self.valor)
         
-        valor_original = float(self.valor)
-        valor_multa = valor_original * multa_pct
-        valor_juros = valor_original * juros_diario_pct * dias_atraso
+        valor_multa = valor_base * multa_pct
+        valor_juros = valor_base * juros_diario_pct * dias_atraso
         
         return round(valor_multa + valor_juros, 2)
 
