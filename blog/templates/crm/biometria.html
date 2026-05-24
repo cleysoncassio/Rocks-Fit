@@ -1,8 +1,52 @@
-{% extends "crm/base.html" %}
 {% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="pt-br">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Biometria | ROCKS FIT</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
-{% block content %}
-<div class="p-6 md:p-12 pb-32 md:pb-24">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "var(--surface)",
+                        "primary": "var(--primary)",
+                        "primary-container": "var(--primary-container)",
+                        "surface-container-low": "var(--surface-container-low)",
+                        "surface-container-high": "var(--surface-container-high)",
+                        "surface-container-highest": "var(--surface-container-highest)",
+                        "on-surface": "var(--on-surface)",
+                        "on-surface-variant": "var(--on-surface-variant)",
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--surface); }
+        ::-webkit-scrollbar-thumb { background: var(--surface-container-highest); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden">
+
+    {% include "crm/sidebar.html" %}
+
+    <main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-y-auto">
+        <div class="p-6 md:p-12 pb-32 md:pb-24">
     <div class="max-w-7xl mx-auto space-y-8">
         
         <!-- Header Section -->
@@ -164,4 +208,6 @@
         location.reload(); // Recarrega para atualizar status na lista
     }
 </script>
-{% endblock %}
+    </main>
+</body>
+</html>
