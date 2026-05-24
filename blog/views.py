@@ -985,7 +985,7 @@ def whatsapp_webhook(request):
     """Endpoint 'buraco negro' para silenciar as insistentes requisições de webhook do WhatsApp que geram erro 400."""
     return JsonResponse({'status': 'ok'})
 
-def processar_pagamento(aluno, plano, valor_pago, metodo, user=None, data_pagamento=None):
+def processar_pagamento(aluno, plano, valor_pago, metodo, user=None, data_pagamento=None, desconto=0.0):
     """Lógica centralizada para pagamentos, dívidas proporcionais e cálculo de dias."""
     from django.utils import timezone
     from blog.models import PagamentoHistorico
@@ -1007,7 +1007,7 @@ def processar_pagamento(aluno, plano, valor_pago, metodo, user=None, data_pagame
             
         valor_pendente_atual = float(pendente.valor)
         
-        if valor_pago >= valor_pendente_atual:
+        if (valor_pago + desconto) >= valor_pendente_atual:
             # Quitou a dívida
             PagamentoHistorico.objects.create(aluno=aluno, plano=plano_pendente, valor=valor_pago, status='pago', data_pagamento=data_pagamento, metodo_pagamento=metodo, operador=user)
             pendente.delete()
@@ -1017,7 +1017,7 @@ def processar_pagamento(aluno, plano, valor_pago, metodo, user=None, data_pagame
             if valor_pendente_atual > 0:
                 dias_credito = max(1, int(round((valor_pendente_atual / valor_plano) * dias_totais)))
             else:
-                dias_credito = max(1, min(dias_totais, int(round((valor_pago / valor_plano) * dias_totais))))
+                dias_credito = max(1, min(dias_totais, int(round(((valor_pago + desconto) / valor_plano) * dias_totais))))
             
             return dias_credito, plano_pendente
         else:
@@ -1026,7 +1026,7 @@ def processar_pagamento(aluno, plano, valor_pago, metodo, user=None, data_pagame
             pendente.valor = valor_pendente_atual - valor_pago
             pendente.save()
             aluno.status = 'AGUARDANDO'
-            dias_credito = max(1, int(round((valor_pago / valor_plano) * dias_totais)))
+            dias_credito = max(1, int(round(((valor_pago + desconto) / valor_plano) * dias_totais)))
             return dias_credito, plano_pendente
 
     # 2. Nova Compra
@@ -1458,7 +1458,10 @@ def crm_aluno_detail(request, aluno_id):
             if p_date:
                 pagamento_dt = timezone.make_aware(datetime.combine(p_date, timezone.now().time()))
             
-        dias_adicionais, plano = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user, data_pagamento=pagamento_dt)
+        desconto_raw = request.POST.get('desconto', '0.00').strip()
+        desconto = float(desconto_raw.replace('.', '').replace(',', '.') if ',' in desconto_raw else desconto_raw) if desconto_raw else 0.0
+
+        dias_adicionais, plano = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user, data_pagamento=pagamento_dt, desconto=desconto)
         
         # 2. Atualizar Controle de Acesso Automaticamente
         if plano and dias_adicionais > 0:
@@ -1514,6 +1517,10 @@ def crm_aluno_detail(request, aluno_id):
             messages.error(request, "Este aluno não possui registro de controle de acesso.")
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
+    # --- AUTO-SYNC ANTES DE CARREGAR A PÁGINA ---
+    sincronizar_estados_alunos()
+    aluno.refresh_from_db()
+    
     acesso = getattr(aluno, 'acesso', None)
     pagamentos = aluno.pagamentos.all().order_by('-data_pagamento')
     total_investido = sum(p.valor for p in pagamentos if p.status == 'pago')
