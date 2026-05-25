@@ -195,7 +195,7 @@
 
         <!-- Bento Grid -->
         <div class="p-6 md:p-12 pb-32 md:pb-24">
-            <div class="max-w-7xl mx-auto space-y-8 md:space-y-12">
+            <div class="w-full max-w-none px-2 sm:px-4 md:px-8 mx-auto space-y-8 md:space-y-12">
                 <!-- Highlighted Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     <div class="bg-white dark:bg-gradient-to-br dark:from-[#2a2d31] dark:to-[#1e2124] p-8 rounded-3xl border border-slate-200 dark:border-white/10 border-b-green-500 shadow-xl hover:-translate-y-2 transition-all duration-500 group">
@@ -291,6 +291,11 @@
                         <option value="CREDITO">Cartão de Crédito</option>
                         <option value="DEBITO">Cartão de Débito</option>
                     </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Início da Liberação (Catraca)</label>
+                    <input type="date" name="data_inicio" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-8 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer tracking-widest" value="{% now 'Y-m-d' %}">
                 </div>
 
                 <div class="pt-4">

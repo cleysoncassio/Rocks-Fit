@@ -85,6 +85,14 @@
                         </div>
 
                         <div class="space-y-3">
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Crédito de Tolerância (Dias)</label>
+                            <div class="relative">
+                                <span class="absolute right-6 top-1/2 -translate-y-1/2 font-black text-primary">Dias</span>
+                                <input type="number" step="1" name="dias_tolerancia" value="{{ gym_settings.dias_tolerancia|default:0 }}" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-2xl py-4 px-6 font-black font-headline text-on-surface focus:ring-1 focus:ring-primary outline-none transition-all" required>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
                             <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">WhatsApp de Suporte (Notificação)</label>
                             <div class="relative">
                                 <span class="absolute left-6 top-1/2 -translate-y-1/2 material-symbols-outlined text-green-500">add_call</span>

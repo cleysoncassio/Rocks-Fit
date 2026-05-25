@@ -332,6 +332,7 @@ class PagamentoHistorico(models.Model):
         ('pendente', 'Pendente'),
         ('pago', 'Pago'),
         ('recusado', 'Recusado'),
+        ('estornado', 'Estornado'),
     ]
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='pagamentos', verbose_name="Aluno")
     plano = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, verbose_name="Plano")
@@ -352,10 +353,16 @@ class PagamentoHistorico(models.Model):
         hoje = date.today()
         vencimento = self.data_pagamento.date() if self.data_pagamento else hoje
         
-        if vencimento >= hoje:
+        # Regra de Fim de Semana (Domingo empurra vencimento sem juros para Segunda)
+        from datetime import timedelta
+        data_carencia = vencimento
+        if vencimento.weekday() == 6: # Domingo
+            data_carencia = vencimento + timedelta(days=1)
+        
+        if data_carencia >= hoje:
             return 0.0
             
-        dias_atraso = (hoje - vencimento).days
+        dias_atraso = (hoje - data_carencia).days
         
         # Safe import to avoid circular dependencies
         from blog.models import GymSetting 
@@ -444,6 +451,7 @@ class ControleAcesso(models.Model):
     )
     esta_dentro = models.BooleanField(default=False, verbose_name="Está Dentro da Academia?")
     ultimo_acesso = models.DateTimeField(null=True, blank=True, verbose_name="Data/Hora Último Acesso")
+    dias_congelados = models.IntegerField(default=0, verbose_name="Dias de Crédito Congelados")
 
     @property
     def dias_vencimento(self):
@@ -643,6 +651,9 @@ class GymSetting(models.Model):
     multa_atraso = models.DecimalField(max_digits=5, decimal_places=2, default=2.00, verbose_name="Multa por Atraso (%)", help_text="Percentual fixo aplicado sobre o valor da mensalidade atrasada.")
     juros_mensal = models.DecimalField(max_digits=5, decimal_places=2, default=1.00, verbose_name="Juros Mensais (%)", help_text="Percentual de juros aplicado por mês de atraso.")
     
+    # Tolerância / Crédito Global
+    dias_tolerancia = models.IntegerField(default=0, verbose_name="Crédito de Tolerância (Dias)", help_text="Quantos dias o aluno pode continuar passando na catraca após o vencimento do plano.")
+
     whatsapp_notificacao = models.CharField(max_length=20, blank=True, null=True, verbose_name="WhatsApp para Suporte", help_text="Número que o aluno deve chamar ao ser barrado.")
 
     # Mensagens Customizadas da Catraca

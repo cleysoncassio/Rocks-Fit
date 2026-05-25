@@ -20,42 +20,43 @@ def sincronizar_estados_alunos():
     - Vencido há mais de 30 dias -> INATIVO
     - Sem freqüência há mais de 30 dias -> INATIVO
     """
-    from blog.models import Aluno
+    from blog.models import Aluno, GymSetting
     from django.utils import timezone
     from datetime import date, timedelta
     
+    gs = GymSetting.objects.first()
+    tolerancia = gs.dias_tolerancia if gs else 0
+    
     hoje = date.today()
+    data_corte = hoje - timedelta(days=tolerancia)
     limite_inativo = hoje - timedelta(days=30)
     
-    # 1. SUSPENSO: Plano Vencido até 30 dias (Atraso)
-    # Alunos que eram ATIVOS mas o plano venceu agora.
+    # 1. SUSPENSO: Plano Vencido além da tolerância e até 30 dias de atraso
     Aluno.objects.filter(
         status='ATIVO',
-        acesso__data_vencimento__lt=hoje,
+        acesso__data_vencimento__lt=data_corte,
         acesso__data_vencimento__gte=limite_inativo
     ).update(status='SUSPENSO')
     
     # 2. INATIVO: Plano Vencido há mais de 30 dias
-    # Alunos que desistiram ou não renovaram por muito tempo.
     Aluno.objects.filter(
         acesso__data_vencimento__lt=limite_inativo
     ).exclude(status='INATIVO').update(status='INATIVO')
     
     # 3. INATIVO: Sem freqüência há mais de 30 dias
-    # Alunos que têm plano mas sumiram da academia (Check-in ausente).
     Aluno.objects.filter(
         acesso__ultimo_acesso__lt=timezone.now() - timedelta(days=30)
     ).exclude(status='INATIVO').update(status='INATIVO')
     
-    # 4. INADIMPLENTE: Tem pagamento pendente e o vencimento da catraca passou.
+    # 4. INADIMPLENTE: Tem pagamento pendente e a data de corte (vencimento + tolerância) já passou
     alunos_inadimplentes = Aluno.objects.filter(
         status__in=['ATIVO', 'AGUARDANDO', 'SUSPENSO'],
-        acesso__data_vencimento__lt=hoje,
+        acesso__data_vencimento__lt=data_corte,
         pagamentos__status='pendente'
     ).distinct()
     alunos_inadimplentes.update(status='INADIMPLENTE')
     
-    # 5. GERAR DÉBITO PENDENTE: Cria automaticamente um pagamento pendente para o mês vigente se o plano expirou recentemente
+    # 5. GERAR DÉBITO PENDENTE: Cria automaticamente um pagamento pendente para o mês vigente se o plano expirou
     from blog.models import PagamentoHistorico
     from datetime import datetime
     alunos_vencidos = Aluno.objects.filter(
@@ -682,9 +683,10 @@ def catraca_check_api(request, id_tag):
         }, status=403)
 
     dias_restantes = (acesso.data_vencimento - hoje).days
+    tolerancia = gym_settings.dias_tolerancia if gym_settings else 0
 
     # 3. VENCIDO
-    if dias_restantes < 0:
+    if dias_restantes + tolerancia < 0:
         acesso.status_catraca = 'bloqueado'
         acesso.save()
         
@@ -700,6 +702,10 @@ def catraca_check_api(request, id_tag):
             'mensagem': 'Plano vencido. Procure a recepção.',
             'whatsapp_action': whatsapp_link
         }, status=403)
+        
+    elif dias_restantes < 0:
+        # Dentro do crédito de tolerância (Vencido, mas liberado)
+        msg_entrada += f" (Crédito: {-dias_restantes}/{tolerancia}d)"
 
     # 4. LÓGICA DE ENTRADA/SAÍDA E FLUXO
     fluxo = gym_settings.catraca_fluxo if gym_settings else 'BIDIRECIONAL'
@@ -1115,15 +1121,38 @@ def crm_dashboard(request):
                 
             dias_adicionais, plano = processar_pagamento(aluno, plano, valor_pago, metodo, user=request.user)
             
+            data_inicio_str = request.POST.get('data_inicio', '')
+            base_inicio_dt = timezone.now()
+            if data_inicio_str:
+                from django.utils.dateparse import parse_date
+                from datetime import datetime
+                i_date = parse_date(data_inicio_str)
+                if i_date:
+                    base_inicio_dt = timezone.make_aware(datetime.combine(i_date, timezone.now().time()))
+                    
             if plano and dias_adicionais > 0:
                 acesso, _ = ControleAcesso.objects.get_or_create(aluno=aluno)
-                hoje_local = timezone.localtime(timezone.now()).date()
-                base_data = hoje_local
-                if hoje_local.weekday() == 6: # Domingo
-                    base_data = hoje_local + timedelta(days=1)
+                base_local = timezone.localtime(base_inicio_dt).date()
+                base_data = base_local
                     
-                start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > hoje_local and plano.plan_type != 'diaria') else base_data
-                acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
+                start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > base_local and plano.plan_type != 'diaria') else base_data
+                
+                from dateutil.relativedelta import relativedelta
+                if dias_adicionais == plano.duration_days:
+                    if plano.plan_type == 'mensal':
+                        acesso.data_vencimento = start_date + relativedelta(months=1)
+                    elif plano.plan_type == 'trimestral':
+                        acesso.data_vencimento = start_date + relativedelta(months=3)
+                    elif plano.plan_type == 'semestral':
+                        acesso.data_vencimento = start_date + relativedelta(months=6)
+                    elif plano.plan_type == 'anual':
+                        acesso.data_vencimento = start_date + relativedelta(years=1)
+                    elif plano.plan_type == 'bienal':
+                        acesso.data_vencimento = start_date + relativedelta(years=2)
+                    else:
+                        acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
+                else:
+                    acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
                 acesso.status_catraca = 'liberado'
                 acesso.save()
                 
@@ -1273,6 +1302,7 @@ def crm_config(request):
         if gym_settings:
             gym_settings.multa_atraso = request.POST.get('multa_atraso', 2.00)
             gym_settings.juros_mensal = request.POST.get('juros_mensal', 1.00)
+            gym_settings.dias_tolerancia = request.POST.get('dias_tolerancia', 0)
             gym_settings.whatsapp_notificacao = request.POST.get('whatsapp_notificacao', '')
             
             # Mensagens Catraca
@@ -1451,8 +1481,6 @@ def crm_aluno_detail(request, aluno_id):
             
             # Regra do Domingo
             base_data = hoje_local
-            if hoje_local.weekday() == 6: # Domingo
-                base_data = hoje_local + timedelta(days=1)
                 
             acesso.data_vencimento = base_data + timedelta(days=plano.duration_days)
             acesso.status_catraca = 'liberado'
@@ -1488,6 +1516,15 @@ def crm_aluno_detail(request, aluno_id):
             p_date = parse_date(data_pagamento_str)
             if p_date:
                 pagamento_dt = timezone.make_aware(datetime.combine(p_date, timezone.now().time()))
+                
+        data_inicio_str = request.POST.get('data_inicio', '')
+        base_inicio_dt = pagamento_dt
+        if data_inicio_str:
+            from django.utils.dateparse import parse_date
+            from datetime import datetime
+            i_date = parse_date(data_inicio_str)
+            if i_date:
+                base_inicio_dt = timezone.make_aware(datetime.combine(i_date, timezone.now().time()))
             
         desconto_raw = request.POST.get('desconto', '0.00').strip()
         desconto = float(desconto_raw.replace('.', '').replace(',', '.') if ',' in desconto_raw else desconto_raw) if desconto_raw else 0.0
@@ -1500,10 +1537,8 @@ def crm_aluno_detail(request, aluno_id):
             from blog.models import ControleAcesso
             acesso, created = ControleAcesso.objects.get_or_create(aluno=aluno)
             
-            base_local = timezone.localtime(pagamento_dt).date()
+            base_local = timezone.localtime(base_inicio_dt).date()
             base_data = base_local
-            if base_local.weekday() == 6: # Domingo
-                base_data = base_local + timedelta(days=1)
 
             # Se for DIÁRIA, não acumula (reseta para o prazo do plano)
             if plano.plan_type == 'diaria':
@@ -1511,7 +1546,23 @@ def crm_aluno_detail(request, aluno_id):
             else:
                 # Se for Mensal/etc, acumula se o vencimento for futuro
                 start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > base_local) else base_data
-                acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
+                
+                from dateutil.relativedelta import relativedelta
+                if dias_adicionais == plano.duration_days:
+                    if plano.plan_type == 'mensal':
+                        acesso.data_vencimento = start_date + relativedelta(months=1)
+                    elif plano.plan_type == 'trimestral':
+                        acesso.data_vencimento = start_date + relativedelta(months=3)
+                    elif plano.plan_type == 'semestral':
+                        acesso.data_vencimento = start_date + relativedelta(months=6)
+                    elif plano.plan_type == 'anual':
+                        acesso.data_vencimento = start_date + relativedelta(years=1)
+                    elif plano.plan_type == 'bienal':
+                        acesso.data_vencimento = start_date + relativedelta(years=2)
+                    else:
+                        acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
+                else:
+                    acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
 
             acesso.status_catraca = 'liberado'
             acesso.esta_dentro = False
@@ -1548,20 +1599,145 @@ def crm_aluno_detail(request, aluno_id):
             messages.error(request, "Este aluno não possui registro de controle de acesso.")
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
+    if request.method == 'POST' and 'trancar_matricula' in request.POST:
+        from django.utils import timezone
+        if hasattr(aluno, 'acesso') and aluno.acesso.data_vencimento:
+            hoje = timezone.localtime(timezone.now()).date()
+            if aluno.acesso.data_vencimento > hoje:
+                dias_restantes = (aluno.acesso.data_vencimento - hoje).days
+                aluno.acesso.dias_congelados += dias_restantes
+                aluno.acesso.data_vencimento = hoje
+                aluno.acesso.status_catraca = 'bloqueado'
+                aluno.acesso.save()
+                
+                aluno.status = 'SUSPENSO'
+                aluno.save()
+                messages.success(request, f"Matrícula trancada. {dias_restantes} dias guardados como crédito.")
+            else:
+                messages.error(request, "O aluno não possui dias válidos no futuro para trancar.")
+        else:
+            messages.error(request, "Aluno sem plano ativo para trancar.")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
+    if request.method == 'POST' and 'destrancar_matricula' in request.POST:
+        from django.utils import timezone
+        from datetime import timedelta
+        if hasattr(aluno, 'acesso') and aluno.acesso.dias_congelados > 0:
+            hoje = timezone.localtime(timezone.now()).date()
+            base_data = hoje
+                
+            start_date = aluno.acesso.data_vencimento if (aluno.acesso.data_vencimento and aluno.acesso.data_vencimento > base_data) else base_data
+            aluno.acesso.data_vencimento = start_date + timedelta(days=aluno.acesso.dias_congelados)
+            aluno.acesso.dias_congelados = 0
+            aluno.acesso.status_catraca = 'liberado'
+            aluno.acesso.save()
+            
+            aluno.status = 'ATIVO'
+            aluno.save()
+            messages.success(request, f"Matrícula destrancada! Acesso válido até {aluno.acesso.data_vencimento.strftime('%d/%m/%Y')}.")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
+
+
+    if request.method == 'POST' and 'estornar_pagamento_id' in request.POST:
+        pg_id = request.POST.get('estornar_pagamento_id')
+        pg = get_object_or_404(PagamentoHistorico, id=pg_id, aluno=aluno)
+        
+        if pg.status == 'pago':
+            pg.status = 'estornado'
+            pg.save()
+            
+            # Subtrair dias do controle de acesso
+            if hasattr(aluno, 'acesso') and aluno.acesso.data_vencimento and pg.plano:
+                from dateutil.relativedelta import relativedelta
+                from datetime import timedelta
+                valor_plano = float(pg.plano.price)
+                if float(pg.valor) < valor_plano:
+                    dias = max(1, int(round((float(pg.valor) / valor_plano) * pg.plano.duration_days)))
+                else:
+                    dias = int(round((float(pg.valor) / valor_plano) * pg.plano.duration_days))
+                
+                if dias == pg.plano.duration_days:
+                    if pg.plano.plan_type == 'mensal':
+                        aluno.acesso.data_vencimento -= relativedelta(months=1)
+                    elif pg.plano.plan_type == 'trimestral':
+                        aluno.acesso.data_vencimento -= relativedelta(months=3)
+                    elif pg.plano.plan_type == 'semestral':
+                        aluno.acesso.data_vencimento -= relativedelta(months=6)
+                    elif pg.plano.plan_type == 'anual':
+                        aluno.acesso.data_vencimento -= relativedelta(years=1)
+                    elif pg.plano.plan_type == 'bienal':
+                        aluno.acesso.data_vencimento -= relativedelta(years=2)
+                    else:
+                        aluno.acesso.data_vencimento -= timedelta(days=dias)
+                else:
+                    aluno.acesso.data_vencimento -= timedelta(days=dias)
+                
+                # Bloquear se a data nova for no passado
+                from django.utils import timezone
+                hoje = timezone.localtime(timezone.now()).date()
+                if aluno.acesso.data_vencimento <= hoje:
+                    aluno.acesso.status_catraca = 'bloqueado'
+                    aluno.status = 'INATIVO'
+                    aluno.save()
+                aluno.acesso.save()
+            
+            # Registrar no Caixa (como saída) se houver caixa aberto
+            from blog.models import CaixaTurno, TransacaoCaixa
+            caixa = CaixaTurno.objects.filter(status='ABERTO').order_by('-abertura').first()
+            if caixa:
+                TransacaoCaixa.objects.create(
+                    caixa=caixa,
+                    tipo='SAIDA',
+                    valor=pg.valor,
+                    descricao=f"ESTORNO: {aluno.nome_completo} ({pg.plano.name if pg.plano else 'Taxa'})",
+                    metodo=pg.metodo_pagamento or 'DINHEIRO',
+                    origem='MANUAL',
+                    status='NORMAL'
+                )
+            
+            messages.warning(request, f"O pagamento de R$ {pg.valor} foi ESTORNADO. O crédito foi removido e registrado no histórico.")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
     # --- AUTO-SYNC ANTES DE CARREGAR A PÁGINA ---
     sincronizar_estados_alunos()
     aluno.refresh_from_db()
     
     acesso = getattr(aluno, 'acesso', None)
-    pagamentos = aluno.pagamentos.all().order_by('-data_pagamento')
-    total_investido = sum(p.valor for p in pagamentos if p.status == 'pago')
-    debitos = sum(p.valor_total_atualizado for p in pagamentos if p.status == 'pendente')
+    pagamentos_qs = list(aluno.pagamentos.all().order_by('-data_pagamento'))
+    total_investido = sum(p.valor for p in pagamentos_qs if p.status == 'pago')
+    debitos = sum(p.valor_total_atualizado for p in pagamentos_qs if p.status == 'pendente')
+    
+    # Agrupamento Visual de Recebimento Parcial + Débito Restante
+    pagamentos_agrupados = []
+    skip_ids = set()
+    for p in pagamentos_qs:
+        if p.id in skip_ids:
+            continue
+            
+        if p.status == 'pago' and p.plano:
+            # Busca débito gerado simultaneamente (parcial)
+            pendente_obj = next((x for x in pagamentos_qs if x.status == 'pendente' and x.plano == p.plano and abs((x.data_pagamento - p.data_pagamento).total_seconds()) < 5), None)
+            if pendente_obj:
+                p.pendente_obj = pendente_obj
+                p.valor_plano_original = p.valor + pendente_obj.valor
+                skip_ids.add(pendente_obj.id)
+            else:
+                p.pendente_obj = None
+                p.valor_plano_original = p.valor
+        else:
+            p.pendente_obj = None
+            p.valor_plano_original = p.valor_total_atualizado if p.status == 'pendente' else p.valor
+            
+        pagamentos_agrupados.append(p)
+        
+    pagamentos = pagamentos_agrupados
     rockspoints = int(total_investido)
     credito = 0.00
     planos = Plan.objects.all()
 
     # --- AUTO-SYNC: Garantir que o acesso esteja sincronizado com o último pagamento ---
-    ultimo_pago = pagamentos.filter(status='pago').first()
+    ultimo_pago = next((p for p in pagamentos if p.status == 'pago'), None)
     # -----------------------------------------------------------------------------------
     if not ultimo_pago and acesso and getattr(acesso, 'data_vencimento', None):
         acesso.data_vencimento = None
@@ -1574,14 +1750,21 @@ def crm_aluno_detail(request, aluno_id):
         ac, created = ControleAcesso.objects.get_or_create(aluno=aluno)
         
         # Se o aluno tem um plano pago mas a catraca está sem data ou vencida, sincroniza
-        # --- REGRA DO DOMINGO: Se pagar domingo, começa a contar de segunda ---
-        data_local = timezone.localtime(ultimo_pago.data_pagamento).date()
-        if data_local.weekday() == 6: # 6 = Domingo
-            base_data_calculo = data_local + timedelta(days=1)
-        else:
-            base_data_calculo = data_local
+        base_data_calculo = timezone.localtime(ultimo_pago.data_pagamento).date()
             
-        vencimento_calculado = base_data_calculo + timedelta(days=ultimo_pago.plano.duration_days)
+        from dateutil.relativedelta import relativedelta
+        if ultimo_pago.plano.plan_type == 'mensal':
+            vencimento_calculado = base_data_calculo + relativedelta(months=1)
+        elif ultimo_pago.plano.plan_type == 'trimestral':
+            vencimento_calculado = base_data_calculo + relativedelta(months=3)
+        elif ultimo_pago.plano.plan_type == 'semestral':
+            vencimento_calculado = base_data_calculo + relativedelta(months=6)
+        elif ultimo_pago.plano.plan_type == 'anual':
+            vencimento_calculado = base_data_calculo + relativedelta(years=1)
+        elif ultimo_pago.plano.plan_type == 'bienal':
+            vencimento_calculado = base_data_calculo + relativedelta(years=2)
+        else:
+            vencimento_calculado = base_data_calculo + timedelta(days=ultimo_pago.plano.duration_days)
         
         # Se for diária, a gente força o vencimento calculado (sem somar)
         # Se for mensal, a gente só atualiza se estiver vazio
@@ -1888,14 +2071,59 @@ def crm_pagamento_edit(request, aluno_id, pagamento_id):
         plano_id = request.POST.get('plano')
         
         if valor:
-            pagamento.valor = float(valor)
+            novo_valor = float(valor)
+            valor_antigo = float(pagamento.valor)
+            
+            if novo_valor != valor_antigo and pagamento.status == 'pago':
+                diferenca = valor_antigo - novo_valor
+                
+                # 1. Ajuste de Caixa (Gerar Saída ou Entrada para equilibrar)
+                from blog.models import CaixaTurno, TransacaoCaixa
+                caixa = CaixaTurno.objects.filter(status='ABERTO').order_by('-abertura').first()
+                if caixa:
+                    tipo_transacao = 'SAIDA' if diferenca > 0 else 'ENTRADA'
+                    TransacaoCaixa.objects.create(
+                        caixa=caixa,
+                        tipo=tipo_transacao,
+                        valor=abs(diferenca),
+                        descricao=f"AJUSTE RECEB: {pagamento.aluno.nome_completo} ({pagamento.plano.name if pagamento.plano else 'Ajuste'})",
+                        metodo=metodo or pagamento.metodo_pagamento or 'DINHEIRO',
+                        origem='MANUAL',
+                        status='NORMAL'
+                    )
+                
+                # 2. Se o valor diminuiu, criar débito e reduzir dias
+                if diferenca > 0 and pagamento.plano:
+                    PagamentoHistorico.objects.create(
+                        aluno=pagamento.aluno,
+                        plano=pagamento.plano,
+                        valor=diferenca,
+                        status='pendente',
+                        data_pagamento=pagamento.data_pagamento
+                    )
+                    
+                    # 3. Retirar os dias proporcionais do que não foi pago da Catraca
+                    from datetime import timedelta
+                    acesso = getattr(pagamento.aluno, 'acesso', None)
+                    if acesso and acesso.data_vencimento:
+                        valor_plano = float(pagamento.plano.price)
+                        dias_remover = int(round((diferenca / valor_plano) * pagamento.plano.duration_days))
+                        if dias_remover > 0:
+                            acesso.data_vencimento -= timedelta(days=dias_remover)
+                            acesso.save()
+                    
+                    pagamento.aluno.status = 'AGUARDANDO'
+                    pagamento.aluno.save()
+            
+            pagamento.valor = novo_valor
+            
         if metodo:
             pagamento.metodo_pagamento = metodo
         if plano_id:
             pagamento.plano_id = plano_id
             
         pagamento.save()
-        messages.success(request, "Histórico financeiro atualizado com sucesso.")
+        messages.success(request, "Histórico atualizado! Débitos e dias de catraca recalibrados automaticamente caso o valor tenha sido reduzido.")
         
     return redirect('crm_aluno_detail', aluno_id=aluno_id)
 
@@ -1962,8 +2190,6 @@ def crm_aluno_create(request):
                     from datetime import timedelta
                     hoje_local = timezone.localtime(timezone.now()).date()
                     base_data = hoje_local
-                    if hoje_local.weekday() == 6: # Domingo
-                        base_data = hoje_local + timedelta(days=1)
                     
                     acesso.data_vencimento = base_data + timedelta(days=dias_adicionais)
                     acesso.status_catraca = 'liberado'
