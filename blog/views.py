@@ -35,24 +35,28 @@ def sincronizar_estados_alunos():
     Aluno.objects.filter(
         status='ATIVO',
         acesso__data_vencimento__lt=data_corte,
-        acesso__data_vencimento__gte=limite_inativo
+        acesso__data_vencimento__gte=limite_inativo,
+        acesso__dias_congelados=0
     ).update(status='SUSPENSO')
     
     # 2. INATIVO: Plano Vencido há mais de 30 dias
     Aluno.objects.filter(
-        acesso__data_vencimento__lt=limite_inativo
+        acesso__data_vencimento__lt=limite_inativo,
+        acesso__dias_congelados=0
     ).exclude(status='INATIVO').update(status='INATIVO')
     
     # 3. INATIVO: Sem freqüência há mais de 30 dias
     Aluno.objects.filter(
-        acesso__ultimo_acesso__lt=timezone.now() - timedelta(days=30)
+        acesso__ultimo_acesso__lt=timezone.now() - timedelta(days=30),
+        acesso__dias_congelados=0
     ).exclude(status='INATIVO').update(status='INATIVO')
     
     # 4. INADIMPLENTE: Tem pagamento pendente e a data de corte (vencimento + tolerância) já passou
     alunos_inadimplentes = Aluno.objects.filter(
         status__in=['ATIVO', 'AGUARDANDO', 'SUSPENSO'],
         acesso__data_vencimento__lt=data_corte,
-        pagamentos__status='pendente'
+        pagamentos__status='pendente',
+        acesso__dias_congelados=0
     ).distinct()
     alunos_inadimplentes.update(status='INADIMPLENTE')
     
@@ -62,7 +66,8 @@ def sincronizar_estados_alunos():
     alunos_vencidos = Aluno.objects.filter(
         status__in=['ATIVO', 'SUSPENSO', 'INADIMPLENTE'],
         acesso__data_vencimento__lt=hoje,
-        acesso__data_vencimento__gte=limite_inativo
+        acesso__data_vencimento__gte=limite_inativo,
+        acesso__dias_congelados=0
     )
     for a in alunos_vencidos:
         # Se ainda não gerou cobrança pendente
@@ -559,7 +564,7 @@ def catraca_sync_api(request):
         acc = getattr(aluno, 'acesso', None)
         dias = 0
         if acc and acc.data_vencimento:
-            dias = (acc.data_vencimento - hoje).days
+            dias = acc.dias_vencimento
             if dias < 0: dias = 0
             
         lista.append({
@@ -682,7 +687,7 @@ def catraca_check_api(request, id_tag):
             'mensagem': 'Sem plano ativo. Procure a recepção.'
         }, status=403)
 
-    dias_restantes = (acesso.data_vencimento - hoje).days
+    dias_restantes = acesso.dias_vencimento
     tolerancia = gym_settings.dias_tolerancia if gym_settings else 0
 
     # 3. VENCIDO
@@ -1150,9 +1155,9 @@ def crm_dashboard(request):
                     elif plano.plan_type == 'bienal':
                         acesso.data_vencimento = start_date + relativedelta(years=2)
                     else:
-                        acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
+                        acesso.data_vencimento = start_date + relativedelta(months=dias_adicionais // 30, days=dias_adicionais % 30)
                 else:
-                    acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
+                    acesso.data_vencimento = start_date + relativedelta(months=dias_adicionais // 30, days=dias_adicionais % 30)
                 acesso.status_catraca = 'liberado'
                 acesso.save()
                 
@@ -1544,25 +1549,34 @@ def crm_aluno_detail(request, aluno_id):
             if plano.plan_type == 'diaria':
                 acesso.data_vencimento = base_data + timedelta(days=dias_adicionais)
             else:
-                # Se for Mensal/etc, acumula se o vencimento for futuro
-                start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > base_local) else base_data
+                # Se o usuário não alterou a data de início (é hoje) e já possui vencimento futuro, acumula (Stacking)
+                hoje = timezone.localtime(timezone.now()).date()
+                if base_data == hoje:
+                    start_date = acesso.data_vencimento if (acesso.data_vencimento and acesso.data_vencimento > base_data) else base_data
+                else:
+                    # Se o usuário informou uma data retroativa (ou futura específica), respeita estritamente essa data
+                    start_date = base_data
                 
                 from dateutil.relativedelta import relativedelta
+                nova_validade = start_date
                 if dias_adicionais == plano.duration_days:
                     if plano.plan_type == 'mensal':
-                        acesso.data_vencimento = start_date + relativedelta(months=1)
+                        nova_validade = start_date + relativedelta(months=1)
                     elif plano.plan_type == 'trimestral':
-                        acesso.data_vencimento = start_date + relativedelta(months=3)
+                        nova_validade = start_date + relativedelta(months=3)
                     elif plano.plan_type == 'semestral':
-                        acesso.data_vencimento = start_date + relativedelta(months=6)
+                        nova_validade = start_date + relativedelta(months=6)
                     elif plano.plan_type == 'anual':
-                        acesso.data_vencimento = start_date + relativedelta(years=1)
+                        nova_validade = start_date + relativedelta(years=1)
                     elif plano.plan_type == 'bienal':
-                        acesso.data_vencimento = start_date + relativedelta(years=2)
+                        nova_validade = start_date + relativedelta(years=2)
                     else:
-                        acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
+                        nova_validade = start_date + relativedelta(months=dias_adicionais // 30, days=dias_adicionais % 30)
                 else:
-                    acesso.data_vencimento = start_date + timedelta(days=dias_adicionais)
+                    nova_validade = start_date + relativedelta(months=dias_adicionais // 30, days=dias_adicionais % 30)
+                    
+                if not acesso.data_vencimento or nova_validade > acesso.data_vencimento:
+                    acesso.data_vencimento = nova_validade
 
             acesso.status_catraca = 'liberado'
             acesso.esta_dentro = False
@@ -1577,7 +1591,9 @@ def crm_aluno_detail(request, aluno_id):
             origem='MANUAL'
         )
         
-        # Salva o status do aluno
+        # Salva o status do aluno e limpa a tag de cancelamento se existir
+        aluno.motivo_cancelamento = None
+        aluno.data_cancelamento = None
         aluno.save()
         
         messages.success(request, f"Pagamento de R$ {valor} processado. Aluno Ativado!")
@@ -1604,7 +1620,7 @@ def crm_aluno_detail(request, aluno_id):
         if hasattr(aluno, 'acesso') and aluno.acesso.data_vencimento:
             hoje = timezone.localtime(timezone.now()).date()
             if aluno.acesso.data_vencimento > hoje:
-                dias_restantes = (aluno.acesso.data_vencimento - hoje).days
+                dias_restantes = aluno.acesso.dias_vencimento
                 aluno.acesso.dias_congelados += dias_restantes
                 aluno.acesso.data_vencimento = hoje
                 aluno.acesso.status_catraca = 'bloqueado'
@@ -1619,6 +1635,26 @@ def crm_aluno_detail(request, aluno_id):
             messages.error(request, "Aluno sem plano ativo para trancar.")
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
 
+    if request.method == 'POST' and 'trancar_definitivo' in request.POST:
+        from django.utils import timezone
+        
+        motivo = request.POST.get('motivo_cancelamento', 'NÃO INFORMADO')
+        data_cancel = request.POST.get('data_cancelamento')
+        
+        if hasattr(aluno, 'acesso'):
+            hoje = timezone.localtime(timezone.now()).date()
+            aluno.acesso.dias_congelados = 0
+            aluno.acesso.data_vencimento = hoje
+            aluno.acesso.status_catraca = 'bloqueado'
+            aluno.acesso.save()
+            
+        aluno.status = 'INATIVO'
+        aluno.motivo_cancelamento = motivo
+        aluno.data_cancelamento = data_cancel if data_cancel else timezone.now().date()
+        aluno.save()
+        messages.success(request, f"Matrícula inativada permanentemente. Motivo: {motivo}")
+        return redirect('crm_aluno_detail', aluno_id=aluno.id)
+
     if request.method == 'POST' and 'destrancar_matricula' in request.POST:
         from django.utils import timezone
         from datetime import timedelta
@@ -1626,13 +1662,18 @@ def crm_aluno_detail(request, aluno_id):
             hoje = timezone.localtime(timezone.now()).date()
             base_data = hoje
                 
+            from dateutil.relativedelta import relativedelta
             start_date = aluno.acesso.data_vencimento if (aluno.acesso.data_vencimento and aluno.acesso.data_vencimento > base_data) else base_data
-            aluno.acesso.data_vencimento = start_date + timedelta(days=aluno.acesso.dias_congelados)
+            meses_adc = aluno.acesso.dias_congelados // 30
+            dias_adc = aluno.acesso.dias_congelados % 30
+            aluno.acesso.data_vencimento = start_date + relativedelta(months=meses_adc, days=dias_adc)
             aluno.acesso.dias_congelados = 0
             aluno.acesso.status_catraca = 'liberado'
             aluno.acesso.save()
             
             aluno.status = 'ATIVO'
+            aluno.motivo_cancelamento = None
+            aluno.data_cancelamento = None
             aluno.save()
             messages.success(request, f"Matrícula destrancada! Acesso válido até {aluno.acesso.data_vencimento.strftime('%d/%m/%Y')}.")
         return redirect('crm_aluno_detail', aluno_id=aluno.id)
@@ -1679,6 +1720,8 @@ def crm_aluno_detail(request, aluno_id):
                 if aluno.acesso.data_vencimento <= hoje:
                     aluno.acesso.status_catraca = 'bloqueado'
                     aluno.status = 'INATIVO'
+                    aluno.motivo_cancelamento = None
+                    aluno.data_cancelamento = None
                     aluno.save()
                 aluno.acesso.save()
             
@@ -2187,11 +2230,11 @@ def crm_aluno_create(request):
                 
                 # 2. Configurar Acesso
                 if dias_adicionais > 0:
-                    from datetime import timedelta
+                    from dateutil.relativedelta import relativedelta
                     hoje_local = timezone.localtime(timezone.now()).date()
                     base_data = hoje_local
                     
-                    acesso.data_vencimento = base_data + timedelta(days=dias_adicionais)
+                    acesso.data_vencimento = base_data + relativedelta(months=dias_adicionais // 30, days=dias_adicionais % 30)
                     acesso.status_catraca = 'liberado'
                     acesso.save()
                 

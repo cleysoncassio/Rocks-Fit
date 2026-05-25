@@ -263,6 +263,11 @@ class Aluno(models.Model):
     digital = models.TextField(blank=True, null=True, verbose_name="Digital (Template Biométrico)")
     data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
     
+    # Cancelamento / Inativação
+    motivo_cancelamento = models.CharField(max_length=255, blank=True, null=True, verbose_name="Motivo do Cancelamento")
+    data_cancelamento = models.DateField(blank=True, null=True, verbose_name="Data do Cancelamento")
+    
+    
     # Endereço Completo
     cep = models.CharField(max_length=9, blank=True, null=True, verbose_name="CEP")
     endereco = models.CharField(max_length=255, blank=True, null=True, verbose_name="Endereço")
@@ -456,9 +461,22 @@ class ControleAcesso(models.Model):
     @property
     def dias_vencimento(self):
         from datetime import date
+        import calendar
         if self.data_vencimento:
-            diff = self.data_vencimento - date.today()
-            return diff.days
+            hoje = date.today()
+            def comm_days(d1, d2):
+                day1 = min(30, d1.day)
+                day2 = min(30, d2.day)
+                if d1.month == 2 and d1.day == calendar.monthrange(d1.year, 2)[1]:
+                    day1 = 30
+                if d2.month == 2 and d2.day == calendar.monthrange(d2.year, 2)[1]:
+                    day2 = 30
+                return (d2.year - d1.year)*360 + (d2.month - d1.month)*30 + (day2 - day1)
+            
+            if self.data_vencimento >= hoje:
+                return comm_days(hoje, self.data_vencimento)
+            else:
+                return -comm_days(self.data_vencimento, hoje)
         return None
 
     def __str__(self):

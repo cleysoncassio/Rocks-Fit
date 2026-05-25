@@ -117,6 +117,13 @@
                                 {% else %}text-neutral-400{% endif %}">
                                 {{ aluno.get_status_display }}
                             </span>
+                            {% if aluno.status == 'INATIVO' and aluno.motivo_cancelamento %}
+                            <span class="w-px h-3 bg-white/10 hidden md:block"></span>
+                            <span class="px-3 py-1 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest border border-red-500/20 bg-red-500/10 text-red-400 mt-2 md:mt-0 flex items-center gap-1 shrink-0">
+                                <span class="material-symbols-outlined text-[10px]">sell</span>
+                                {{ aluno.motivo_cancelamento }} • {{ aluno.data_cancelamento|date:"d/m/y" }}
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -158,15 +165,11 @@
                                 </button>
                             </form>
                         {% else %}
-                            <!-- Botão Trancar (Congelar) -->
-                            <form method="POST" class="flex-1 md:flex-none" onsubmit="return confirm('Deseja TRANCAR a matrícula? Os dias restantes serão salvos como crédito para uso futuro.');">
-                                {% csrf_token %}
-                                <input type="hidden" name="trancar_matricula" value="true">
-                                <button type="submit" class="w-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-4 md:px-6 py-3 rounded-xl font-headline font-black text-[8px] md:text-[9px] uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                                    <span class="material-symbols-outlined text-base">ac_unit</span> 
-                                    <span class="hidden md:inline">Trancar Matrícula</span><span class="md:hidden">Trancar</span>
-                                </button>
-                            </form>
+                            <!-- Botão Trancar (Abre Modal) -->
+                            <button type="button" onclick="document.getElementById('modal-trancar-matricula').classList.remove('hidden')" class="w-full flex-1 md:flex-none bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-4 md:px-6 py-3 rounded-xl font-headline font-black text-[8px] md:text-[9px] uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                                <span class="material-symbols-outlined text-base">ac_unit</span> 
+                                <span class="hidden md:inline">Trancar Matrícula</span><span class="md:hidden">Trancar</span>
+                            </button>
                         {% endif %}
 
 
@@ -321,53 +324,22 @@
 
                 <!-- Modalities & Tags -->
                 <div class="col-span-12 lg:col-span-5 space-y-8">
-                    <div class="bg-surface-container-low p-10 rounded-[40px] border border-white/5 min-h-[300px] flex flex-col justify-between">
-                        <div>
-                            <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-400 italic mb-6">Histórico Financeiro</h3>
-                            <div class="flex flex-col max-h-[600px] overflow-y-auto pr-4 custom-scrollbar space-y-2">
-                                {% for pg in pagamentos %}
-                                <div class="py-5 flex flex-col gap-2 hover:bg-white/5 transition-all px-4 -mx-4 rounded-xl group border-b border-slate-200 dark:border-white/10 last:border-b-0">
-                                    <div class="flex justify-between items-start">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary shrink-0 {% if pg.status == 'cancelado' or pg.status == 'estornado' %}opacity-50 grayscale{% endif %}">
-                                                <span class="material-symbols-outlined text-xs">receipt_long</span>
-                                            </div>
-                                            <div class="{% if pg.status == 'cancelado' or pg.status == 'estornado' %}opacity-50{% endif %}">
-                                                <p class="text-[11px] font-black font-headline uppercase tracking-tight text-on-surface {% if pg.status == 'cancelado' or pg.status == 'estornado' %}line-through{% endif %}">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
-                                                <p class="text-[8px] font-bold uppercase tracking-widest text-neutral-500 mt-1">Data: <span class="text-neutral-300">{{ pg.data_pagamento|date:"d/m/Y H:i" }}</span></p>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-sm font-black font-headline tracking-tighter {% if pg.status == 'cancelado' or pg.status == 'estornado' %}text-neutral-500 line-through{% else %}text-primary{% endif %}">R$ {{ pg.valor_total_atualizado|floatformat:2 }}</p>
-                                            <span class="text-[7px] font-black font-headline uppercase tracking-[0.2em] px-2 py-0.5 mt-1 inline-block {% if pg.status == 'cancelado' %}bg-red-500/10 text-red-500{% elif pg.status == 'estornado' %}bg-orange-500/10 text-orange-500{% else %}bg-surface-container-highest text-neutral-300{% endif %} rounded-sm">{{ pg.status }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-4 text-[8px] font-bold uppercase tracking-widest text-neutral-500 pl-11 {% if pg.status == 'cancelado' or pg.status == 'estornado' %}opacity-50{% endif %}">
-                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">payments</span> {{ pg.get_metodo_pagamento_display }}</span>
-                                        {% if pg.operador %}
-                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">person</span> {{ pg.operador.first_name|default:pg.operador.username }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% empty %}
-                                <p class="py-10 text-center text-neutral-500 font-headline uppercase text-[9px] font-black tracking-widest italic border-none">Nenhum histórico registrado.</p>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-4 md:gap-6 mt-4">
-                        <button class="bg-surface-container-low py-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-xl">fitness_center</span>
-                            <span class="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-400">Treinos</span>
+                    <div class="grid grid-cols-2 gap-4 md:gap-6">
+                        <button onclick="document.getElementById('modal-historico-financeiro').classList.remove('hidden')" class="bg-surface-container-low py-8 rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all shadow-lg hover:-translate-y-1">
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">receipt_long</span>
+                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400 group-hover:text-primary">Histórico</span>
                         </button>
-                        <button class="bg-surface-container-low py-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-xl">monitor_heart</span>
-                            <span class="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-400">Saúde</span>
+                        <button class="bg-surface-container-low py-8 rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all shadow-lg hover:-translate-y-1">
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">fitness_center</span>
+                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Treinos</span>
                         </button>
-                        <button class="bg-surface-container-low py-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/40 transition-all">
-                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-xl">query_stats</span>
-                             <span class="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-400">Evolução</span>
+                        <button class="bg-surface-container-low py-8 rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all shadow-lg hover:-translate-y-1">
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">monitor_heart</span>
+                            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Saúde</span>
+                        </button>
+                        <button class="bg-surface-container-low py-8 rounded-[32px] border border-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all shadow-lg hover:-translate-y-1">
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary transition-colors text-3xl">query_stats</span>
+                             <span class="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400">Evolução</span>
                         </button>
                     </div>
                 </div>
@@ -429,12 +401,12 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2">
-                        <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Data do Recebimento</label>
-                        <input type="date" name="data_pagamento" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-6 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer tracking-widest" value="{% now 'Y-m-d' %}">
+                        <label class="text-[9px] font-black text-green-500 uppercase tracking-widest ml-1">Data do Recebimento</label>
+                        <input type="date" id="faturar_data_pagamento" name="data_pagamento" onchange="syncDataInicio(); updateAportePrice()" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-6 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer tracking-widest" value="{% now 'Y-m-d' %}">
                     </div>
                     <div class="space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1">Início da Liberação</label>
-                        <input type="date" name="data_inicio" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-6 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer tracking-widest" value="{% now 'Y-m-d' %}">
+                        <input type="date" id="faturar_data_inicio" name="data_inicio" onchange="updateAportePrice()" class="w-full bg-surface-container-low border-none rounded-2xl py-4 px-6 font-black font-headline text-xs text-on-surface focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer tracking-widest" value="{% now 'Y-m-d' %}">
                     </div>
                 </div>
 
@@ -544,6 +516,90 @@
         </div>
     </div>
 
+    <!-- Modal Histórico Financeiro -->
+    <div id="modal-historico-financeiro" class="hidden fixed inset-0 z-[300] flex items-center justify-center p-6 bg-surface/80 backdrop-blur-md">
+        <div class="bg-surface-container-high w-full max-w-lg rounded-[40px] p-10 border border-white/5 shadow-2xl relative max-h-[90vh] flex flex-col">
+            <button onclick="document.getElementById('modal-historico-financeiro').classList.add('hidden')" class="absolute top-8 right-8 text-neutral-600 hover:text-on-surface transition-all"><span class="material-symbols-outlined">close</span></button>
+            <h3 class="font-headline font-black text-xs uppercase tracking-[0.4em] text-neutral-400 italic mb-6">Histórico Financeiro</h3>
+            <div class="flex flex-col overflow-y-auto pr-4 custom-scrollbar space-y-2 flex-grow">
+                {% for pg in pagamentos %}
+                <div class="py-5 flex flex-col gap-2 hover:bg-white/5 transition-all px-4 -mx-4 rounded-xl group border-b border-slate-200 dark:border-white/10 last:border-b-0">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-white/5 text-primary shrink-0 {% if pg.status == 'cancelado' or pg.status == 'estornado' %}opacity-50 grayscale{% endif %}">
+                                <span class="material-symbols-outlined text-xs">receipt_long</span>
+                            </div>
+                            <div class="{% if pg.status == 'cancelado' or pg.status == 'estornado' %}opacity-50{% endif %}">
+                                <p class="text-[11px] font-black font-headline uppercase tracking-tight text-on-surface {% if pg.status == 'cancelado' or pg.status == 'estornado' %}line-through{% endif %}">{{ pg.plano.name|default:"Pagamento Avulso" }}</p>
+                                <p class="text-[8px] font-bold uppercase tracking-widest text-neutral-500 mt-1">Data: <span class="text-neutral-300">{{ pg.data_pagamento|date:"d/m/Y H:i" }}</span></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-black font-headline tracking-tighter {% if pg.status == 'cancelado' or pg.status == 'estornado' %}text-neutral-500 line-through{% else %}text-primary{% endif %}">R$ {{ pg.valor_total_atualizado|floatformat:2 }}</p>
+                            <span class="text-[7px] font-black font-headline uppercase tracking-[0.2em] px-2 py-0.5 mt-1 inline-block {% if pg.status == 'cancelado' %}bg-red-500/10 text-red-500{% elif pg.status == 'estornado' %}bg-orange-500/10 text-orange-500{% else %}bg-surface-container-highest text-neutral-300{% endif %} rounded-sm">{{ pg.status }}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 text-[8px] font-bold uppercase tracking-widest text-neutral-500 pl-11 {% if pg.status == 'cancelado' or pg.status == 'estornado' %}opacity-50{% endif %}">
+                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">payments</span> {{ pg.get_metodo_pagamento_display }}</span>
+                        {% if pg.operador %}
+                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">person</span> {{ pg.operador.first_name|default:pg.operador.username }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="py-10 text-center text-neutral-500 font-headline uppercase text-[9px] font-black tracking-widest italic border-none">Nenhum histórico registrado.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Trancar Matrícula -->
+    <div id="modal-trancar-matricula" class="hidden fixed inset-0 z-[300] flex items-center justify-center p-6 bg-surface/80 backdrop-blur-md">
+        <div class="bg-surface-container-high w-full max-w-lg rounded-[40px] p-10 border border-white/5 shadow-2xl relative">
+            <button onclick="document.getElementById('modal-trancar-matricula').classList.add('hidden')" class="absolute top-8 right-8 text-neutral-600 hover:text-on-surface transition-all"><span class="material-symbols-outlined">close</span></button>
+            <h2 class="text-3xl font-black font-headline tracking-tighter mb-4 uppercase italic leading-none">Trancar Matrícula</h2>
+            <p class="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-8">Escolha a modalidade de trancamento.</p>
+            
+            <!-- Trancar Guardando Crédito -->
+            <div class="mb-6 p-6 bg-surface-container-low border border-cyan-500/20 rounded-2xl">
+                <h3 class="text-[11px] font-black uppercase text-cyan-400 tracking-widest mb-2 flex items-center gap-2"><span class="material-symbols-outlined text-sm">pause_circle</span> Trancamento Temporário</h3>
+                <p class="text-[9px] text-neutral-400 uppercase tracking-widest mb-4">Congela os dias restantes como crédito para uso futuro. Status atualiza para SUSPENSO.</p>
+                <form method="POST" onsubmit="return confirm('Deseja TRANCAR a matrícula? Os dias restantes serão salvos como crédito para uso futuro.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="trancar_matricula" value="true">
+                    <button type="submit" class="w-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 py-4 rounded-xl font-headline font-black text-[9px] uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-base">ac_unit</span> Trancar Guardando Crédito
+                    </button>
+                </form>
+            </div>
+
+            <!-- Trancar Definitivamente -->
+            <div class="p-6 bg-surface-container-low border border-red-500/20 rounded-2xl">
+                <h3 class="text-[11px] font-black uppercase text-red-400 tracking-widest mb-2 flex items-center gap-2"><span class="material-symbols-outlined text-sm">block</span> Trancamento Definitivo</h3>
+                <p class="text-[9px] text-neutral-400 uppercase tracking-widest mb-4">Inativa a conta e bloqueia o acesso. Saldo de dias congelados será ZERADO e dias restantes perdidos.</p>
+                <form method="POST" onsubmit="return confirm('ATENÇÃO: Deseja trancar DEFINITIVAMENTE? Os créditos serão zerados e a matrícula inativada.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="trancar_definitivo" value="true">
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="space-y-2">
+                            <label class="text-[8px] font-black text-neutral-500 uppercase tracking-widest ml-1">Motivo do Trancamento (Tag)</label>
+                            <input type="text" name="motivo_cancelamento" class="w-full bg-surface-container-highest border-none rounded-xl py-4 px-6 font-bold text-[10px] tracking-widest text-on-surface focus:ring-1 focus:ring-red-500 outline-none transition-all placeholder:text-neutral-600 uppercase" placeholder="Ex: MUDANÇA DE CIDADE" required>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[8px] font-black text-neutral-500 uppercase tracking-widest ml-1">Data Efetiva</label>
+                            <input type="date" name="data_cancelamento" class="w-full bg-surface-container-highest border-none rounded-xl py-4 px-6 font-bold text-[10px] tracking-widest text-on-surface focus:ring-1 focus:ring-red-500 outline-none appearance-none uppercase" value="{% now 'Y-m-d' %}" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-red-500/10 text-red-400 border border-red-500/30 py-4 rounded-xl font-headline font-black text-[9px] uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-base">cancel</span> Trancar Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         function openQuitarDebitoModal(valor_debito) {
             document.getElementById('modal-faturar').classList.remove('hidden');
@@ -590,15 +646,68 @@
         // --- Sync Plan Price & Discounts ---
         let currentBasePrice = 0;
 
+        function calcularSimulacaoJuros(basePrice) {
+            if (basePrice <= 0) return 0;
+            
+            const dpInput = document.getElementById('faturar_data_pagamento');
+            const diInput = document.getElementById('faturar_data_inicio');
+            
+            if(!dpInput || !diInput || !dpInput.value || !diInput.value) return 0;
+            
+            const dp = new Date(dpInput.value + 'T00:00:00');
+            const di = new Date(diInput.value + 'T00:00:00');
+            
+            // Regra do Domingo (carencia vai para segunda)
+            let carencia = new Date(di);
+            if (carencia.getDay() === 0) {
+                carencia.setDate(carencia.getDate() + 1);
+            }
+            
+            const diffTime = dp - carencia;
+            const diasAtraso = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diasAtraso > 0) {
+                const multaPct = parseFloat("{{ gym_settings.multa_atraso|default:'0' }}".replace(',', '.')) / 100.0;
+                const jurosDiarioPct = (parseFloat("{{ gym_settings.juros_mensal|default:'0' }}".replace(',', '.')) / 30.0) / 100.0;
+                
+                const valorMulta = basePrice * multaPct;
+                const valorJuros = basePrice * (jurosDiarioPct * diasAtraso);
+                return valorMulta + valorJuros;
+            }
+            return 0;
+        }
+
+        function syncDataInicio() {
+            const dpInput = document.getElementById('faturar_data_pagamento');
+            const diInput = document.getElementById('faturar_data_inicio');
+            if (dpInput && diInput && dpInput.value) {
+                diInput.value = dpInput.value;
+            }
+        }
+
         function updateAportePrice() {
             const select = document.getElementById('plano_aporte');
             const selectedOption = select.options[select.selectedIndex];
-            currentBasePrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+            currentBasePrice = parseFloat(selectedOption?.getAttribute('data-price')) || 0;
             
             document.getElementById('desc_perc').value = '';
             document.getElementById('desc_valor').value = '';
             
             aplicarDesconto('none');
+            
+            let juros = calcularSimulacaoJuros(currentBasePrice);
+            let aviso = document.getElementById('aviso_juros_simulacao');
+            if(juros > 0) {
+                if(!aviso) {
+                    aviso = document.createElement('p');
+                    aviso.id = 'aviso_juros_simulacao';
+                    aviso.className = 'text-[9px] text-error uppercase font-black tracking-widest mt-2';
+                    document.getElementById('valor_aporte').parentNode.appendChild(aviso);
+                }
+                aviso.innerHTML = `INCLUI R$ ${juros.toFixed(2).replace('.', ',')} DE MULTA/JUROS (ATRASO SIMULADO)`;
+            } else if(aviso) {
+                aviso.remove();
+            }
         }
         
         function syncBaseFromLíquido() {
@@ -618,21 +727,24 @@
             let descontoReais = (parseFloat(descValorInput.value.replace(/\D/g, '')) / 100) || 0;
             let descontoPerc = parseFloat(descPercInput.value) || 0;
             
+            let juros = calcularSimulacaoJuros(currentBasePrice);
+            let precoBase = currentBasePrice + juros;
+            
             if(origem === 'perc') {
-                descontoReais = currentBasePrice * (descontoPerc / 100);
+                descontoReais = precoBase * (descontoPerc / 100);
                 let valStr = descontoReais.toFixed(2).replace('.', ',');
                 if (!valStr.includes(',')) valStr += ',00';
                 else if (valStr.split(',')[1].length === 1) valStr += '0';
                 descValorInput.value = valStr.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-            } else if (origem === 'valor' && currentBasePrice > 0) {
-                descontoPerc = (descontoReais / currentBasePrice) * 100;
+            } else if (origem === 'valor' && precoBase > 0) {
+                descontoPerc = (descontoReais / precoBase) * 100;
                 descPercInput.value = descontoPerc.toFixed(1);
             }
             
-            let finalPrice = currentBasePrice - descontoReais;
+            let finalPrice = precoBase - descontoReais;
             if(finalPrice < 0) finalPrice = 0;
             
-            if (currentBasePrice > 0 || (currentBasePrice === 0 && finalPrice === 0)) {
+            if (precoBase > 0 || (precoBase === 0 && finalPrice === 0)) {
                 let cleanPrice = finalPrice.toFixed(2).replace('.', ',');
                 if (!cleanPrice.includes(',')) cleanPrice += ',00';
                 else if (cleanPrice.split(',')[1].length === 1) cleanPrice += '0';
