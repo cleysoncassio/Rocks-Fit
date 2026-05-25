@@ -59,7 +59,7 @@
         </a>
         <a href="{% url 'crm_alunos_list' %}" class="flex flex-col items-center gap-1 text-primary">
             <span class="material-symbols-outlined text-2xl">group</span>
-            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Membros</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Alunos</span>
         </a>
         <div class="relative -top-8">
             <a href="{% url 'crm_aluno_create' %}" class="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,145,89,0.4)] transition-all">
@@ -137,6 +137,11 @@
                                 <span class="material-symbols-outlined text-xl group-hover:animate-pulse">warning</span>
                             </button>
                         </form>
+                        {% if aluno.whatsapp %}
+                        <a href="https://wa.me/55{{ aluno.whatsapp|cut:' '|cut:'-'|cut:'('|cut:')' }}" target="_blank" class="h-12 w-12 md:h-full flex-none justify-center bg-green-500/10 text-green-500 px-4 rounded-xl border border-green-500/20 hover:bg-green-500 hover:text-white transition-all flex items-center shadow-lg group" title="WhatsApp: {{ aluno.whatsapp }}">
+                            <span class="material-symbols-outlined text-xl">forum</span>
+                        </a>
+                        {% endif %}
                         <a href="{% url 'crm_aluno_edit' aluno.id %}" class="flex-1 md:flex-none justify-center bg-surface-container-highest text-on-surface px-4 md:px-6 py-4 rounded-xl font-headline font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] border border-white/5 hover:bg-neutral-800 transition-all flex items-center gap-3">
                             <span class="material-symbols-outlined text-lg">edit_note</span> <span class="hidden md:inline">Editar Perfil</span>
                         </a>

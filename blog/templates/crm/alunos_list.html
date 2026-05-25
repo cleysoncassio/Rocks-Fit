@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Membros | ROCKS FIT</title>
+    <title>Alunos | ROCKS FIT</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -55,7 +55,7 @@
         </a>
         <a href="{% url 'crm_alunos_list' %}" class="flex flex-col items-center gap-1 text-primary">
             <span class="material-symbols-outlined text-2xl">group</span>
-            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Membros</span>
+            <span class="text-[8px] font-black uppercase tracking-widest font-headline">Alunos</span>
         </a>
         
         <!-- Quick Action Center -->
@@ -79,7 +79,7 @@
     <main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-hidden">
 <header class="w-full bg-surface flex flex-col md:flex-row justify-between items-start md:items-center px-6 md:px-12 py-6 md:py-8 z-40 gap-6">
             <div class="flex items-center gap-4">
-                <h2 class="font-headline font-black text-3xl md:text-5xl tracking-tighter text-on-surface uppercase italic">Membros 
+                <h2 class="font-headline font-black text-3xl md:text-5xl tracking-tighter text-on-surface uppercase italic">Alunos 
                     <span class="text-primary border-r border-white/10 pr-6 mr-2">
                         {% if status_filter == 'ATIVO' %}Ativos
                         {% elif status_filter == 'INATIVO' %}Inativos
