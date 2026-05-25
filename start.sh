@@ -31,7 +31,7 @@ echo "=== ROCKS-FIT: SUBINDO SERVIDOR WEB (GUNICORN) ==="
 exec gunicorn sitio.wsgi:application \
     --bind 0.0.0.0:$PORT \
     --workers 2 \
-    --timeout 120 \
+    --timeout 300 \
     --log-level info \
     --access-logfile - \
     --error-logfile -

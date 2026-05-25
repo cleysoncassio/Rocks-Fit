@@ -22,7 +22,7 @@ apt-get install -y libxcb1 libgl1 libsm6 libglib2.0-0
 # 2. Instala dependências Python
 echo "Passo 2: Instalando dependências Python..."
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install --no-cache-dir -r requirements.txt
 
 # 2. Coleta arquivos estáticos (não acessa banco)
 echo "Passo 2: Coletando arquivos estáticos..."
