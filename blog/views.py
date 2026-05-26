@@ -11,6 +11,9 @@ import json
 from blog.models import ContactInfo, Program, Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso
 from django.utils import timezone
 from .services import processar_vencimento_catraca
+from blog.whatsapp_service import EvolutionApiService
+from django.views.decorators.http import require_POST
+import re
 from .forms import ContactForm
 
 def sincronizar_estados_alunos():
@@ -2373,6 +2376,40 @@ def crm_ia_action(request, action_id):
             
     return redirect('crm_ia_dashboard')
 
+@login_required
+@require_POST
+def crm_whatsapp_campanha(request):
+    """ Envia uma campanha de WhatsApp para uma lista de alunos filtrada """
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'error': 'Acesso Negado'}, status=403)
+        
+    audience = request.POST.get('audience', 'ATIVO')
+    message_text = request.POST.get('message', '').strip()
+    
+    if not message_text:
+        messages.error(request, "A mensagem não pode estar vazia.")
+        return redirect('crm_alunos_list')
+        
+    alunos_alvo = Aluno.objects.exclude(whatsapp__isnull=True).exclude(whatsapp__exact='')
+    
+    if audience != 'TODOS':
+        alunos_alvo = alunos_alvo.filter(status=audience)
+        
+    # Limita o envio para não travar (Ideal: Celery ou background task)
+    # Neste caso vamos fazer envio síncrono para demonstração
+    enviados = 0
+    erros = 0
+    
+    for aluno in alunos_alvo:
+        sucesso, resp = EvolutionApiService.enviar_mensagem_texto(aluno.whatsapp, message_text)
+        if sucesso:
+            enviados += 1
+        else:
+            erros += 1
+            
+    messages.success(request, f"Campanha concluída! {enviados} mensagens enviadas. {erros} erros.")
+    return redirect('crm_alunos_list')
+
 
 @csrf_exempt
 def api_biometria_save(request, matricula):
@@ -2393,3 +2430,95 @@ def api_biometria_save(request, matricula):
             return JsonResponse({"success": False, "error": str(e)}, status=500)
     
     return JsonResponse({"success": False, "error": "Método não permitido"}, status=405)
+
+
+@csrf_exempt
+@require_POST
+def webhook_evolution_api(request):
+    """ Recebe os eventos de mensagem da Evolution API """
+    from django.conf import settings
+    
+    # Validação de Segurança Básica: Verifica se a API KEY configurada bate com a enviada no header
+    # A Evolution pode enviar como Authorization, apikey ou podemos configurar via query params
+    api_key_esperada = getattr(settings, 'EVOLUTION_API_KEY', '')
+    if api_key_esperada:
+        header_key = request.headers.get('apikey') or request.headers.get('Authorization', '').replace('Bearer ', '')
+        if header_key != api_key_esperada:
+            return JsonResponse({"erro": "Acesso Negado. Token Inválido."}, status=403)
+
+    try:
+        payload = json.loads(request.body)
+
+        # O evento de nova mensagem na Evolution geralmente é 'messages.upsert'
+        if payload.get('event') == 'messages.upsert':
+            messages_list = payload.get('data', {}).get('messages', [])
+            
+            for msg in messages_list:
+                # Ignora mensagens enviadas pelo próprio sistema (evita loop infinito)
+                if msg.get('key', {}).get('fromMe'):
+                    continue
+                
+                # Número do WhatsApp do aluno (Ex: 5584999999999@s.whatsapp.net)
+                remetente = msg.get('key', {}).get('remoteJid')
+                
+                # A estrutura da mensagem muda se tiver anexo, botão ou for texto simples
+                texto_msg = msg.get('message', {}).get('conversation') or \
+                            msg.get('message', {}).get('extendedTextMessage', {}).get('text') or ""
+                
+                texto_limpo = texto_msg.strip()
+
+                if texto_limpo:
+                    processar_mensagem_aluno(remetente, texto_limpo)
+
+        # Retorne 200 OK o mais rápido possível para a API não dar timeout
+        return JsonResponse({"status": "sucesso"}, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"erro": "JSON malformado"}, status=400)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro processando webhook: {e}")
+        return JsonResponse({"erro": "Erro interno"}, status=500)
+
+def processar_mensagem_aluno(remetente, texto):
+    """ O Cérebro do Autoatendimento """
+    
+    # Extrai apenas os números da mensagem do aluno
+    numeros_digitados = re.sub(r'\D', '', texto)
+
+    # Identifica se parece um CPF
+    if len(numeros_digitados) == 11:
+        cpf = numeros_digitados
+        
+        aluno = Aluno.objects.filter(cpf=cpf).first()
+        if aluno:
+            vencimento = None
+            if hasattr(aluno, 'acesso') and aluno.acesso.data_vencimento:
+                vencimento = aluno.acesso.data_vencimento.strftime('%d/%m/%Y')
+            
+            # Aqui podemos simular os valores pegando do último plano
+            ultimo_pg = PagamentoHistorico.objects.filter(aluno=aluno).order_by('-data_pagamento').first()
+            if ultimo_pg and ultimo_pg.plano:
+                preco_cartao = ultimo_pg.plano.price
+                preco_pix = float(preco_cartao) * 0.95  # 5% de desconto no PIX simulado
+                
+                msg_texto = f"Olá {aluno.nome_completo}, identificamos seu cadastro! 🎉\n"
+                msg_texto += f"Seu plano vence em {vencimento}.\n\n"
+                msg_texto += f"O valor atualizado do seu plano é R$ {preco_pix:.2f} no PIX ou R$ {preco_cartao} no Cartão Recorrente.\n\n"
+                msg_texto += "Qual opção você prefere?"
+                EvolutionApiService.enviar_mensagem_texto(remetente, msg_texto)
+            else:
+                msg_texto = f"Olá {aluno.nome_completo}, identificamos seu cadastro! 🎉\n"
+                if vencimento:
+                    msg_texto += f"Seu plano vence em {vencimento}.\n\n"
+                msg_texto += "Não encontrei um plano anterior registrado. Para renovar ou ver opções de planos, por favor vá até a recepção."
+                EvolutionApiService.enviar_mensagem_texto(remetente, msg_texto)
+                
+            print(f"[LOG] CPF Identificado: {cpf} do número {remetente}")
+        else:
+            EvolutionApiService.enviar_mensagem_texto(remetente, "Poxa, não consegui encontrar nenhum aluno com esse CPF. Tem certeza que digitou corretamente?")
+    else:
+        # Resposta padrão caso não seja um CPF
+        print(f"[LOG] Mensagem genérica recebida de {remetente}: {texto}")
+        EvolutionApiService.enviar_mensagem_texto(remetente, "Oi! Tudo bem? Para consultar seu plano e renovar de forma automática, digite apenas os números do seu CPF. 💪")
