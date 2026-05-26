@@ -51,3 +51,8 @@ STORAGES = {
 # Fallbacks legados para pacotes que não suportam STORAGES (como django-cloudinary-storage)
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+# ── Evolution API (WhatsApp) ──────────────────────────────────────────────────
+EVOLUTION_API_URL = 'http://localhost:8080'
+EVOLUTION_API_KEY = '429683C4C977415CBEE243405C76100E'
+EVOLUTION_INSTANCE_NAME = 'RocksFit'

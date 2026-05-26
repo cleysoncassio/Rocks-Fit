@@ -1,18 +1,18 @@
-version: '3.3'
-
 services:
   evolution-api:
-    image: atendai/evolution-api:v2.2.1
+    image: evoapicloud/evolution-api:2.4.0-rc2
     container_name: evolution-api
     restart: always
     ports:
       - "8080:8080"
     environment:
-      - SERVER_URL=https://sua-evolution-api.hostman.site
+      - SERVER_URL=http://localhost:8080
       - CONFIG_SESSION_PHONE_CLIENT=RocksFit
       - CONFIG_SESSION_PHONE_NAME=chrome
       - DEL_INSTANCE=false
-      
+      - QRCODE_LIMIT=30
+      - QRCODE_COLOR=#198754
+
       # Autenticação (A CHAVE GLOBAL SECRETA)
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=429683C4C977415CBEE243405C76100E
@@ -40,6 +40,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
 
     volumes:
       - evolution_instances:/evolution/instances
