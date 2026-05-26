@@ -1,101 +1,47 @@
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1778882737.497284   40434 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-I0000 00:00:1778882737.497592   40434 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
-I0000 00:00:1778882737.534231   40434 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+I0000 00:00:1779757577.408835   98329 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1779757577.409665   98329 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+I0000 00:00:1779757577.513801   98329 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1778882738.443470   40434 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-I0000 00:00:1778882738.444086   40434 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+I0000 00:00:1779757580.310264   98329 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1779757580.312062   98329 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1778882739.706071   40450 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-I0000 00:00:1778882739.706372   40450 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+I0000 00:00:1779757584.017270   98355 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1779757584.018091   98355 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1778882740.684281   40450 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-I0000 00:00:1778882740.684886   40450 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+I0000 00:00:1779757586.922338   98355 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1779757586.923895   98355 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
 Watching for file changes with StatReloader
-[15/May/2026 19:05:42] "GET /api/biometria/verificar/ HTTP/1.1" 200 46
-[15/May/2026 19:06:14] "GET /api/biometria/verificar/ HTTP/1.1" 200 46
-[15/May/2026 19:06:19] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:20] "GET /api/biometria/verificar/ HTTP/1.1" 200 46
-[15/May/2026 19:06:20] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:20] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:21] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:22] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:22] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:23] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:24] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:24] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:25] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:26] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:26] "POST /api/biometria/verificar/ HTTP/1.1" 200 80
-[15/May/2026 19:06:27] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:28] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:28] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:29] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:41] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:42] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:42] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:43] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:44] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:44] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:45] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:46] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:46] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:47] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:48] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:48] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:49] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:50] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:50] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:51] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:52] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:52] "POST /api/biometria/verificar/ HTTP/1.1" 200 80
-[15/May/2026 19:06:53] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:54] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:54] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:55] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:55] "GET /api/biometria/verificar/ HTTP/1.1" 200 46
-[15/May/2026 19:06:56] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:56] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:57] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:58] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:06:58] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:06:59] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:07:00] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:07:00] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:07:01] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:07:02] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:07:02] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:07:03] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:07:04] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:07:04] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:07:05] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:07:06] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:07:18] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:07:18] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:07:19] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:07:20] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:20] "GET /api/biometria/verificar/ HTTP/1.1" 200 46
-[15/May/2026 19:24:23] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:24] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:25] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:25] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:24:26] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:26] "GET /api/biometria/verificar/ HTTP/1.1" 200 46
-[15/May/2026 19:24:27] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:24:27] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:39] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:40] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:41] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:41] "POST /api/biometria/verificar/ HTTP/1.1" 200 82
-[15/May/2026 19:24:42] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:43] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
-[15/May/2026 19:24:43] "POST /api/biometria/verificar/ HTTP/1.1" 200 81
+/home/ccs/Modelos/Rocks-Fit/blog/whatsapp_service.py changed, reloading.
 Performing system checks...
 
 System check identified no issues (0 silenced).
-May 15, 2026 - 19:05:41
+May 25, 2026 - 22:06:29
 Django version 5.1, using settings 'sitio.settings.development'
-Starting development server at http://0.0.0.0:8000/
+Starting development server at http://127.0.0.1:8001/
 Quit the server with CONTROL-C.
 
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1779757856.450527   98632 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1779757856.451245   98632 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1779757859.464032   98632 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1779757859.465510   98632 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+Watching for file changes with StatReloader
+/home/ccs/Modelos/Rocks-Fit/blog/whatsapp_service.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+May 25, 2026 - 22:11:01
+Django version 5.1, using settings 'sitio.settings.development'
+Starting development server at http://127.0.0.1:8001/
+Quit the server with CONTROL-C.
+
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1779757866.869371   98660 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1779757866.870139   98660 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1779757869.693133   98660 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1779757869.694543   98660 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+Watching for file changes with StatReloader
