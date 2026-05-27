@@ -692,6 +692,11 @@ class GymSetting(models.Model):
     ai_system_prompt = models.TextField(blank=True, null=True, verbose_name="Prompt de Sistema da IA")
     ai_api_key = models.CharField(max_length=255, blank=True, null=True, verbose_name="API Key (OpenRouter/Qwen)")
 
+    # Configurações do WhatsApp (Evolution API)
+    evolution_api_url = models.CharField(max_length=255, default='http://localhost:8080', verbose_name="URL da Evolution API")
+    evolution_api_key = models.CharField(max_length=255, default='429683C4C977415CBEE243405C76100E', verbose_name="API Key (Global) da Evolution")
+    evolution_instance_name = models.CharField(max_length=100, default='Rocksfit-business', verbose_name="Nome da Instância")
+
     def __str__(self):
         return f"Configurações de {self.name}"
 

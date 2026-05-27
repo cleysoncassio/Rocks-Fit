@@ -7,7 +7,9 @@ logger = logging.getLogger(__name__)
 class EvolutionApiService:
     @staticmethod
     def _get_headers():
-        api_key = getattr(settings, 'EVOLUTION_API_KEY', '')
+        from blog.models import GymSetting
+        config = GymSetting.objects.first()
+        api_key = config.evolution_api_key if config else getattr(settings, 'EVOLUTION_API_KEY', '')
         return {
             'apikey': api_key,
             'Content-Type': 'application/json'
@@ -15,8 +17,12 @@ class EvolutionApiService:
         
     @staticmethod
     def _get_base_url():
-        base_url = getattr(settings, 'EVOLUTION_API_URL', 'http://localhost:8080')
-        instance = getattr(settings, 'EVOLUTION_INSTANCE_NAME', 'RocksFit')
+        from blog.models import GymSetting
+        config = GymSetting.objects.first()
+        
+        base_url = config.evolution_api_url if config else getattr(settings, 'EVOLUTION_API_URL', 'http://localhost:8080')
+        instance = config.evolution_instance_name if config else getattr(settings, 'EVOLUTION_INSTANCE_NAME', 'Rocksfit-business')
+        
         return f"{base_url.rstrip('/')}/message/sendText/{instance}"
 
     @staticmethod
@@ -32,13 +38,11 @@ class EvolutionApiService:
         
         payload = {
             "number": numero_limpo,
+            "text": texto,
             "options": {
                 "delay": 1200,
                 "presence": "composing",
                 "linkPreview": False
-            },
-            "textMessage": {
-                "text": texto
             }
         }
         
@@ -69,12 +73,10 @@ class EvolutionApiService:
         # Depois enviamos apenas a chave limpa para facilitar a cópia
         payload = {
             "number": numero_limpo,
+            "text": chave_pix,
             "options": {
                 "delay": 2000,
                 "presence": "composing"
-            },
-            "textMessage": {
-                "text": chave_pix
             }
         }
         
