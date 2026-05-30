@@ -54,5 +54,5 @@ DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # ── Evolution API (WhatsApp) ──────────────────────────────────────────────────
 EVOLUTION_API_URL = 'http://localhost:8080'
-EVOLUTION_API_KEY = '429683C4C977415CBEE243405C76100E'
-EVOLUTION_INSTANCE_NAME = 'Rocksfit-business'
+EVOLUTION_API_KEY = '5961FD6698B6-4EFE-9540-2303EE0FB31F'
+EVOLUTION_INSTANCE_NAME = 'API-Evolution'

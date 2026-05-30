@@ -1,0 +1,455 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Rocks Fit Forge OS - Motor de Pesquisa</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "tertiary-fixed": "#fbb423",
+                  "secondary-fixed": "#ffc69f",
+                  "secondary": "#f88d36",
+                  "background": "#0e0e0e",
+                  "inverse-surface": "#fcf9f8",
+                  "error-container": "#b92902",
+                  "on-primary-container": "#401500",
+                  "on-background": "#ffffff",
+                  "tertiary": "#ffc562",
+                  "error": "#ff7351",
+                  "surface-dim": "#0e0e0e",
+                  "secondary-dim": "#eb832c",
+                  "inverse-on-surface": "#565555",
+                  "on-primary": "#531e00",
+                  "on-secondary-fixed-variant": "#803f00",
+                  "tertiary-container": "#fbb423",
+                  "primary-fixed": "#ff7a2f",
+                  "surface-tint": "#ff9159",
+                  "on-tertiary": "#5e4000",
+                  "surface-container": "#1a1919",
+                  "primary-container": "#ff7a2f",
+                  "on-primary-fixed-variant": "#4f1c00",
+                  "surface-variant": "#262626",
+                  "on-error-container": "#ffd2c8",
+                  "surface-container-high": "#201f1f",
+                  "secondary-fixed-dim": "#ffb37d",
+                  "primary-fixed-dim": "#f66700",
+                  "outline": "#767575",
+                  "on-primary-fixed": "#000000",
+                  "surface-bright": "#2c2c2c",
+                  "on-tertiary-container": "#523700",
+                  "on-secondary-container": "#fff6f2",
+                  "on-error": "#450900",
+                  "tertiary-fixed-dim": "#eba60f",
+                  "outline-variant": "#484847",
+                  "primary": "#ff9159",
+                  "on-tertiary-fixed-variant": "#5e4000",
+                  "on-tertiary-fixed": "#372400",
+                  "on-surface-variant": "#adaaaa",
+                  "surface-container-low": "#131313",
+                  "on-surface": "#ffffff",
+                  "tertiary-dim": "#eba60f",
+                  "surface-container-lowest": "#000000",
+                  "on-secondary-fixed": "#552800",
+                  "primary-dim": "#ff7524",
+                  "on-secondary": "#462000",
+                  "error-dim": "#d53d18",
+                  "secondary-container": "#944a00",
+                  "surface-container-highest": "#262626",
+                  "inverse-primary": "#a14100",
+                  "surface": "#0e0e0e"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.125rem",
+                  "lg": "0.25rem",
+                  "xl": "0.5rem",
+                  "full": "0.75rem"
+          },
+          "fontFamily": {
+                  "headline": ["Space Grotesk"],
+                  "display": ["Space Grotesk"],
+                  "body": ["Manrope"],
+                  "label": ["Inter"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+        font-family: 'Manrope', sans-serif;
+        background-color: #0e0e0e;
+        color: #ffffff;
+        overflow-x: hidden;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-panel {
+      background: rgba(38, 38, 38, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0e0e0e; }
+    ::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #ff9159; }
+    .status-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body flex h-screen overflow-hidden selection:bg-primary selection:text-on-primary-fixed">
+
+{% include "crm/sidebar.html" %}
+
+<!-- Main Content Canvas -->
+<main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-y-auto">
+
+<!-- Top App Bar -->
+<header class="sticky top-0 w-full bg-surface/80 backdrop-blur-md flex justify-between items-center px-8 h-20 z-40 mb-8">
+<div class="flex items-center gap-4">
+</div>
+<div class="hidden md:flex items-center gap-8">
+<nav class="flex gap-6">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 font-headline text-xs uppercase tracking-widest" href="{% url 'crm_dashboard' %}">Dashboard</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 font-headline text-xs uppercase tracking-widest" href="{% url 'automacoes_hub' %}">Automações</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 font-headline text-xs uppercase tracking-widest" href="{% url 'automacoes_campanha' %}">Campanhas</a>
+</nav>
+<div class="h-6 w-[1px] bg-outline-variant/30"></div>
+<div class="flex items-center gap-4">
+<button class="relative text-on-surface-variant hover:text-primary transition-colors group">
+<span class="material-symbols-outlined">notifications</span>
+{% if ativas > 0 %}
+<span class="absolute -top-1 -right-1 flex h-3 w-3">
+  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+  <span class="relative inline-flex rounded-full h-3 w-3 bg-primary border-2 border-surface text-[7px] font-bold text-on-primary-fixed items-center justify-center">{{ ativas }}</span>
+</span>
+<!-- Tooltip -->
+<div class="absolute right-0 top-8 w-48 bg-surface-container-high text-xs text-on-surface p-2 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg">
+    {{ ativas }} campanha(s) ativa(s) no momento.
+</div>
+{% endif %}
+</button>
+</div>
+</div>
+<button class="md:hidden text-on-surface">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+
+
+<div class="px-4 md:px-8 pb-24 md:pb-8 w-full max-w-[1400px] mx-auto">
+<!-- Hero Header / Stats -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+<div class="p-6 bg-surface-container rounded-xl flex flex-col gap-1 border-l-4 border-primary">
+<div class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">TOTAL DE PESQUISAS ENVIADAS</div>
+<div class="text-4xl font-display font-black text-on-surface">14.208</div>
+<div class="mt-2 text-primary flex items-center gap-1 text-xs">
+<span class="material-symbols-outlined text-sm">trending_up</span> +12% este mês
+        </div>
+</div>
+<div class="p-6 bg-surface-container rounded-xl flex flex-col gap-1">
+<div class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">SCORE NPS MÉDIO</div>
+<div class="text-4xl font-display font-black text-tertiary">9.2</div>
+<div class="mt-2 text-tertiary flex items-center gap-1 text-xs">
+<span class="material-symbols-outlined text-sm">verified</span> Liderança do Setor
+        </div>
+</div>
+<div class="p-6 bg-surface-container rounded-xl flex flex-col gap-1">
+<div class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">TAXA DE RESPOSTA</div>
+<div class="text-4xl font-display font-black text-on-surface">68%</div>
+<div class="w-full h-1.5 bg-surface-variant rounded-full mt-3 overflow-hidden">
+<div class="bg-primary h-full w-[68%]"></div>
+</div>
+</div>
+<div class="p-6 bg-surface-container-high rounded-xl flex items-center justify-center gap-4 group cursor-pointer hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-3xl text-primary group-hover:text-on-primary-fixed transition-colors">add_circle</span>
+<span class="font-headline font-bold text-lg group-hover:text-on-primary-fixed transition-colors">CRIAR NOVO<br>MOTOR DE PESQUISA</span>
+</div>
+</div>
+<!-- Survey Editor Workspace -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Builder Panel -->
+<div class="lg:col-span-8 space-y-6">
+<div class="p-8 bg-surface-container-low rounded-xl relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<!-- Header Config -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="px-2 py-1 bg-tertiary/20 text-tertiary text-[10px] font-bold rounded uppercase tracking-tighter border border-tertiary/30">MODO RASCUNHO</span>
+<span class="text-on-surface-variant text-xs">ID: SRV-2024-X9</span>
+</div>
+<h1 class="text-3xl font-display font-bold">Satisfação de Onboarding do Membro</h1>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2 bg-surface-container-highest text-on-surface font-bold rounded-full text-xs hover:bg-outline-variant transition-colors">PRÉ-VISUALIZAR</button>
+<button class="px-6 py-2 bg-primary text-on-primary-fixed font-bold rounded-full text-xs shadow-lg shadow-primary/20">SALVAR ALTERAÇÕES</button>
+</div>
+</div>
+<!-- Section 1: NPS Question -->
+<div class="bg-surface-container-high p-6 rounded-xl border border-outline-variant/10 group mb-6">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star_rate</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-on-surface">Pergunta 01</h3>
+<p class="text-xs text-on-surface-variant uppercase">TIPO: NET PROMOTER SCORE (0-10)</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant/10 text-on-surface-variant hover:text-primary hover:border-primary transition-colors flex items-center justify-center" title="Enviar por WhatsApp">
+<span class="material-symbols-outlined text-[16px]">chat</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant/10 text-on-surface-variant hover:text-primary hover:border-primary transition-colors flex items-center justify-center" title="Enviar por E-mail">
+<span class="material-symbols-outlined text-[16px]">mail</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant/10 text-on-surface-variant hover:text-primary hover:border-primary transition-colors flex items-center justify-center" title="Enviar pelo App">
+<span class="material-symbols-outlined text-[16px]">smartphone</span>
+</button>
+<div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+<div class="space-y-4">
+<input class="w-full bg-surface-container-lowest border-none rounded-lg p-4 text-on-surface font-medium focus:ring-2 focus:ring-primary" type="text" value="Qual a probabilidade de você recomendar a Rocks Fit a um amigo ou colega?">
+<div class="flex justify-between px-2 pt-4">
+<span class="text-[10px] text-on-surface-variant uppercase font-bold">NÃO PROVÁVEL</span>
+<span class="text-[10px] text-on-surface-variant uppercase font-bold">EXTREMAMENTE PROVÁVEL</span>
+</div>
+<div class="grid grid-cols-11 gap-2">
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">0</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">1</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">2</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">3</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">4</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">5</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">6</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">7</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center rounded border border-outline-variant/20 text-xs font-bold text-on-surface-variant cursor-pointer">8</div>
+<div class="aspect-square bg-primary-container flex items-center justify-center rounded border border-primary text-xs font-black text-on-primary-fixed cursor-pointer">9</div>
+<div class="aspect-square bg-primary flex items-center justify-center rounded border border-primary text-xs font-black text-on-primary-fixed cursor-pointer">10</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Multiple Choice -->
+<div class="bg-surface-container-high p-6 rounded-xl border border-outline-variant/10 group mb-6">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">checklist</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-on-surface">Pergunta 02</h3>
+<p class="text-xs text-on-surface-variant uppercase">TIPO: MÚLTIPLA ESCOLHA</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant/10 text-on-surface-variant hover:text-secondary hover:border-secondary transition-colors flex items-center justify-center" title="Enviar por WhatsApp">
+<span class="material-symbols-outlined text-[16px]">chat</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant/10 text-on-surface-variant hover:text-secondary hover:border-secondary transition-colors flex items-center justify-center" title="Enviar por E-mail">
+<span class="material-symbols-outlined text-[16px]">mail</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant/10 text-on-surface-variant hover:text-secondary hover:border-secondary transition-colors flex items-center justify-center" title="Enviar pelo App">
+<span class="material-symbols-outlined text-[16px]">smartphone</span>
+</button>
+<div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+<div class="space-y-4">
+<input class="w-full bg-surface-container-lowest border-none rounded-lg p-4 text-on-surface font-medium focus:ring-2 focus:ring-primary mb-4" type="text" value="Qual área de equipamentos você visitou hoje?">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex items-center gap-3 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary text-sm">radio_button_checked</span>
+<input class="bg-transparent border-none p-0 text-sm w-full focus:ring-0" type="text" value="Área de Cardio">
+</div>
+<div class="flex items-center gap-3 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">radio_button_unchecked</span>
+<input class="bg-transparent border-none p-0 text-sm w-full focus:ring-0" type="text" value="Pesos Livres">
+</div>
+<div class="flex items-center gap-3 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">radio_button_unchecked</span>
+<input class="bg-transparent border-none p-0 text-sm w-full focus:ring-0" type="text" value="Gaiola de CrossFit">
+</div>
+<div class="flex items-center gap-3 p-3 rounded-lg border-2 border-dashed border-outline-variant/30 text-on-surface-variant cursor-pointer hover:bg-surface-container hover:text-on-surface transition-all text-xs font-bold uppercase tracking-widest flex items-center justify-center">
+<span class="material-symbols-outlined text-sm mr-2">add</span> ADICIONAR OPÇÃO
+                </div>
+</div>
+</div>
+</div>
+<!-- Add Section Trigger -->
+<div class="flex justify-center py-4 relative">
+<div class="absolute inset-0 flex items-center"><div class="w-full border-t border-outline-variant/20"></div></div>
+<div class="relative flex gap-4">
+<button class="bg-surface-container text-on-surface px-4 py-2 rounded-full border border-outline-variant/30 flex items-center gap-2 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-primary">add_circle</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">ADICIONAR PERGUNTA</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Settings & Logic Panel -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Scheduling Panel -->
+<div class="glass-panel p-6 rounded-xl border border-outline-variant/10">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<h2 class="font-headline font-bold uppercase tracking-widest">TEMPORIZAÇÃO DO MOTOR</h2>
+</div>
+<div class="space-y-6">
+<div class="space-y-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">AÇÃO DE GATILHO</label>
+<select class="w-full bg-surface-container-lowest border-none rounded-lg p-3 text-sm focus:ring-primary">
+<option>30 Dias após o Cadastro</option>
+<option>Após o Primeiro Check-in</option>
+<option>Renovação de Contrato (T-15)</option>
+<option>Ausência &gt; 7 Dias</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">CANAL DE NOTIFICAÇÃO</label>
+<div class="grid grid-cols-3 gap-2">
+<button class="flex flex-col items-center justify-center gap-2 p-3 bg-primary-container text-on-primary-fixed rounded-xl border border-primary">
+<span class="material-symbols-outlined">mail</span>
+<span class="text-[10px] font-bold">Email</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-3 bg-surface-container-lowest text-on-surface-variant rounded-xl border border-outline-variant/10 hover:border-primary transition-colors">
+<span class="material-symbols-outlined">chat</span>
+<span class="text-[10px] font-bold">SMS</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-3 bg-surface-container-lowest text-on-surface-variant rounded-xl border border-outline-variant/10 hover:border-primary transition-colors">
+<span class="material-symbols-outlined">smartphone</span>
+<span class="text-[10px] font-bold">App</span>
+</button>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant/10">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-on-surface">Lembrete Automático</span>
+<div class="w-10 h-5 bg-primary/40 rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-primary rounded-full"></div>
+</div>
+</div>
+<p class="text-[10px] text-on-surface-variant leading-relaxed">Envia um acompanhamento 3 dias depois se não for preenchido.</p>
+</div>
+</div>
+</div>
+<!-- Audience Targeting -->
+<div class="glass-panel p-6 rounded-xl border border-outline-variant/10">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary">target</span>
+<h2 class="font-headline font-bold uppercase tracking-widest">PÚBLICO ATIVO</h2>
+</div>
+<div class="p-4 bg-surface-container-lowest rounded-xl mb-4">
+<div class="flex items-center justify-between mb-4">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">SEGMENTO ALVO</span>
+<span class="material-symbols-outlined text-xs text-primary">edit</span>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-high rounded text-[10px] font-bold border border-outline-variant/10">Novos Membros</span>
+<span class="px-2 py-1 bg-surface-container-high rounded text-[10px] font-bold border border-outline-variant/10">Personal Training</span>
+<span class="px-2 py-1 bg-surface-container-high rounded text-[10px] font-bold border border-outline-variant/10">Idade: 18-35</span>
+</div>
+</div>
+<div class="flex items-center gap-4 text-xs">
+<div class="flex-1">
+<div class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">ALCANCE ESTIMADO</div>
+<div class="text-xl font-display font-black">2.450 <span class="text-xs text-on-surface-variant font-medium">Usuários</span></div>
+</div>
+<div class="w-16 h-16 relative">
+<svg class="w-full h-full transform -rotate-90">
+<circle cx="32" cy="32" fill="transparent" r="28" stroke="#262626" stroke-width="4"></circle>
+<circle cx="32" cy="32" fill="transparent" r="28" stroke="#ff9159" stroke-dasharray="175.9" stroke-dashoffset="44" stroke-width="4"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold">75%</div>
+</div>
+</div>
+</div>
+<!-- Automation Flow Visualizer -->
+<div class="p-6 bg-surface-container-highest rounded-xl border-2 border-primary/20">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary status-pulse">hub</span>
+<h3 class="font-headline font-bold text-xs uppercase tracking-widest">LÓGICA DO FLUXO</h3>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="flex-1 h-px bg-outline-variant/30"></div>
+<div class="px-2 py-1 bg-surface-container-lowest rounded text-[9px] font-bold uppercase">EVENTO DE CADASTRO</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<div class="flex-1 h-px bg-outline-variant/30"></div>
+<div class="px-2 py-1 bg-surface-container-lowest rounded text-[9px] font-bold uppercase">ESPERAR 30D</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary ring-4 ring-primary/20"></div>
+<div class="flex-1 h-px bg-outline-variant/30"></div>
+<div class="px-2 py-1 bg-primary text-on-primary-fixed rounded text-[9px] font-black uppercase">ENVIAR PESQUISA</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-container-high/90 backdrop-blur-2xl border-t border-white/10 z-[100] flex items-center justify-around px-4">
+    <a href="{% url 'crm_dashboard' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">grid_view</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Dash</span>
+    </a>
+    <a href="{% url 'crm_alunos_list' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">group</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Alunos</span>
+    </a>
+    <div class="relative -top-8">
+        <a href="{% url 'crm_aluno_create' %}" class="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,145,89,0.4)]">
+            <span class="material-symbols-outlined text-3xl font-black">person_add</span>
+        </a>
+    </div>
+    <a href="{% url 'automacoes_hub' %}" class="flex flex-col items-center gap-1 text-primary">
+        <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Automar</span>
+    </a>
+    <a href="{% url 'crm_caixa' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">payments</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Caixa</span>
+    </a>
+</div>
+
+<!-- Micro-interaction JS -->
+<script>
+    // Simple state simulation for survey blocks
+    document.querySelectorAll('.aspect-square').forEach(el => {
+      el.addEventListener('click', function() {
+        // Remove current active state in the grid
+        const parent = this.parentElement;
+        parent.querySelectorAll('.aspect-square').forEach(item => {
+          item.classList.remove('bg-primary', 'bg-primary-container', 'text-on-primary-fixed');
+          item.classList.add('bg-surface-container-lowest', 'text-on-surface-variant');
+        });
+        
+        // Add active state to clicked
+        this.classList.remove('bg-surface-container-lowest', 'text-on-surface-variant');
+        this.classList.add('bg-primary', 'text-on-primary-fixed');
+      });
+    });
+
+  </script>
+</body></html>

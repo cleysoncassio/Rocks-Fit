@@ -46,6 +46,10 @@ urlpatterns = [
     # Automações
     path("crm/automacoes/", views.automacoes_hub, name="automacoes_hub"),
     path("crm/automacoes/campanha/", views.automacoes_campanha, name="automacoes_campanha"),
+    path("crm/automacoes/campanha/<int:campanha_id>/", views.automacoes_campanha, name="automacoes_campanha_edit"),
+    path("crm/automacoes/campanha/<int:campanha_id>/delete/", views.automacoes_delete, name="automacoes_delete"),
+    path("crm/automacoes/campanha/<int:campanha_id>/send/", views.automacoes_send_manual, name="automacoes_send_manual"),
+    path("crm/automacoes/pesquisas/", views.automacoes_pesquisas, name="automacoes_pesquisas"),
 
     path('crm/caixa/', views.crm_caixa, name='crm_caixa'),
     

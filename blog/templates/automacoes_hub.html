@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html class="dark" lang="pt-BR"><head>
 <meta charset="utf-8"/>
@@ -116,87 +117,44 @@
         }
     </style>
 </head>
-<body class="bg-background text-on-background selection:bg-primary selection:text-on-primary-fixed">
-<!-- Sidebar (Desktop Only) -->
-<aside class="fixed left-0 top-0 h-full flex flex-col pt-24 pb-8 bg-surface-container-low w-64 z-40 hidden md:flex" id="sidebar">
-<div class="px-8 mb-10">
-<h2 class="font-display text-xl font-bold text-on-surface">Forge OS</h2>
-<p class="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">V2.4 Ativo</p>
-</div>
-<nav class="flex-1 space-y-1">
-<a class="text-on-surface-variant hover:bg-surface-container-high px-8 py-3 flex items-center gap-3 transition-all" href="{% url 'crm_dashboard' %}">
-<span class="material-symbols-outlined text-xl">terminal</span>
-<span class="font-label text-sm font-medium">Controle de Missão</span>
-</a>
-<a class="text-on-surface-variant hover:bg-surface-container-high px-8 py-3 flex items-center gap-3 transition-all" href="#">
-<span class="material-symbols-outlined text-xl">group</span>
-<span class="font-label text-sm font-medium">Base de Membros</span>
-</a>
-<a class="bg-surface-container-highest text-primary border-l-4 border-primary px-8 py-3 flex items-center gap-3" href="{% url 'automacoes_hub' %}">
-<span class="material-symbols-outlined text-xl">precision_manufacturing</span>
-<span class="font-label text-sm font-medium">Hub de Automações</span>
-</a>
-<a class="text-on-surface-variant hover:bg-surface-container-high px-8 py-3 flex items-center gap-3 transition-all" href="{% url 'automacoes_campanha' %}">
-<span class="material-symbols-outlined text-xl">campaign</span>
-<span class="font-label text-sm font-medium">Laboratório de Campanhas</span>
-</a>
-<a class="text-on-surface-variant hover:bg-surface-container-high px-8 py-3 flex items-center gap-3 transition-all" href="#">
-<span class="material-symbols-outlined text-xl">poll</span>
-<span class="font-label text-sm font-medium">Motor de Pesquisas</span>
-</a>
-<a class="text-on-surface-variant hover:bg-surface-container-high px-8 py-3 flex items-center gap-3 transition-all" href="#">
-<span class="material-symbols-outlined text-xl">monitoring</span>
-<span class="font-label text-sm font-medium">Análises</span>
-</a>
-</nav>
-<div class="px-8 mt-auto space-y-4">
-<a href="{% url 'automacoes_campanha' %}" class="w-full gradient-orange text-on-primary-fixed font-bold py-3 rounded-full text-xs tracking-wider flex items-center justify-center gap-2 hover:opacity-90 transition-opacity uppercase">
-<span class="material-symbols-outlined text-sm">add</span>
-            NOVA AUTOMAÇÃO
-        </a>
-<div class="pt-6 border-t border-outline-variant/20 space-y-2">
-<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors text-xs" href="#">
-<span class="material-symbols-outlined text-lg">help</span>
-                Suporte
-            </a>
-<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors text-xs" href="#">
-<span class="material-symbols-outlined text-lg">history</span>
-                Logs
-            </a>
-</div>
-</div>
-</aside>
+<body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden selection:bg-primary selection:text-on-primary-fixed">
+{% include "crm/sidebar.html" %}
+<!-- Main Content Canvas -->
+<main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-y-auto">
 <!-- Top App Bar -->
-<header class="fixed top-0 left-0 right-0 h-20 bg-surface flex justify-between items-center px-8 z-50">
+<header class="sticky top-0 w-full bg-surface/80 backdrop-blur-md flex justify-between items-center px-8 h-20 z-40">
 <div class="flex items-center gap-4">
-<h1 class="font-display text-2xl font-black text-primary tracking-tighter uppercase">Rocks Fit Forge OS</h1>
 </div>
 <div class="hidden md:flex items-center gap-8">
 <nav class="flex gap-6">
 <a class="text-on-surface-variant hover:text-primary transition-colors duration-200 font-headline text-xs uppercase tracking-widest" href="{% url 'crm_dashboard' %}">Dashboard</a>
 <a class="text-primary font-bold border-b-2 border-primary font-headline text-xs uppercase tracking-widest" href="{% url 'automacoes_hub' %}">Automações</a>
 <a class="text-on-surface-variant hover:text-primary transition-colors duration-200 font-headline text-xs uppercase tracking-widest" href="{% url 'automacoes_campanha' %}">Campanhas</a>
-<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 font-headline text-xs uppercase tracking-widest" href="#">Pesquisas</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200 font-headline text-xs uppercase tracking-widest" href="{% url 'automacoes_pesquisas' %}">Pesquisas</a>
 </nav>
 <div class="h-6 w-[1px] bg-outline-variant/30"></div>
 <div class="flex items-center gap-4">
-<button class="text-on-surface-variant hover:text-primary transition-colors">
+<button class="relative text-on-surface-variant hover:text-primary transition-colors group">
 <span class="material-symbols-outlined">notifications</span>
-</button>
-<button class="text-on-surface-variant hover:text-primary transition-colors">
-<span class="material-symbols-outlined">settings</span>
-</button>
-<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/30">
-<img alt="Perfil do Gerente" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB28d2VVpdh1sGnRmx6q7R6foO5Hw5nvbqfOQcL5df5mAN1e2wNB7Sbl5x_I_GyEVl1T51KMDziBt50nNSLRfo2jJBaPVillSAk-1oNsLA6OAUvtq2neHDBiHbVWJEwSnDpQmk-Jo5nxT1wQ3rF3TNaWB4XAjXBL9YENuxzjTs3U4Lu-7kPiYo_rraOP2leRHltlQCYg0kiRiXNbaOleytTDEV75ezUzK1jJTq-9mzV3YfCjhzRr0etA9-Otg7VpypYkmpcUpwNU_o"/>
+{% if ativas > 0 %}
+<span class="absolute -top-1 -right-1 flex h-3 w-3">
+  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+  <span class="relative inline-flex rounded-full h-3 w-3 bg-primary border-2 border-surface text-[7px] font-bold text-on-primary-fixed items-center justify-center">{{ ativas }}</span>
+</span>
+<!-- Tooltip -->
+<div class="absolute right-0 top-8 w-48 bg-surface-container-high text-xs text-on-surface p-2 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg">
+    {{ ativas }} campanha(s) ativa(s) no momento.
 </div>
+{% endif %}
+</button>
 </div>
 </div>
 <button class="md:hidden text-on-surface">
 <span class="material-symbols-outlined">menu</span>
 </button>
 </header>
-<!-- Main Content Canvas -->
-<main class="pt-20 md:pl-64 min-h-screen">
+
+
 <div class="p-8 max-w-[1400px] mx-auto">
 <!-- Bento-Style Stats Header -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -235,10 +193,10 @@
 <div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-primary relative overflow-hidden group">
 <div class="relative z-10">
 <p class="text-on-surface-variant text-xs font-label uppercase tracking-widest mb-2">Automações Ativas</p>
-<h3 class="font-display text-4xl font-bold text-on-surface">32</h3>
+<h3 class="font-display text-4xl font-bold text-on-surface">{{ ativas }}</h3>
 <div class="mt-4 flex items-center gap-2 text-on-surface-variant">
 <span class="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
-<span class="text-xs font-bold">Carga do Sistema: 14%</span>
+<span class="text-xs font-bold">Monitorando o banco de dados</span>
 </div>
 </div>
 <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -260,6 +218,9 @@
 <button class="bg-surface-container-highest p-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors">
 <span class="material-symbols-outlined">filter_list</span>
 </button>
+<a href="{% url 'automacoes_pesquisas' %}" class="bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-bold px-6 py-2.5 rounded-full text-sm hover:scale-105 transition-transform mr-2">
+                    MOTOR DE PESQUISAS
+                </a>
 <a href="{% url 'automacoes_campanha' %}" class="gradient-orange text-on-primary-fixed font-bold px-6 py-2.5 rounded-full text-sm hover:scale-105 transition-transform">
                     CRIAR FLUXO
                 </a>
@@ -276,128 +237,87 @@
 <div class="col-span-1 text-right">Ação</div>
 </div>
 <!-- List Items -->
-<!-- Item 1 -->
-<div class="bg-surface-container-low hover:bg-surface-container-high transition-all p-6 md:px-6 md:py-4 rounded-xl flex flex-col md:grid md:grid-cols-12 items-center gap-4 md:gap-0 group">
+{% for campanha in campanhas %}
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-all p-6 md:px-6 md:py-4 rounded-xl flex flex-col md:grid md:grid-cols-12 items-center gap-4 md:gap-0 group relative">
 <div class="col-span-5 flex items-center gap-4 w-full md:w-auto">
 <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary-fixed transition-colors">
-<span class="material-symbols-outlined">waving_hand</span>
+<span class="material-symbols-outlined">
+{% if campanha.gatilho == 'data' %}event{% elif campanha.gatilho == 'checkin' %}waving_hand{% elif campanha.gatilho == 'pagamento' %}payments{% else %}campaign{% endif %}
+</span>
 </div>
 <div>
-<h4 class="font-headline font-bold text-on-surface">Boas-vindas a Novos Membros</h4>
-<p class="text-xs text-on-surface-variant">Enviado imediatamente após o primeiro check-in</p>
+<h4 class="font-headline font-bold text-on-surface">{{ campanha.descricao }}</h4>
+<p class="text-xs text-on-surface-variant">Gatilho: {{ campanha.get_gatilho_display }}</p>
 </div>
 </div>
 <div class="col-span-2 w-full md:w-auto">
-<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold uppercase text-on-surface-variant">Baseado em comportamento</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold uppercase text-on-surface-variant">{{ campanha.get_prioridade_display }}</span>
 </div>
 <div class="col-span-2 flex items-center gap-3 w-full md:w-auto">
-<span class="material-symbols-outlined text-primary text-xl">mail</span>
-<span class="material-symbols-outlined text-on-surface-variant/40 text-xl">smartphone</span>
-<span class="material-symbols-outlined text-secondary text-xl">chat</span>
-</div>
-<div class="col-span-2 w-full md:w-auto">
-<span class="bg-tertiary-container/20 text-tertiary px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1.5">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
-                        Ativa
-                    </span>
-</div>
-<div class="col-span-1 text-right w-full md:w-auto flex justify-end">
-<button class="w-8 h-8 rounded-full hover:bg-surface-container-highest flex items-center justify-center text-on-surface-variant transition-colors">
-<span class="material-symbols-outlined text-lg">more_vert</span>
-</button>
-</div>
-</div>
-<!-- Item 2 -->
-<div class="bg-surface-container-low hover:bg-surface-container-high transition-all p-6 md:px-6 md:py-4 rounded-xl flex flex-col md:grid md:grid-cols-12 items-center gap-4 md:gap-0 group">
-<div class="col-span-5 flex items-center gap-4 w-full md:w-auto">
-<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-on-primary-fixed transition-colors">
-<span class="material-symbols-outlined">cake</span>
-</div>
-<div>
-<h4 class="font-headline font-bold text-on-surface">Pesquisa de Aniversário de Membro</h4>
-<p class="text-xs text-on-surface-variant">Enviado no aniversário da data de adesão do membro</p>
-</div>
-</div>
-<div class="col-span-2 w-full md:w-auto">
-<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold uppercase text-on-surface-variant">Baseado em data</span>
-</div>
-<div class="col-span-2 flex items-center gap-3 w-full md:w-auto">
+{% if campanha.canal_email %}
+<span class="material-symbols-outlined text-primary text-xl" title="E-mail">mail</span>
+{% else %}
 <span class="material-symbols-outlined text-on-surface-variant/40 text-xl">mail</span>
-<span class="material-symbols-outlined text-primary text-xl">smartphone</span>
+{% endif %}
+
+{% if campanha.canal_app %}
+<span class="material-symbols-outlined text-primary text-xl" title="App Push">smartphone</span>
+{% else %}
+<span class="material-symbols-outlined text-on-surface-variant/40 text-xl">smartphone</span>
+{% endif %}
+
+{% if campanha.canal_whatsapp %}
+<span class="material-symbols-outlined text-secondary text-xl" title="WhatsApp">chat</span>
+{% else %}
 <span class="material-symbols-outlined text-on-surface-variant/40 text-xl">chat</span>
+{% endif %}
 </div>
 <div class="col-span-2 w-full md:w-auto">
-<span class="bg-secondary-container/20 text-secondary px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1.5">
-                        Agendada
-                    </span>
-</div>
-<div class="col-span-1 text-right w-full md:w-auto flex justify-end">
-<button class="w-8 h-8 rounded-full hover:bg-surface-container-highest flex items-center justify-center text-on-surface-variant transition-colors">
-<span class="material-symbols-outlined text-lg">more_vert</span>
-</button>
-</div>
-</div>
-<!-- Item 3 -->
-<div class="bg-surface-container-low hover:bg-surface-container-high transition-all p-6 md:px-6 md:py-4 rounded-xl flex flex-col md:grid md:grid-cols-12 items-center gap-4 md:gap-0 group">
-<div class="col-span-5 flex items-center gap-4 w-full md:w-auto">
-<div class="w-12 h-12 rounded-xl bg-error/10 flex items-center justify-center text-error group-hover:bg-error group-hover:text-on-primary-fixed transition-colors">
-<span class="material-symbols-outlined">heart_broken</span>
-</div>
-<div>
-<h4 class="font-headline font-bold text-on-surface">Pulso de Prevenção de Churn</h4>
-<p class="text-xs text-on-surface-variant">Gatilho disparado se não houver check-in por 7 dias</p>
-</div>
-</div>
-<div class="col-span-2 w-full md:w-auto">
-<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold uppercase text-on-surface-variant">Baseado em comportamento</span>
-</div>
-<div class="col-span-2 flex items-center gap-3 w-full md:w-auto">
-<span class="material-symbols-outlined text-primary text-xl">mail</span>
-<span class="material-symbols-outlined text-primary text-xl">smartphone</span>
-<span class="material-symbols-outlined text-secondary text-xl">chat</span>
-</div>
-<div class="col-span-2 w-full md:w-auto">
-<span class="bg-surface-container-highest text-on-surface-variant px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1.5">
-                        Pausada
-                    </span>
-</div>
-<div class="col-span-1 text-right w-full md:w-auto flex justify-end">
-<button class="w-8 h-8 rounded-full hover:bg-surface-container-highest flex items-center justify-center text-on-surface-variant transition-colors">
-<span class="material-symbols-outlined text-lg">more_vert</span>
-</button>
-</div>
-</div>
-<!-- Item 4 -->
-<div class="bg-surface-container-low hover:bg-surface-container-high transition-all p-6 md:px-6 md:py-4 rounded-xl flex flex-col md:grid md:grid-cols-12 items-center gap-4 md:gap-0 group">
-<div class="col-span-5 flex items-center gap-4 w-full md:w-auto">
-<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary-fixed transition-colors">
-<span class="material-symbols-outlined">celebration</span>
-</div>
-<div>
-<h4 class="font-headline font-bold text-on-surface">Horário de Funcionamento Semana Santa</h4>
-<p class="text-xs text-on-surface-variant">Transmissão para todos os membros ativos</p>
-</div>
-</div>
-<div class="col-span-2 w-full md:w-auto">
-<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold uppercase text-on-surface-variant">Baseado em data</span>
-</div>
-<div class="col-span-2 flex items-center gap-3 w-full md:w-auto">
-<span class="material-symbols-outlined text-primary text-xl">mail</span>
-<span class="material-symbols-outlined text-primary text-xl">smartphone</span>
-<span class="material-symbols-outlined text-secondary text-xl">chat</span>
-</div>
-<div class="col-span-2 w-full md:w-auto">
+{% if campanha.status == 'ativa' %}
 <span class="bg-tertiary-container/20 text-tertiary px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1.5">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
-                        Ativa
-                    </span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span> Ativa
+</span>
+{% elif campanha.status == 'pausada' %}
+<span class="bg-surface-container-highest text-on-surface-variant px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1.5">
+Pausada
+</span>
+{% else %}
+<span class="bg-secondary-container/20 text-secondary px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1.5">
+Rascunho
+</span>
+{% endif %}
 </div>
-<div class="col-span-1 text-right w-full md:w-auto flex justify-end">
-<button class="w-8 h-8 rounded-full hover:bg-surface-container-highest flex items-center justify-center text-on-surface-variant transition-colors">
+<div class="col-span-1 text-right w-full md:w-auto flex justify-end relative">
+<button onclick="document.getElementById('menu-{{ campanha.id }}').classList.toggle('hidden')" onblur="setTimeout(() => document.getElementById('menu-{{ campanha.id }}').classList.add('hidden'), 200)" class="w-8 h-8 rounded-full hover:bg-surface-container-highest flex items-center justify-center text-on-surface-variant transition-colors">
 <span class="material-symbols-outlined text-lg">more_vert</span>
 </button>
+<div id="menu-{{ campanha.id }}" class="hidden absolute right-0 top-10 w-48 bg-surface-container-high rounded-xl shadow-xl border border-white/5 py-2 z-50 flex flex-col items-start overflow-hidden text-left">
+    <a href="{% url 'automacoes_campanha_edit' campanha.id %}" class="w-full px-4 py-2 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">edit</span> Editar
+    </a>
+    <form action="{% url 'automacoes_send_manual' campanha.id %}" method="post" class="w-full m-0">
+        {% csrf_token %}
+        <button type="submit" class="w-full text-left px-4 py-2 text-xs font-bold text-secondary hover:text-on-primary-fixed hover:bg-secondary transition-colors flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">send</span> Disparo Manual
+        </button>
+    </form>
+    <div class="w-full border-t border-outline-variant/10 my-1"></div>
+    <form action="{% url 'automacoes_delete' campanha.id %}" method="post" class="w-full m-0">
+        {% csrf_token %}
+        <button type="submit" class="w-full text-left px-4 py-2 text-xs font-bold text-error hover:text-on-primary-fixed hover:bg-error transition-colors flex items-center gap-2" onclick="return confirm('Deseja realmente excluir esta campanha?')">
+            <span class="material-symbols-outlined text-sm">delete</span> Excluir
+        </button>
+    </form>
 </div>
 </div>
+</div>
+{% empty %}
+<div class="text-center py-12 bg-surface-container-low rounded-xl border border-outline-variant/5">
+<span class="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-4 block">campaign</span>
+<h3 class="text-on-surface-variant font-bold">Nenhuma automação cadastrada.</h3>
+</div>
+{% endfor %}
+
 </div>
 <!-- Visual Flow Concept Section -->
 <div class="mt-12">
@@ -418,25 +338,30 @@
 </div>
 </div>
 </main>
-<!-- Bottom Navigation (Mobile Only) -->
-<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-6 pb-4 pt-2 md:hidden bg-surface-container backdrop-blur-xl rounded-t-xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)]">
-<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary" href="{% url 'crm_dashboard' %}">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="font-label text-[10px] uppercase font-bold">Início</span>
-</a>
-<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full w-14 h-14 -mt-4 shadow-lg" href="{% url 'automacoes_hub' %}">
-<span class="material-symbols-outlined">bolt</span>
-<span class="font-label text-[10px] uppercase font-bold">Automar</span>
-</a>
-<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary" href="{% url 'automacoes_campanha' %}">
-<span class="material-symbols-outlined">send</span>
-<span class="font-label text-[10px] uppercase font-bold">Campanhas</span>
-</a>
-<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary" href="#">
-<span class="material-symbols-outlined">sensors</span>
-<span class="font-label text-[10px] uppercase font-bold">Pulso</span>
-</a>
-</nav>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-container-high/90 backdrop-blur-2xl border-t border-white/10 z-[100] flex items-center justify-around px-4">
+    <a href="{% url 'crm_dashboard' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">grid_view</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Dash</span>
+    </a>
+    <a href="{% url 'crm_alunos_list' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">group</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Alunos</span>
+    </a>
+    <div class="relative -top-8">
+        <a href="{% url 'crm_aluno_create' %}" class="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,145,89,0.4)]">
+            <span class="material-symbols-outlined text-3xl font-black">person_add</span>
+        </a>
+    </div>
+    <a href="{% url 'automacoes_hub' %}" class="flex flex-col items-center gap-1 text-primary">
+        <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Automar</span>
+    </a>
+    <a href="{% url 'crm_caixa' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">payments</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Caixa</span>
+    </a>
+</div>
 <script>
     // Simple micro-interactions
     document.querySelectorAll('.group').forEach(item => {

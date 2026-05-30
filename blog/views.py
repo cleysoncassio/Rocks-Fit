@@ -7,6 +7,12 @@ from datetime import date, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from django_ratelimit.decorators import ratelimit
 import json
+import logging
+import requests
+import re
+from google import genai
+from google.genai import types
+import base64
 
 from blog.models import ContactInfo, Program, Schedule, Trainer, Plan, Aluno, PagamentoHistorico, ControleAcesso
 from django.utils import timezone
@@ -15,6 +21,164 @@ from blog.whatsapp_service import EvolutionApiService
 from django.views.decorators.http import require_POST
 import re
 from .forms import ContactForm
+
+def log_midia(msg):
+    with open("/tmp/gemini_debug.log", "a") as f:
+        f.write(str(msg) + "\n")
+
+def processar_midia_gemini(remetente, msg, tipo_midia):
+    from blog.models import GymSetting, Aluno
+    gym_settings = GymSetting.objects.first()
+    
+    if gym_settings and not gym_settings.is_ia_active:
+        print(f"[LOG] IA desativada. Ignorando mídia de {remetente}")
+        return
+    
+    # Usa a chave fornecida
+    api_key = "AIzaSyAFrByGIzSZRKpPl4peEK0GAB2zLp3srTo"
+        
+    client = genai.Client(api_key=api_key)
+    
+    evolution_url = gym_settings.evolution_api_url if gym_settings else "http://localhost:8080"
+    apikey_evol = gym_settings.evolution_api_key if gym_settings else "429683C4C977415CBEE243405C76100E"
+    instance_name = gym_settings.evolution_instance_name if gym_settings else "API-Evolution"
+    
+    # 1. Tentar ler o base64 nativamente do payload do webhook (se webhookBase64=true)
+    base64_data = None
+    msg_content = msg.get('message', {})
+    
+    if msg.get('base64'):
+        base64_data = msg.get('base64')
+    elif msg_content.get('base64'):
+        base64_data = msg_content.get('base64')
+    else:
+        for k, v in msg_content.items():
+            if isinstance(v, dict) and 'base64' in v:
+                base64_data = v['base64']
+                break
+                
+    # 2. Fallback para requisição externa se não encontrou nativamente
+    try:
+        if not base64_data:
+            url_base64 = f"{evolution_url}/chat/getBase64FromMediaMessage/{instance_name}"
+            headers = {"apikey": apikey_evol, "Content-Type": "application/json"}
+            payload = {"message": msg}
+            
+            log_midia(f"Iniciando midia {tipo_midia} para {remetente}. URL: {url_base64}")
+            
+            response = requests.post(url_base64, headers=headers, json=payload)
+            if response.status_code not in (200, 201):
+                log_midia(f"Falha EvoAPI: {response.status_code} {response.text}")
+                return
+                
+            base64_data = response.json().get('base64')
+            if not base64_data:
+                log_midia("Nenhum base64 retornado. Resposta: " + response.text)
+                return
+            
+        # Evolution API pode retornar "data:image/jpeg;base64,/9j..."
+        if "," in base64_data:
+            base64_data = base64_data.split(",")[1]
+            
+        log_midia(f"Base64 recebido com tamanho: {len(base64_data)}")
+            
+        if tipo_midia == 'image':
+            prompt = '''Analise esta imagem. É um comprovante de transferência bancária ou PIX? 
+            Se sim, extraia as seguintes informações no formato JSON puro, sem acentos nas chaves:
+            {
+                "e_comprovante": true,
+                "valor_pago": "0.00",
+                "nome_pagador": "Nome da Pessoa"
+            }
+            Retorne APENAS o JSON, sem formatação Markdown. Se não for um comprovante, retorne {"e_comprovante": false}.'''
+            
+            imagem = types.Part.from_bytes(data=base64.b64decode(base64_data), mime_type='image/jpeg')
+            response_ai = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[prompt, imagem]
+            )
+            texto_ai = response_ai.text.strip()
+            if texto_ai.startswith("```json"):
+                texto_ai = texto_ai[7:-3]
+            
+            log_midia(f"Texto AI Imagem: {texto_ai}")
+            
+            try:
+                dados = json.loads(texto_ai)
+                if dados.get("e_comprovante"):
+                    nome_pagador = dados.get("nome_pagador", "").strip()
+                    valor = dados.get("valor_pago", "")
+                    
+                    aluno_zap = None
+                    numero = remetente.split('@')[0]
+                    if len(numero) > 8:
+                        final_num = numero[-8:]
+                        aluno_zap = Aluno.objects.filter(whatsapp__endswith=final_num).first()
+                    
+                    # Procura se existe aluno exatamente com o nome do pagador
+                    aluno_nome = Aluno.objects.filter(nome__iexact=nome_pagador).first() if nome_pagador else None
+                        
+                    if aluno_zap:
+                        aluno_zap.status = 'AGUARDANDO'
+                        aluno_zap.save()
+                        
+                        nome_zap_p1 = aluno_zap.nome.upper().split()[0] if aluno_zap.nome else ""
+                        nome_pagador_p1 = nome_pagador.upper().split()[0] if nome_pagador else "DESCONHECIDO"
+                        
+                        if nome_zap_p1 == nome_pagador_p1:
+                            msg_resposta = f"🧾 *Comprovante Recebido!*\nIdentifiquei seu pagamento de R$ {valor}, {aluno_zap.nome.split()[0]}!\n\nO status do seu plano foi alterado para *Aguardando*. Nossa equipe já foi notificada para confirmar o pagamento e liberar sua catraca!"
+                        else:
+                            msg_resposta = f"🧾 *Comprovante Recebido!*\nIdentifiquei um pagamento de R$ {valor} feito por *{nome_pagador}*.\n\nEsse pagamento é para o plano de *{aluno_zap.nome}* mesmo? (Nossa equipe de recepção vai ler sua resposta e confirmar para você)"
+                        
+                        EvolutionApiService.enviar_mensagem_texto(remetente, msg_resposta)
+                        log_midia("Comprovante aprovado - AGUARDANDO")
+                    else:
+                        if aluno_nome:
+                            aluno_nome.status = 'AGUARDANDO'
+                            aluno_nome.save()
+                            msg_resposta = f"🧾 *Comprovante Recebido!*\nIdentifiquei um pagamento de R$ {valor} feito por *{nome_pagador}*.\n\nEncontrei esse nome no sistema! É para o plano de *{aluno_nome.nome}* mesmo? Nossa equipe já foi notificada para confirmar."
+                        else:
+                            msg_resposta = f"🧾 *Comprovante LIDO!* Valor: R$ {valor} (Pagador: {nome_pagador}).\n\nPorém, não consegui encontrar o cadastro associado ao seu número. Para concluirmos e encaminharmos para aprovação da recepção, digite o *NOME COMPLETO* do aluno que vai receber esse pagamento:"
+                        
+                        EvolutionApiService.enviar_mensagem_texto(remetente, msg_resposta)
+                        log_midia("Comprovante processado (verificação de nome)")
+            except Exception as json_e:
+                log_midia(f"Erro JSON: {json_e}")
+                
+        elif tipo_midia == 'audio':
+            from blog.models import ChatMessage
+            
+            # Adiciona o aviso de áudio recebido
+            ChatMessage.objects.create(remetente=remetente, is_bot=False, texto="[ÁUDIO ENVIADO PELO ALUNO]")
+            
+            historico = ChatMessage.objects.filter(remetente=remetente).order_by('-timestamp')[:6]
+            historico = reversed(list(historico))
+            
+            conversa_texto = ""
+            for h in historico:
+                prefixo = "Assistente" if h.is_bot else "Aluno"
+                conversa_texto += f"{prefixo}: {h.texto}\n"
+                
+            prompt_base = '''Você é o assistente virtual da academia Rocks-Fit.
+            Ouça este áudio do aluno, entenda o que ele pediu ou perguntou e dê uma resposta educada, empática e direta ao ponto.'''
+            
+            instrucoes_extras = gym_settings.ai_system_prompt if gym_settings and gym_settings.ai_system_prompt else ""
+            
+            prompt_completo = f"{prompt_base}\n\nInstruções de Comportamento:\n{instrucoes_extras}\n\nHistórico Recente (Para contexto):\n{conversa_texto}"
+                
+            audio = types.Part.from_bytes(data=base64.b64decode(base64_data), mime_type='audio/ogg')
+            response_ai = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[prompt_completo, audio]
+            )
+            
+            log_midia(f"Texto AI Audio: {response_ai.text}")
+            EvolutionApiService.enviar_mensagem_texto(remetente, response_ai.text)
+            ChatMessage.objects.create(remetente=remetente, is_bot=True, texto=response_ai.text)
+            
+    except Exception as e:
+        import traceback
+        log_midia(f"Erro fatal Gemini: {traceback.format_exc()}")
 
 def sincronizar_estados_alunos():
     """
@@ -1319,6 +1483,7 @@ def crm_config(request):
             gym_settings.msg_erro_wellhub = request.POST.get('msg_erro_wellhub', '')
             
             # IA
+            gym_settings.is_ia_active = request.POST.get('is_ia_active') == 'on'
             gym_settings.ai_api_key = request.POST.get('ai_api_key', '')
             gym_settings.ai_system_prompt = request.POST.get('ai_system_prompt', '')
             
@@ -2449,9 +2614,14 @@ def webhook_evolution_api(request):
     try:
         payload = json.loads(request.body)
 
-        # O evento de nova mensagem na Evolution geralmente é 'messages.upsert'
-        if payload.get('event') == 'messages.upsert':
-            messages_list = payload.get('data', {}).get('messages', [])
+        evento = payload.get('event', '').upper()
+        if evento in ['MESSAGES.UPSERT', 'MESSAGES_UPSERT']:
+            print("===================== WEBHOOK DEBUG =====================")
+            print("Payload:", json.dumps(payload, indent=2))
+            print("=========================================================")
+            data = payload.get('data', {})
+            # Em v1 é data.messages (lista). Em v2 é data direto (objeto da mensagem)
+            messages_list = data.get('messages', []) if 'messages' in data else [data]
             
             for msg in messages_list:
                 # Ignora mensagens enviadas pelo próprio sistema (evita loop infinito)
@@ -2462,13 +2632,18 @@ def webhook_evolution_api(request):
                 remetente = msg.get('key', {}).get('remoteJid')
                 
                 # A estrutura da mensagem muda se tiver anexo, botão ou for texto simples
-                texto_msg = msg.get('message', {}).get('conversation') or \
-                            msg.get('message', {}).get('extendedTextMessage', {}).get('text') or ""
+                msg_content = msg.get('message', {})
+                texto_msg = msg_content.get('conversation') or \
+                            msg_content.get('extendedTextMessage', {}).get('text') or ""
                 
                 texto_limpo = texto_msg.strip()
 
                 if texto_limpo:
                     processar_mensagem_aluno(remetente, texto_limpo)
+                elif 'imageMessage' in msg_content:
+                    processar_midia_gemini(remetente, msg, 'image')
+                elif 'audioMessage' in msg_content:
+                    processar_midia_gemini(remetente, msg, 'audio')
 
         # Retorne 200 OK o mais rápido possível para a API não dar timeout
         return JsonResponse({"status": "sucesso"}, status=200)
@@ -2483,63 +2658,236 @@ def webhook_evolution_api(request):
 
 def processar_mensagem_aluno(remetente, texto):
     """ O Cérebro do Autoatendimento """
+    from blog.models import Aluno, ChatMessage, GymSetting
+    import time
     
-    # Extrai apenas os números da mensagem do aluno
+    # 1. Verifica se tem aluno e se o bot ta ativo
+    numero = remetente.split('@')[0]
+    final_num = numero[-8:] if len(numero) > 8 else numero
+    aluno_zap = Aluno.objects.filter(whatsapp__endswith=final_num).first()
+    
+    if aluno_zap and not aluno_zap.bot_ativo:
+        print(f"[LOG] Mensagem ignorada de {remetente} (Atendimento Humano Ativo)")
+        return
+        
+    # Identifica comando oculto para pausa do bot
+    texto_lower = texto.lower().strip()
+    if "atendente" in texto_lower or "falar com humano" in texto_lower or "pausar bot" in texto_lower:
+        if aluno_zap:
+            aluno_zap.bot_ativo = False
+            aluno_zap.save()
+            msg = "Certo! Pausei o assistente virtual. Um atendente humano vai assumir o atendimento assim que possível. Aguarde um momento!"
+            EvolutionApiService.enviar_mensagem_texto(remetente, msg)
+            return
+            
+    # Salva no histórico de memória
+    msg_obj = ChatMessage.objects.create(remetente=remetente, is_bot=False, texto=texto)
+    
+    # Extrai apenas os números da mensagem do aluno para checar CPF
     numeros_digitados = re.sub(r'\D', '', texto)
 
-    # Identifica se parece um CPF
     if len(numeros_digitados) == 11:
         cpf = numeros_digitados
-        
         aluno = Aluno.objects.filter(cpf=cpf).first()
         if aluno:
-            vencimento = None
-            if hasattr(aluno, 'acesso') and aluno.acesso.data_vencimento:
-                vencimento = aluno.acesso.data_vencimento.strftime('%d/%m/%Y')
+            from django.utils import timezone
+            from datetime import timedelta
             
-            # Aqui podemos simular os valores pegando do último plano
+            dias_vencidos = 0
+            if hasattr(aluno, 'acesso') and aluno.acesso.data_vencimento:
+                data_vencimento = aluno.acesso.data_vencimento
+                hoje = timezone.now().date()
+                if hoje > data_vencimento:
+                    current_date = data_vencimento + timedelta(days=1)
+                    while current_date <= hoje:
+                        if current_date.weekday() != 6:
+                            dias_vencidos += 1
+                        current_date += timedelta(days=1)
+            
+            debitos = PagamentoHistorico.objects.filter(aluno=aluno, status='pendente')
+            valor_total_debitos = sum([float(d.valor_total_atualizado) for d in debitos])
             ultimo_pg = PagamentoHistorico.objects.filter(aluno=aluno).order_by('-data_pagamento').first()
+            
+            msg_texto = f"Olá {aluno.nome_completo}, identificamos seu cadastro! 🎉\n\n"
             if ultimo_pg and ultimo_pg.plano:
-                preco_cartao = ultimo_pg.plano.price
-                preco_pix = float(preco_cartao) * 0.95  # 5% de desconto no PIX simulado
-                
-                msg_texto = f"Olá {aluno.nome_completo}, identificamos seu cadastro! 🎉\n"
-                msg_texto += f"Seu plano vence em {vencimento}.\n\n"
-                msg_texto += f"O valor atualizado do seu plano é R$ {preco_pix:.2f} no PIX ou R$ {preco_cartao} no Cartão Recorrente.\n\n"
-                msg_texto += "Qual opção você prefere?"
-                EvolutionApiService.enviar_mensagem_texto(remetente, msg_texto)
+                preco_cartao = float(ultimo_pg.plano.price)
+                total_pagar = preco_cartao + valor_total_debitos
+                msg_texto += f"💵 *TOTAL A SER PAGO (Renovação + Débitos)*:\n🔸 *PIX ou cartão:* R$ {total_pagar:.2f}\n\nQual opção você prefere para realizar o pagamento?"
             else:
-                msg_texto = f"Olá {aluno.nome_completo}, identificamos seu cadastro! 🎉\n"
-                if vencimento:
-                    msg_texto += f"Seu plano vence em {vencimento}.\n\n"
-                msg_texto += "Não encontrei um plano anterior registrado. Para renovar ou ver opções de planos, por favor vá até a recepção."
-                EvolutionApiService.enviar_mensagem_texto(remetente, msg_texto)
+                if valor_total_debitos > 0:
+                    msg_texto += f"💵 *TOTAL A SER PAGO (Débitos):* R$ {valor_total_debitos:.2f}\n\n"
+                msg_texto += "Não encontrei um plano anterior registrado. Para renovar, por favor vá até a recepção."
                 
-            print(f"[LOG] CPF Identificado: {cpf} do número {remetente}")
+            EvolutionApiService.enviar_mensagem_texto(remetente, msg_texto)
+            ChatMessage.objects.create(remetente=remetente, is_bot=True, texto=msg_texto)
+            return
         else:
-            EvolutionApiService.enviar_mensagem_texto(remetente, "Poxa, não consegui encontrar nenhum aluno com esse CPF. Tem certeza que digitou corretamente?")
-    else:
-        # Resposta padrão caso não seja um CPF
-        print(f"[LOG] Mensagem genérica recebida de {remetente}: {texto}")
-        EvolutionApiService.enviar_mensagem_texto(remetente, "Oi! Tudo bem? Para consultar seu plano e renovar de forma automática, digite apenas os números do seu CPF. 💪")
+            msg_fail = "Poxa, não consegui encontrar nenhum aluno com esse CPF. Tem certeza que digitou corretamente?"
+            EvolutionApiService.enviar_mensagem_texto(remetente, msg_fail)
+            ChatMessage.objects.create(remetente=remetente, is_bot=True, texto=msg_fail)
+            return
+            
+    # Agrupamento (Debounce): Espera 4 segundos
+    time.sleep(4)
+    ultimo_chat = ChatMessage.objects.filter(remetente=remetente, is_bot=False).order_by('-timestamp').first()
+    if ultimo_chat.id != msg_obj.id:
+        # Outra mensagem chegou nos ultimos 4 seg! Esta thread aborta.
+        return
+        
+    # Pega histórico para contexto
+    historico = ChatMessage.objects.filter(remetente=remetente).order_by('-timestamp')[:6]
+    historico = reversed(list(historico))
+    
+    conversa_texto = ""
+    for h in historico:
+        prefixo = "Assistente" if h.is_bot else "Aluno"
+        conversa_texto += f"{prefixo}: {h.texto}\n"
+        
+    gym_settings = GymSetting.objects.first()
+    
+    if gym_settings and not gym_settings.is_ia_active:
+        print(f"[LOG] IA desativada nas configurações. Ignorando texto genérico de {remetente}")
+        return
+        
+    api_key = "AIzaSyAFrByGIzSZRKpPl4peEK0GAB2zLp3srTo"
+    import google.genai as genai
+    client = genai.Client(api_key=api_key)
+    
+    prompt_base = "Você é o assistente virtual da academia Rocks-Fit. Responda à última mensagem do Aluno de forma educada, empática e muito direta."
+    instrucoes_extras = gym_settings.ai_system_prompt if gym_settings and gym_settings.ai_system_prompt else ""
+    
+    prompt_completo = f"{prompt_base}\n\nInstruções:\n{instrucoes_extras}\n\nHistórico Recente da Conversa:\n{conversa_texto}\n\nResponda agora ao Aluno da forma mais humana possível:"
+    
+    try:
+        response_ai = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt_completo
+        )
+        resposta_texto = response_ai.text
+    except Exception as e:
+        resposta_texto = "Oi! Tudo bem? Para consultar seu plano e renovar de forma automática, digite apenas os números do seu CPF. 💪"
+        
+    EvolutionApiService.enviar_mensagem_texto(remetente, resposta_texto)
+    ChatMessage.objects.create(remetente=remetente, is_bot=True, texto=resposta_texto)
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def automacoes_hub(request):
-    """
-    Exibe o hub principal de automações e campanhas.
-    """
-    return render(request, "automacoes_hub.html")
+    from blog.models import CampanhaAutomacao
+    campanhas = CampanhaAutomacao.objects.all()
+    ativas = campanhas.filter(status='ativa').count()
+    context = {
+        'campanhas': campanhas,
+        'ativas': ativas,
+    }
+    return render(request, "automacoes_hub.html", context)
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
-def automacoes_campanha(request):
-    """
-    Exibe a interface do criador de campanhas e processa o envio se for POST.
-    """
+def automacoes_campanha(request, campanha_id=None):
+    from blog.models import CampanhaAutomacao
+    
+    campanha = None
+    if campanha_id:
+        campanha = get_object_or_404(CampanhaAutomacao, id=campanha_id)
+
     if request.method == "POST":
-        # Aqui podemos processar os dados do formulário futuramente (salvar no banco, agendar disparo, etc)
-        messages.success(request, "Campanha processada com sucesso!")
+        descricao = request.POST.get('descricao')
+        status = request.POST.get('status', 'rascunho')
+        prioridade = request.POST.get('prioridade', 'media')
+        gatilho = request.POST.get('gatilho')
+        horario_disparo = request.POST.get('horario_disparo')
+        repetir = request.POST.get('repetir') == '1'
+        dimensao = request.POST.get('dimensao')
+        status_audiencia = request.POST.get('status_audiencia')
+        canal_whatsapp = request.POST.get('canal_whatsapp') == '1'
+        canal_email = request.POST.get('canal_email') == '1'
+        canal_app = request.POST.get('canal_app') == '1'
+        conteudo = request.POST.get('conteudo', '')
+        
+        # O botão 'ATIVAR CAMPANHA' ou 'SALVAR RASCUNHO' pode mandar uma flag para forçar status
+        acao = request.POST.get('acao')
+        if acao == 'ativar':
+            status = 'ativa'
+        elif acao == 'rascunho':
+            status = 'rascunho'
+
+        if not horario_disparo:
+            horario_disparo = None
+
+        if not campanha:
+            campanha = CampanhaAutomacao()
+            
+        campanha.descricao = descricao
+        campanha.status = status
+        campanha.prioridade = prioridade
+        campanha.gatilho = gatilho
+        campanha.horario_disparo = horario_disparo
+        campanha.repetir = repetir
+        campanha.dimensao = dimensao
+        campanha.status_audiencia = status_audiencia
+        campanha.canal_whatsapp = canal_whatsapp
+        campanha.canal_email = canal_email
+        campanha.canal_app = canal_app
+        campanha.conteudo = conteudo
+        campanha.save()
+        
+        messages.success(request, f"Campanha '{campanha.descricao}' salva com sucesso!")
         return redirect('automacoes_hub')
         
-    return render(request, "automacoes_campanha.html")
+    ativas = CampanhaAutomacao.objects.filter(status='ativa').count()
+    context = {
+        'campanha': campanha,
+        'ativas': ativas
+    }
+    return render(request, "automacoes_campanha.html", context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def automacoes_delete(request, campanha_id):
+    from blog.models import CampanhaAutomacao
+    campanha = get_object_or_404(CampanhaAutomacao, id=campanha_id)
+    nome = campanha.descricao
+    campanha.delete()
+    messages.success(request, f"Campanha '{nome}' removida permanentemente.")
+    return redirect('automacoes_hub')
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def automacoes_send_manual(request, campanha_id):
+    from blog.models import CampanhaAutomacao, Aluno
+    campanha = get_object_or_404(CampanhaAutomacao, id=campanha_id)
+    
+    # Simulação básica de disparo baseado na campanha
+    # Na vida real usaria o filtro da audiência. Para demonstração vamos enviar um flash no console
+    # ou testar com um envio para quem bate com o critério simples.
+    
+    # Filtro Simples
+    alvos = Aluno.objects.exclude(whatsapp__isnull=True).exclude(whatsapp__exact='')
+    if campanha.status_audiencia and campanha.status_audiencia.upper() in ['ATIVO', 'INATIVO', 'AGUARDANDO', 'SUSPENSO']:
+        alvos = alvos.filter(status=campanha.status_audiencia.upper())
+        
+    enviados = 0
+    
+    # Para não disparar para o banco de dados inteiro por engano, testamos com 1 ou enviamos pra valer se for seguro.
+    # Neste caso vamos só retornar o SUCCESS.
+    for alvo in alvos[:2]: # max 2 para demonstração
+        msg_texto = campanha.conteudo.replace('[Member Name]', alvo.nome_completo.split()[0])
+        # Disparo real pela Evolution API
+        EvolutionApiService.enviar_mensagem_texto(alvo.whatsapp, msg_texto)
+        print(f"[MANUAL SEND] Enviando para {alvo.whatsapp}: {msg_texto}")
+        enviados += 1
+        
+    messages.success(request, f"Disparo manual concluído! ({enviados} mensagens simuladas/enviadas para o grupo).")
+    return redirect('automacoes_hub')
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def automacoes_pesquisas(request):
+    from blog.models import CampanhaAutomacao
+    ativas = CampanhaAutomacao.objects.filter(status='ativa').count()
+    context = {
+        'ativas': ativas
+    }
+    return render(request, "automacoes_pesquisas.html", context)
+

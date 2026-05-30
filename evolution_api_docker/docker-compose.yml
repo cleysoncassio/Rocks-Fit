@@ -17,6 +17,7 @@ services:
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=429683C4C977415CBEE243405C76100E
       - AUTHENTICATION_EXPOSE_IN_ENV=true
+      - TYPEBOT_ENABLED=true
 
       # Configuração de Banco de Dados (Obrigatório na v2)
       - DATABASE_ENABLED=true
@@ -40,6 +41,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     dns:
       - 8.8.8.8

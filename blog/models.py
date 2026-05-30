@@ -263,6 +263,8 @@ class Aluno(models.Model):
     digital = models.TextField(blank=True, null=True, verbose_name="Digital (Template Biométrico)")
     data_cadastro = models.DateTimeField(auto_now_add=True, verbose_name="Data de Cadastro")
     
+    bot_ativo = models.BooleanField(default=True, verbose_name="Bot do WhatsApp Ativo", help_text="Se falso, o bot de IA ignora as mensagens deste aluno (útil para atendimento humano).")
+    
     # Cancelamento / Inativação
     motivo_cancelamento = models.CharField(max_length=255, blank=True, null=True, verbose_name="Motivo do Cancelamento")
     data_cancelamento = models.DateField(blank=True, null=True, verbose_name="Data do Cancelamento")
@@ -689,6 +691,7 @@ class GymSetting(models.Model):
     catraca_fluxo = models.CharField(max_length=20, choices=CATRACA_FLUXO_CHOICES, default='BIDIRECIONAL', verbose_name="Controle de Fluxo")
     
     # Configurações de IA
+    is_ia_active = models.BooleanField(default=True, verbose_name="Ativar IA no WhatsApp")
     ai_system_prompt = models.TextField(blank=True, null=True, verbose_name="Prompt de Sistema da IA")
     ai_api_key = models.CharField(max_length=255, blank=True, null=True, verbose_name="API Key (OpenRouter/Qwen)")
 
@@ -824,3 +827,64 @@ def save_user_profile(sender, instance, **kwargs):
 # --- 🚀 SINCRONIZAÇÃO LOCAL (rks-catraca) ---
 # ... (restante do código de exportação JSON já existente)
 
+class CampanhaAutomacao(models.Model):
+    STATUS_CHOICES = [
+        ('ativa', 'Ativa'),
+        ('pausada', 'Pausada'),
+        ('rascunho', 'Rascunho'),
+    ]
+    PRIORIDADE_CHOICES = [
+        ('baixa', 'Baixa'),
+        ('media', 'Média'),
+        ('alta', 'Alta'),
+    ]
+    GATILHO_CHOICES = [
+        ('data', 'Data & Hora Agendada'),
+        ('checkin', 'No Check-in do Membro'),
+        ('cadastro', 'No Novo Cadastro'),
+        ('pagamento', 'No Sucesso do Pagamento'),
+        ('pesquisa', 'Envio de Pesquisa de Opinião'),
+    ]
+    
+    descricao = models.CharField(max_length=255, verbose_name="Descrição da Campanha")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='rascunho')
+    prioridade = models.CharField(max_length=10, choices=PRIORIDADE_CHOICES, default='media')
+    
+    gatilho = models.CharField(max_length=20, choices=GATILHO_CHOICES)
+    horario_disparo = models.DateTimeField(null=True, blank=True)
+    repetir = models.BooleanField(default=False)
+    
+    dimensao = models.CharField(max_length=50, blank=True, null=True)
+    status_audiencia = models.CharField(max_length=50, blank=True, null=True)
+    
+    canal_whatsapp = models.BooleanField(default=True)
+    canal_email = models.BooleanField(default=False)
+    canal_app = models.BooleanField(default=False)
+    
+    conteudo = models.TextField(verbose_name="Conteúdo da Mensagem")
+    
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.descricao} ({self.get_status_display()})"
+    
+    class Meta:
+        verbose_name = "Campanha de Automação"
+        verbose_name_plural = "Campanhas de Automação"
+        ordering = ['-criado_em']
+
+class ChatMessage(models.Model):
+    remetente = models.CharField(max_length=50, verbose_name="Número do WhatsApp")
+    is_bot = models.BooleanField(default=False, verbose_name="Enviado pelo Bot?")
+    texto = models.TextField(verbose_name="Texto da Mensagem")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        tipo = "BOT" if self.is_bot else "USUÁRIO"
+        return f"[{tipo}] {self.remetente}: {self.texto[:30]}..."
+        
+    class Meta:
+        verbose_name = "Mensagem de Chat (IA)"
+        verbose_name_plural = "Histórico de Chat (IA)"
+        ordering = ['timestamp']

@@ -131,8 +131,16 @@
                     </div>
 
                     <div class="grid grid-cols-1 gap-10">
+                        <div class="bg-purple-500/5 p-6 rounded-2xl border border-purple-500/20 flex flex-col justify-center">
+                            <label class="flex items-center gap-4 cursor-pointer">
+                                <input type="checkbox" name="is_ia_active" {% if gym_settings.is_ia_active %}checked{% endif %} class="rocks-checkbox w-6 h-6 bg-white dark:bg-black border-slate-300 dark:border-white/10 rounded-md focus:ring-purple-500 transition-all text-purple-500">
+                                <span class="font-headline font-black text-sm uppercase tracking-widest text-purple-500">Ativar IA no Atendimento WhatsApp</span>
+                            </label>
+                            <p class="text-xs font-bold text-neutral-500 mt-2 ml-10">Se desativado, o robô ignorará todas as mensagens de texto e áudio.</p>
+                        </div>
+
                         <div class="space-y-3">
-                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">OpenRouter API Key (Qwen)</label>
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">OpenRouter API Key (Qwen / Alternativa)</label>
                             <div class="relative">
                                 <span class="absolute left-6 top-1/2 -translate-y-1/2 material-symbols-outlined text-purple-500">key</span>
                                 <input type="password" name="ai_api_key" value="{{ gym_settings.ai_api_key|default:'' }}" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-2xl py-4 pl-14 pr-6 font-black font-headline text-on-surface focus:ring-1 focus:ring-purple-500 outline-none transition-all" placeholder="sk-or-v1-...">
@@ -140,7 +148,7 @@
                         </div>
 
                         <div class="space-y-3">
-                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Prompt de Sistema (Personalidade e Regras)</label>
+                            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Prompt de Sistema (Personalidade e Regras para o Gemini/Evolution)</label>
                             <textarea name="ai_system_prompt" rows="8" class="w-full bg-slate-50 dark:bg-black/40 border-none rounded-[32px] py-6 px-8 font-bold font-headline text-sm text-on-surface focus:ring-1 focus:ring-purple-500 outline-none transition-all resize-none">{{ gym_settings.ai_system_prompt }}</textarea>
                         </div>
                     </div>

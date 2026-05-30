@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html class="dark" lang="pt-BR"><head>
 <meta charset="utf-8"/>
@@ -118,80 +119,36 @@
         }
     </style>
 </head>
-<body class="bg-background text-on-background font-body custom-scrollbar selection:bg-primary selection:text-on-primary-fixed">
+<body class="bg-surface text-on-surface font-body flex h-screen overflow-hidden custom-scrollbar selection:bg-primary selection:text-on-primary-fixed">
+{% include "crm/sidebar.html" %}
+<!-- Main Content Canvas -->
+<main class="ml-0 md:ml-64 flex-grow flex flex-col h-screen overflow-y-auto pt-4 pb-24 px-6 md:px-12">
 <!-- Top Navigation Anchor -->
-<header class="bg-surface-container-low dark:bg-surface-container-low fixed top-0 left-0 right-0 z-40 flex justify-between items-center w-full px-8 h-20">
+<header class="sticky top-0 w-full bg-surface/80 backdrop-blur-md flex justify-between items-center px-2 md:px-0 h-20 z-40 mb-8">
 <div class="flex items-center gap-12">
-<div class="font-display text-2xl font-black text-primary dark:text-primary tracking-tighter">
-                ROCKS FIT FORGE OS
-            </div>
 <nav class="hidden md:flex items-center gap-8 h-full">
 <a class="text-on-surface-variant dark:text-on-surface-variant font-label text-sm font-medium hover:text-primary transition-colors duration-200" href="{% url 'crm_dashboard' %}">Dashboard</a>
 <a class="text-primary dark:text-primary font-bold border-b-2 border-primary font-label text-sm flex items-center h-20" href="{% url 'automacoes_hub' %}">Automações</a>
 <a class="text-on-surface-variant dark:text-on-surface-variant font-label text-sm font-medium hover:text-primary transition-colors duration-200" href="{% url 'automacoes_campanha' %}">Campanhas</a>
-<a class="text-on-surface-variant dark:text-on-surface-variant font-label text-sm font-medium hover:text-primary transition-colors duration-200" href="#">Pesquisas</a>
 </nav>
 </div>
-<div class="flex items-center gap-6">
-<button class="text-on-surface-variant hover:text-primary transition-colors">
+<div class="flex items-center gap-4">
+<button class="relative text-on-surface-variant hover:text-primary transition-colors group">
 <span class="material-symbols-outlined">notifications</span>
-</button>
-<button class="text-on-surface-variant hover:text-primary transition-colors">
-<span class="material-symbols-outlined">settings</span>
-</button>
-<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20">
-<img alt="Perfil do Gestor" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEfMCFss5kM7R78_7Pw3sD0TUx9C5QBGcfLCMMtRlqSjqjN987xdFm54eFU_0Sy8fuO0JdgJBIKcreeN7HGx2w2sBwOsuAFwAIigr0UdcuX0Y7HjjxZUBJfiJ8bGQqDXt_bARQc6vmBazAh53h9gh1YhIPGnygiexN7Bc0HBvETacHxbC0_RlENDtUa6YCR8WWHbXEK-qZjChwpa6lT9lw4FkyKQU47ZItrAVa0ZLH06vUEXLpSGClkZJugmL7i_SL0ppVtnKSBYw"/>
+{% if ativas > 0 %}
+<span class="absolute -top-1 -right-1 flex h-3 w-3">
+  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+  <span class="relative inline-flex rounded-full h-3 w-3 bg-primary border-2 border-surface text-[7px] font-bold text-on-primary-fixed items-center justify-center">{{ ativas }}</span>
+</span>
+<!-- Tooltip -->
+<div class="absolute right-0 top-8 w-48 bg-surface-container-high text-xs text-on-surface p-2 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg">
+    {{ ativas }} campanha(s) ativa(s) no momento.
 </div>
+{% endif %}
+</button>
 </div>
 </header>
-<!-- Sidebar Layout -->
-<aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low dark:bg-surface-container-low flex flex-col pt-24 pb-8 border-r border-outline-variant/10 hidden xl:flex">
-<div class="px-6 mb-8">
-<div class="flex items-center gap-3 p-4 bg-surface-container-high rounded-xl">
-<div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
-</div>
-<div>
-<h3 class="font-display text-sm font-bold text-on-surface">Forge OS</h3>
-<p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">V2.4 ATIVO</p>
-</div>
-</div>
-</div>
-<nav class="flex-1 px-4 space-y-1">
-<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="{% url 'crm_dashboard' %}">
-<span class="material-symbols-outlined">terminal</span>
-<span class="font-label text-sm font-medium">Controle de Missão</span>
-</a>
-<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="#">
-<span class="material-symbols-outlined">group</span>
-<span class="font-label text-sm font-medium">Base de Membros</span>
-</a>
-<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="{% url 'automacoes_hub' %}">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
-<span class="font-label text-sm font-medium">Hub de Automação</span>
-</a>
-<a class="bg-surface-container-highest text-primary border-l-4 border-primary px-4 py-3 flex items-center gap-3 rounded-r-xl" href="{% url 'automacoes_campanha' %}">
-<span class="material-symbols-outlined">campaign</span>
-<span class="font-label text-sm font-bold">Laboratório de Campanhas</span>
-</a>
-<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="#">
-<span class="material-symbols-outlined">poll</span>
-<span class="font-label text-sm font-medium">Motor de Pesquisas</span>
-</a>
-</nav>
-<div class="px-4 mt-auto space-y-1">
-<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="#">
-<span class="material-symbols-outlined">help</span>
-<span class="font-label text-sm font-medium">Suporte</span>
-</a>
-<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="#">
-<span class="material-symbols-outlined">history</span>
-<span class="font-label text-sm font-medium">Logs</span>
-</a>
-</div>
-</aside>
-<!-- Main Content Canvas -->
-<main class="xl:ml-64 pt-24 pb-24 px-6 md:px-12 min-h-screen">
+
 <!-- Header with Back Button -->
 <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
 <div>
@@ -207,16 +164,16 @@
                 </p>
 </div>
 <div class="flex items-center gap-4">
-<button class="px-6 py-3 rounded-full font-bold text-sm bg-surface-container-highest text-on-surface hover:bg-surface-bright transition-all">
+<button type="submit" form="campanha-form" name="acao" value="rascunho" class="px-6 py-3 rounded-full font-bold text-sm bg-surface-container-highest text-on-surface hover:bg-surface-bright transition-all">
                     SALVAR RASCUNHO
                 </button>
-<button class="px-8 py-3 rounded-full font-bold text-sm bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+<button type="submit" form="campanha-form" name="acao" value="ativar" class="px-8 py-3 rounded-full font-bold text-sm bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
                     ATIVAR CAMPANHA
                 </button>
 </div>
 </div>
 <!-- Form Layout: Asymmetric Bento Grid -->
-<form action="" method="POST" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<form id="campanha-form" action="" method="POST" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 {% csrf_token %}
 <!-- Left Column: Core Configuration -->
 <div class="lg:col-span-7 space-y-8">
@@ -231,15 +188,15 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 <div class="col-span-1 md:col-span-2 group">
 <label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">DESCRIÇÃO DA CAMPANHA *</label>
-<input name="descricao" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all" type="text" placeholder="Ex: Horário Funcionamento RKS - Semana Santa" required/>
+<input name="descricao" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all" type="text" placeholder="Ex: Horário Funcionamento RKS - Semana Santa" value="{{ campanha.descricao|default:'' }}" required/>
 </div>
 <div class="group">
 <label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">STATUS INICIAL</label>
 <div class="relative">
 <select name="status" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium appearance-none">
-<option value="ativa">Ativa / Ligada</option>
-<option value="pausada">Pausada / Desligada</option>
-<option value="rascunho">Rascunho</option>
+<option value="ativa" {% if campanha.status == 'ativa' %}selected{% endif %}>Ativa / Ligada</option>
+<option value="pausada" {% if campanha.status == 'pausada' %}selected{% endif %}>Pausada / Desligada</option>
+<option value="rascunho" {% if campanha.status == 'rascunho' %}selected{% endif %}>Rascunho</option>
 </select>
 <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
 </div>
@@ -247,14 +204,14 @@
 <div class="group">
 <label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">NÍVEL DE PRIORIDADE</label>
 <div class="flex items-center gap-2 mt-2">
-<input type="radio" name="prioridade" value="baixa" id="pri_baixa" class="hidden">
-<label for="pri_baixa" class="flex-1 text-center cursor-pointer py-3 bg-surface-container-highest rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary transition-all">BAIXA</label>
+<input type="radio" name="prioridade" value="baixa" id="pri_baixa" class="hidden" {% if campanha.prioridade == 'baixa' %}checked{% endif %}>
+<label for="pri_baixa" class="flex-1 text-center cursor-pointer py-3 rounded-xl text-xs font-bold transition-all {% if campanha.prioridade == 'baixa' %}bg-primary/20 border border-primary/30 text-primary{% else %}bg-surface-container-highest text-on-surface-variant hover:text-primary{% endif %}">BAIXA</label>
 
-<input type="radio" name="prioridade" value="media" id="pri_media" class="hidden" checked>
-<label for="pri_media" class="flex-1 text-center cursor-pointer py-3 bg-primary/20 border border-primary/30 rounded-xl text-xs font-bold text-primary transition-all">MÉDIA</label>
+<input type="radio" name="prioridade" value="media" id="pri_media" class="hidden" {% if campanha.prioridade == 'media' or not campanha %}checked{% endif %}>
+<label for="pri_media" class="flex-1 text-center cursor-pointer py-3 rounded-xl text-xs font-bold transition-all {% if campanha.prioridade == 'media' or not campanha %}bg-primary/20 border border-primary/30 text-primary{% else %}bg-surface-container-highest text-on-surface-variant hover:text-primary{% endif %}">MÉDIA</label>
 
-<input type="radio" name="prioridade" value="alta" id="pri_alta" class="hidden">
-<label for="pri_alta" class="flex-1 text-center cursor-pointer py-3 bg-surface-container-highest rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary transition-all">ALTA</label>
+<input type="radio" name="prioridade" value="alta" id="pri_alta" class="hidden" {% if campanha.prioridade == 'alta' %}checked{% endif %}>
+<label for="pri_alta" class="flex-1 text-center cursor-pointer py-3 rounded-xl text-xs font-bold transition-all {% if campanha.prioridade == 'alta' %}bg-primary/20 border border-primary/30 text-primary{% else %}bg-surface-container-highest text-on-surface-variant hover:text-primary{% endif %}">ALTA</label>
 </div>
 </div>
 </div>
@@ -272,17 +229,17 @@
 <div class="group">
 <label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-secondary transition-colors">TIPO DE GATILHO</label>
 <select name="gatilho" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium">
-<option value="data">Data &amp; Hora Agendada</option>
-<option value="checkin">No Check-in do Membro</option>
-<option value="cadastro">No Novo Cadastro</option>
-<option value="pagamento">No Sucesso do Pagamento</option>
-<option value="pesquisa">Envio de Pesquisa de Opinião</option>
+<option value="data" {% if campanha.gatilho == 'data' %}selected{% endif %}>Data &amp; Hora Agendada</option>
+<option value="checkin" {% if campanha.gatilho == 'checkin' %}selected{% endif %}>No Check-in do Membro</option>
+<option value="cadastro" {% if campanha.gatilho == 'cadastro' %}selected{% endif %}>No Novo Cadastro</option>
+<option value="pagamento" {% if campanha.gatilho == 'pagamento' %}selected{% endif %}>No Sucesso do Pagamento</option>
+<option value="pesquisa" {% if campanha.gatilho == 'pesquisa' %}selected{% endif %}>Envio de Pesquisa de Opinião</option>
 </select>
 </div>
 <div class="group">
 <label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-secondary transition-colors">HORÁRIO DE DISPARO</label>
 <div class="relative">
-<input name="horario_disparo" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium" type="datetime-local"/>
+<input name="horario_disparo" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium" type="datetime-local" value="{{ campanha.horario_disparo|date:'Y-m-d\TH:i' }}"/>
 </div>
 </div>
 </div>
@@ -295,7 +252,7 @@
 </div>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
-<input name="repetir" class="sr-only peer" type="checkbox" value="1"/>
+<input name="repetir" class="sr-only peer" type="checkbox" value="1" {% if campanha.repetir %}checked{% endif %}/>
 <div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
 </label>
 </div>
@@ -321,17 +278,17 @@
 <div>
 <label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">DIMENSÃO ALVO</label>
 <select name="dimensao" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm text-on-surface font-medium">
-<option value="tipo_membro">Tipo de Membro</option>
-<option value="plano">Plano de Assinatura</option>
-<option value="ultima_visita">Data da Última Visita</option>
+<option value="tipo_membro" {% if campanha.dimensao == 'tipo_membro' %}selected{% endif %}>Tipo de Membro</option>
+<option value="plano" {% if campanha.dimensao == 'plano' %}selected{% endif %}>Plano de Assinatura</option>
+<option value="ultima_visita" {% if campanha.dimensao == 'ultima_visita' %}selected{% endif %}>Data da Última Visita</option>
 </select>
 </div>
 <div>
 <label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">VALOR DO STATUS</label>
 <select name="status_audiencia" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm text-on-surface font-medium">
-<option value="ativos">Ativos</option>
-<option value="bloqueados">Bloqueados</option>
-<option value="cancelados">Cancelados</option>
+<option value="ATIVO" {% if campanha.status_audiencia == 'ATIVO' %}selected{% endif %}>Ativos</option>
+<option value="BLOQUEADO" {% if campanha.status_audiencia == 'BLOQUEADO' %}selected{% endif %}>Bloqueados</option>
+<option value="INATIVO" {% if campanha.status_audiencia == 'INATIVO' %}selected{% endif %}>Cancelados/Inativos</option>
 </select>
 </div>
 </div>
@@ -365,7 +322,7 @@
 </div>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
-<input name="canal_whatsapp" class="sr-only peer" type="checkbox" value="1" checked/>
+<input name="canal_whatsapp" class="sr-only peer" type="checkbox" value="1" {% if campanha.canal_whatsapp or not campanha %}checked{% endif %}/>
 <div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
 </label>
 </div>
@@ -377,7 +334,7 @@
 <span class="text-sm font-bold text-on-surface">Newsletter por E-mail</span>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
-<input name="canal_email" class="sr-only peer" type="checkbox" value="1"/>
+<input name="canal_email" class="sr-only peer" type="checkbox" value="1" {% if campanha.canal_email %}checked{% endif %}/>
 <div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
 </label>
 </div>
@@ -389,7 +346,7 @@
 <span class="text-sm font-bold text-on-surface">Push no Aplicativo</span>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
-<input name="canal_app" class="sr-only peer" type="checkbox" value="1"/>
+<input name="canal_app" class="sr-only peer" type="checkbox" value="1" {% if campanha.canal_app %}checked{% endif %}/>
 <div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
 </label>
 </div>
@@ -410,7 +367,7 @@
 </div>
 <div class="space-y-6">
 <div class="relative">
-<textarea name="conteudo" class="w-full bg-surface-container-highest border-none rounded-xl p-6 text-on-surface font-medium text-sm leading-relaxed focus:ring-2 focus:ring-primary/20 resize-none" placeholder="Digite sua mensagem aqui..." rows="8"></textarea>
+<textarea name="conteudo" class="w-full bg-surface-container-highest border-none rounded-xl p-6 text-on-surface font-medium text-sm leading-relaxed focus:ring-2 focus:ring-primary/20 resize-none" placeholder="Digite sua mensagem aqui..." rows="8">{{ campanha.conteudo|default:'' }}</textarea>
 <!-- Variable Chips -->
 <div class="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2 pt-4 border-t border-outline-variant/10">
 <span class="text-[9px] font-bold text-on-surface-variant uppercase flex items-center mr-2">Tags Rápidas:</span>
@@ -449,24 +406,29 @@
 </section>
 </div>
 </form>
-<!-- Footer Sticky Action Bar (Mobile Only) -->
-<div class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-6 pb-4 pt-2 md:hidden bg-surface-container dark:bg-surface-container-highest/80 backdrop-blur-xl rounded-t-xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)]">
-<a class="flex flex-col items-center justify-center text-on-surface-variant" href="{% url 'crm_dashboard' %}">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="font-label text-[10px] uppercase font-bold">Início</span>
-</a>
-<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full w-14 h-14 -mt-4 shadow-lg scale-90 transition-all" href="{% url 'automacoes_hub' %}">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
-<span class="font-label text-[10px] uppercase font-bold">Automação</span>
-</a>
-<a class="flex flex-col items-center justify-center text-on-surface-variant" href="{% url 'automacoes_campanha' %}">
-<span class="material-symbols-outlined">send</span>
-<span class="font-label text-[10px] uppercase font-bold">Campanhas</span>
-</a>
-<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
-<span class="material-symbols-outlined">sensors</span>
-<span class="font-label text-[10px] uppercase font-bold">Pulso</span>
-</a>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-container-high/90 backdrop-blur-2xl border-t border-white/10 z-[100] flex items-center justify-around px-4">
+    <a href="{% url 'crm_dashboard' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">grid_view</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Dash</span>
+    </a>
+    <a href="{% url 'crm_alunos_list' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">group</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Alunos</span>
+    </a>
+    <div class="relative -top-8">
+        <a href="{% url 'crm_aluno_create' %}" class="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,145,89,0.4)]">
+            <span class="material-symbols-outlined text-3xl font-black">person_add</span>
+        </a>
+    </div>
+    <a href="{% url 'automacoes_hub' %}" class="flex flex-col items-center gap-1 text-primary">
+        <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Automar</span>
+    </a>
+    <a href="{% url 'crm_caixa' %}" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-primary">
+        <span class="material-symbols-outlined text-2xl">payments</span>
+        <span class="text-[8px] font-black uppercase tracking-widest font-headline">Caixa</span>
+    </a>
 </div>
 </main>
 <script>
