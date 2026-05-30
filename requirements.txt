@@ -152,3 +152,4 @@ wheel==0.47.0
 whitenoise==6.12.0
 wrapt==2.1.2
 xtyping==0.8.2
+google-genai==2.7.0
