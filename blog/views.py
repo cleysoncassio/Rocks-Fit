@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.db import models
@@ -2522,3 +2522,24 @@ def processar_mensagem_aluno(remetente, texto):
         # Resposta padrão caso não seja um CPF
         print(f"[LOG] Mensagem genérica recebida de {remetente}: {texto}")
         EvolutionApiService.enviar_mensagem_texto(remetente, "Oi! Tudo bem? Para consultar seu plano e renovar de forma automática, digite apenas os números do seu CPF. 💪")
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def automacoes_hub(request):
+    """
+    Exibe o hub principal de automações e campanhas.
+    """
+    return render(request, "automacoes_hub.html")
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def automacoes_campanha(request):
+    """
+    Exibe a interface do criador de campanhas e processa o envio se for POST.
+    """
+    if request.method == "POST":
+        # Aqui podemos processar os dados do formulário futuramente (salvar no banco, agendar disparo, etc)
+        messages.success(request, "Campanha processada com sucesso!")
+        return redirect('automacoes_hub')
+        
+    return render(request, "automacoes_campanha.html")

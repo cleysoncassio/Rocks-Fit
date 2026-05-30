@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Criador de Campanhas | Rocks Fit Forge OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed": "#fbb423",
+                      "secondary-fixed": "#ffc69f",
+                      "secondary": "#f88d36",
+                      "background": "#0e0e0e",
+                      "inverse-surface": "#fcf9f8",
+                      "error-container": "#b92902",
+                      "on-primary-container": "#401500",
+                      "on-background": "#ffffff",
+                      "tertiary": "#ffc562",
+                      "error": "#ff7351",
+                      "surface-dim": "#0e0e0e",
+                      "secondary-dim": "#eb832c",
+                      "inverse-on-surface": "#565555",
+                      "on-primary": "#531e00",
+                      "on-secondary-fixed-variant": "#803f00",
+                      "tertiary-container": "#fbb423",
+                      "primary-fixed": "#ff7a2f",
+                      "surface-tint": "#ff9159",
+                      "on-tertiary": "#5e4000",
+                      "surface-container": "#1a1919",
+                      "primary-container": "#ff7a2f",
+                      "on-primary-fixed-variant": "#4f1c00",
+                      "surface-variant": "#262626",
+                      "on-error-container": "#ffd2c8",
+                      "surface-container-high": "#201f1f",
+                      "secondary-fixed-dim": "#ffb37d",
+                      "primary-fixed-dim": "#f66700",
+                      "outline": "#767575",
+                      "on-primary-fixed": "#000000",
+                      "surface-bright": "#2c2c2c",
+                      "on-tertiary-container": "#523700",
+                      "on-secondary-container": "#fff6f2",
+                      "on-error": "#450900",
+                      "tertiary-fixed-dim": "#eba60f",
+                      "outline-variant": "#484847",
+                      "primary": "#ff9159",
+                      "on-tertiary-fixed-variant": "#5e4000",
+                      "on-tertiary-fixed": "#372400",
+                      "on-surface-variant": "#adaaaa",
+                      "surface-container-low": "#131313",
+                      "on-surface": "#ffffff",
+                      "tertiary-dim": "#eba60f",
+                      "surface-container-lowest": "#000000",
+                      "on-secondary-fixed": "#552800",
+                      "primary-dim": "#ff7524",
+                      "on-secondary": "#462000",
+                      "error-dim": "#d53d18",
+                      "secondary-container": "#944a00",
+                      "surface-container-highest": "#262626",
+                      "inverse-primary": "#a14100",
+                      "surface": "#0e0e0e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Space Grotesk"],
+                      "display": ["Space Grotesk"],
+                      "body": ["Manrope"],
+                      "label": ["Inter"]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #131313;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #262626;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #ff9159;
+        }
+        .glass-panel {
+            background: rgba(38, 38, 38, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .status-slug {
+            padding: 2px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .active-glow {
+            box-shadow: -4px 0 0 0 #ff9159;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 145, 89, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body custom-scrollbar selection:bg-primary selection:text-on-primary-fixed">
+<!-- Top Navigation Anchor -->
+<header class="bg-surface-container-low dark:bg-surface-container-low fixed top-0 left-0 right-0 z-40 flex justify-between items-center w-full px-8 h-20">
+<div class="flex items-center gap-12">
+<div class="font-display text-2xl font-black text-primary dark:text-primary tracking-tighter">
+                ROCKS FIT FORGE OS
+            </div>
+<nav class="hidden md:flex items-center gap-8 h-full">
+<a class="text-on-surface-variant dark:text-on-surface-variant font-label text-sm font-medium hover:text-primary transition-colors duration-200" href="{% url 'crm_dashboard' %}">Dashboard</a>
+<a class="text-primary dark:text-primary font-bold border-b-2 border-primary font-label text-sm flex items-center h-20" href="{% url 'automacoes_hub' %}">Automações</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-label text-sm font-medium hover:text-primary transition-colors duration-200" href="{% url 'automacoes_campanha' %}">Campanhas</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-label text-sm font-medium hover:text-primary transition-colors duration-200" href="#">Pesquisas</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20">
+<img alt="Perfil do Gestor" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEfMCFss5kM7R78_7Pw3sD0TUx9C5QBGcfLCMMtRlqSjqjN987xdFm54eFU_0Sy8fuO0JdgJBIKcreeN7HGx2w2sBwOsuAFwAIigr0UdcuX0Y7HjjxZUBJfiJ8bGQqDXt_bARQc6vmBazAh53h9gh1YhIPGnygiexN7Bc0HBvETacHxbC0_RlENDtUa6YCR8WWHbXEK-qZjChwpa6lT9lw4FkyKQU47ZItrAVa0ZLH06vUEXLpSGClkZJugmL7i_SL0ppVtnKSBYw"/>
+</div>
+</div>
+</header>
+<!-- Sidebar Layout -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low dark:bg-surface-container-low flex flex-col pt-24 pb-8 border-r border-outline-variant/10 hidden xl:flex">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 p-4 bg-surface-container-high rounded-xl">
+<div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+</div>
+<div>
+<h3 class="font-display text-sm font-bold text-on-surface">Forge OS</h3>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">V2.4 ATIVO</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="{% url 'crm_dashboard' %}">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-label text-sm font-medium">Controle de Missão</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label text-sm font-medium">Base de Membros</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="{% url 'automacoes_hub' %}">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
+<span class="font-label text-sm font-medium">Hub de Automação</span>
+</a>
+<a class="bg-surface-container-highest text-primary border-l-4 border-primary px-4 py-3 flex items-center gap-3 rounded-r-xl" href="{% url 'automacoes_campanha' %}">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-label text-sm font-bold">Laboratório de Campanhas</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">poll</span>
+<span class="font-label text-sm font-medium">Motor de Pesquisas</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1">
+<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label text-sm font-medium">Suporte</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high px-4 py-3 rounded-xl flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label text-sm font-medium">Logs</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="xl:ml-64 pt-24 pb-24 px-6 md:px-12 min-h-screen">
+<!-- Header with Back Button -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div>
+<a href="{% url 'automacoes_hub' %}" class="flex items-center gap-2 text-on-surface-variant hover:text-primary mb-4 transition-colors">
+<span class="material-symbols-outlined text-lg">arrow_back</span>
+<span class="text-xs font-bold uppercase tracking-widest">VOLTAR AO HUB</span>
+</a>
+<h1 class="font-display text-4xl md:text-5xl font-black text-on-surface tracking-tighter uppercase">
+                    CRIADOR DE <span class="text-primary">CAMPANHAS</span>
+</h1>
+<p class="text-on-surface-variant mt-2 max-w-lg">
+                    Crie e agende sequências de automação multicanal para a comunidade Rocks Fit.
+                </p>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-6 py-3 rounded-full font-bold text-sm bg-surface-container-highest text-on-surface hover:bg-surface-bright transition-all">
+                    SALVAR RASCUNHO
+                </button>
+<button class="px-8 py-3 rounded-full font-bold text-sm bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                    ATIVAR CAMPANHA
+                </button>
+</div>
+</div>
+<!-- Form Layout: Asymmetric Bento Grid -->
+<form action="" method="POST" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+{% csrf_token %}
+<!-- Left Column: Core Configuration -->
+<div class="lg:col-span-7 space-y-8">
+<!-- Section 1: Campaign Details -->
+<section class="bg-surface-container-low rounded-full p-8 border border-outline-variant/5">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">info</span>
+</div>
+<h2 class="font-display text-xl font-bold uppercase tracking-tight">IDENTIDADE DA CAMPANHA</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="col-span-1 md:col-span-2 group">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">DESCRIÇÃO DA CAMPANHA *</label>
+<input name="descricao" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all" type="text" placeholder="Ex: Horário Funcionamento RKS - Semana Santa" required/>
+</div>
+<div class="group">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">STATUS INICIAL</label>
+<div class="relative">
+<select name="status" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium appearance-none">
+<option value="ativa">Ativa / Ligada</option>
+<option value="pausada">Pausada / Desligada</option>
+<option value="rascunho">Rascunho</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="group">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">NÍVEL DE PRIORIDADE</label>
+<div class="flex items-center gap-2 mt-2">
+<input type="radio" name="prioridade" value="baixa" id="pri_baixa" class="hidden">
+<label for="pri_baixa" class="flex-1 text-center cursor-pointer py-3 bg-surface-container-highest rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary transition-all">BAIXA</label>
+
+<input type="radio" name="prioridade" value="media" id="pri_media" class="hidden" checked>
+<label for="pri_media" class="flex-1 text-center cursor-pointer py-3 bg-primary/20 border border-primary/30 rounded-xl text-xs font-bold text-primary transition-all">MÉDIA</label>
+
+<input type="radio" name="prioridade" value="alta" id="pri_alta" class="hidden">
+<label for="pri_alta" class="flex-1 text-center cursor-pointer py-3 bg-surface-container-highest rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary transition-all">ALTA</label>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Trigger & Scheduling -->
+<section class="bg-surface-container-low rounded-full p-8 border border-outline-variant/5">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<h2 class="font-display text-xl font-bold uppercase tracking-tight">GATILHO DE EXECUÇÃO</h2>
+</div>
+<div class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="group">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-secondary transition-colors">TIPO DE GATILHO</label>
+<select name="gatilho" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium">
+<option value="data">Data &amp; Hora Agendada</option>
+<option value="checkin">No Check-in do Membro</option>
+<option value="cadastro">No Novo Cadastro</option>
+<option value="pagamento">No Sucesso do Pagamento</option>
+<option value="pesquisa">Envio de Pesquisa de Opinião</option>
+</select>
+</div>
+<div class="group">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-secondary transition-colors">HORÁRIO DE DISPARO</label>
+<div class="relative">
+<input name="horario_disparo" class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface font-medium" type="datetime-local"/>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-high rounded-xl border border-outline-variant/10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">replay</span>
+<div>
+<p class="text-sm font-bold text-on-surface">Repetir esta automação</p>
+<p class="text-[10px] text-on-surface-variant font-medium">Habilitar para campanhas recorrentes de feriados</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input name="repetir" class="sr-only peer" type="checkbox" value="1"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Section 3: Audience Filtering -->
+<section class="bg-surface-container-low rounded-full p-8 border border-outline-variant/5">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">filter_alt</span>
+</div>
+<h2 class="font-display text-xl font-bold uppercase tracking-tight">LÓGICA DE AUDIÊNCIA</h2>
+</div>
+<div class="space-y-4">
+<div class="p-6 bg-surface-container-high rounded-xl border border-outline-variant/10">
+<div class="flex justify-between items-center mb-4">
+<h4 class="text-xs font-bold text-on-surface tracking-widest uppercase">GRUPO DE CONDIÇÃO 1</h4>
+<button type="button" class="text-error hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">DIMENSÃO ALVO</label>
+<select name="dimensao" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm text-on-surface font-medium">
+<option value="tipo_membro">Tipo de Membro</option>
+<option value="plano">Plano de Assinatura</option>
+<option value="ultima_visita">Data da Última Visita</option>
+</select>
+</div>
+<div>
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">VALOR DO STATUS</label>
+<select name="status_audiencia" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm text-on-surface font-medium">
+<option value="ativos">Ativos</option>
+<option value="bloqueados">Bloqueados</option>
+<option value="cancelados">Cancelados</option>
+</select>
+</div>
+</div>
+</div>
+<button type="button" class="w-full py-4 border-2 border-dashed border-outline-variant/30 rounded-xl text-on-surface-variant font-bold text-sm hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                            ADICIONAR CONDIÇÃO DE FILTRO
+                        </button>
+</div>
+</section>
+</div>
+<!-- Right Column: Channels & Content -->
+<div class="lg:col-span-5 space-y-8">
+<!-- Section 4: Channel Selection -->
+<section class="bg-surface-container-low rounded-full p-8 border border-outline-variant/5">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">hub</span>
+</div>
+<h2 class="font-display text-xl font-bold uppercase tracking-tight">CANAIS ATIVOS</h2>
+</div>
+<div class="grid grid-cols-1 gap-3">
+<div class="flex items-center justify-between p-4 bg-surface-container-highest rounded-xl border-l-4 border-primary shadow-lg shadow-black/20 group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-[#25D366]/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[#25D366]">chat_bubble</span>
+</div>
+<div>
+<span class="text-sm font-bold text-on-surface">WhatsApp Direto</span>
+<p class="text-[10px] text-on-surface-variant">Média de 98% de taxa de abertura</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input name="canal_whatsapp" class="sr-only peer" type="checkbox" value="1" checked/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-high rounded-xl opacity-60 hover:opacity-100 transition-opacity">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-blue-500">mail</span>
+</div>
+<span class="text-sm font-bold text-on-surface">Newsletter por E-mail</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input name="canal_email" class="sr-only peer" type="checkbox" value="1"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-high rounded-xl opacity-60 hover:opacity-100 transition-opacity">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-purple-500">notifications_active</span>
+</div>
+<span class="text-sm font-bold text-on-surface">Push no Aplicativo</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input name="canal_app" class="sr-only peer" type="checkbox" value="1"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Section 5: Content Editor -->
+<section class="bg-surface-container-low rounded-full p-8 border border-outline-variant/5">
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+</div>
+<h2 class="font-display text-xl font-bold uppercase tracking-tight">CONTEÚDO</h2>
+</div>
+<button type="button" class="text-[10px] font-bold text-primary tracking-widest bg-primary/10 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors">
+                            PRÉ-VISUALIZAR MENSAGEM
+                        </button>
+</div>
+<div class="space-y-6">
+<div class="relative">
+<textarea name="conteudo" class="w-full bg-surface-container-highest border-none rounded-xl p-6 text-on-surface font-medium text-sm leading-relaxed focus:ring-2 focus:ring-primary/20 resize-none" placeholder="Digite sua mensagem aqui..." rows="8"></textarea>
+<!-- Variable Chips -->
+<div class="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2 pt-4 border-t border-outline-variant/10">
+<span class="text-[9px] font-bold text-on-surface-variant uppercase flex items-center mr-2">Tags Rápidas:</span>
+<button type="button" onclick="document.querySelector('textarea[name=conteudo]').value += ' [Member Name] '" class="px-2 py-1 bg-surface-container-high rounded-md text-[10px] font-bold text-primary hover:bg-primary hover:text-on-primary-fixed transition-colors">[Member Name]</button>
+<button type="button" onclick="document.querySelector('textarea[name=conteudo]').value += ' [Plan Type] '" class="px-2 py-1 bg-surface-container-high rounded-md text-[10px] font-bold text-primary hover:bg-primary hover:text-on-primary-fixed transition-colors">[Plan Type]</button>
+<button type="button" onclick="document.querySelector('textarea[name=conteudo]').value += ' [Gym Hours] '" class="px-2 py-1 bg-surface-container-high rounded-md text-[10px] font-bold text-primary hover:bg-primary hover:text-on-primary-fixed transition-colors">[Gym Hours]</button>
+<button type="button" onclick="document.querySelector('textarea[name=conteudo]').value += ' [Link Pesquisa] '" class="px-2 py-1 bg-surface-container-high rounded-md text-[10px] font-bold text-secondary hover:bg-secondary hover:text-on-primary-fixed transition-colors">[Link Pesquisa]</button>
+</div>
+</div>
+<div class="p-4 bg-surface-container-high/50 rounded-xl border border-outline-variant/10 italic text-[11px] text-on-surface-variant flex items-start gap-3">
+<span class="material-symbols-outlined text-sm mt-0.5">lightbulb</span>
+                            Personalizar mensagens com [Member Name] aumenta o engajamento em até 35% nos canais de WhatsApp. Se quiser enviar uma pesquisa, inclua a tag [Link Pesquisa].
+                        </div>
+</div>
+</section>
+<!-- Media Attachment (Optional Industrial Polish) -->
+<section class="bg-surface-container-low rounded-full p-8 border border-outline-variant/5">
+<div class="flex items-center gap-4 mb-4">
+<span class="material-symbols-outlined text-on-surface-variant">attachment</span>
+<h2 class="font-display text-sm font-bold uppercase tracking-widest text-on-surface-variant">ANEXOS</h2>
+</div>
+<div class="flex gap-4">
+<div class="w-24 h-24 rounded-xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center group cursor-pointer hover:border-primary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary mb-1">image</span>
+<span class="text-[9px] font-bold text-on-surface-variant">IMAGEM</span>
+</div>
+<div class="w-24 h-24 rounded-xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center group cursor-pointer hover:border-primary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary mb-1">videocam</span>
+<span class="text-[9px] font-bold text-on-surface-variant">VÍDEO</span>
+</div>
+<div class="w-24 h-24 rounded-xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center group cursor-pointer hover:border-primary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary mb-1">description</span>
+<span class="text-[9px] font-bold text-on-surface-variant">DOC</span>
+</div>
+</div>
+</section>
+</div>
+</form>
+<!-- Footer Sticky Action Bar (Mobile Only) -->
+<div class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-6 pb-4 pt-2 md:hidden bg-surface-container dark:bg-surface-container-highest/80 backdrop-blur-xl rounded-t-xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="{% url 'crm_dashboard' %}">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label text-[10px] uppercase font-bold">Início</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full w-14 h-14 -mt-4 shadow-lg scale-90 transition-all" href="{% url 'automacoes_hub' %}">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-label text-[10px] uppercase font-bold">Automação</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="{% url 'automacoes_campanha' %}">
+<span class="material-symbols-outlined">send</span>
+<span class="font-label text-[10px] uppercase font-bold">Campanhas</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">sensors</span>
+<span class="font-label text-[10px] uppercase font-bold">Pulso</span>
+</a>
+</div>
+</main>
+<script>
+        // Simple micro-interactions for the form elements
+        document.querySelectorAll('input:not([type="radio"]):not([type="checkbox"]), select, textarea').forEach(el => {
+            el.addEventListener('focus', () => {
+                el.closest('section')?.classList.add('active-glow');
+            });
+            el.addEventListener('blur', () => {
+                el.closest('section')?.classList.remove('active-glow');
+            });
+        });
+
+        // Toggle state logic for buttons (Prioridade)
+        const prioridadeRadios = document.querySelectorAll('input[name="prioridade"]');
+        prioridadeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // reset all labels
+                const labels = this.closest('.flex').querySelectorAll('label');
+                labels.forEach(l => {
+                    l.classList.remove('bg-primary/20', 'border', 'border-primary/30', 'text-primary');
+                    l.classList.add('bg-surface-container-highest', 'text-on-surface-variant');
+                });
+                
+                // set active label
+                const activeLabel = this.nextElementSibling;
+                activeLabel.classList.add('bg-primary/20', 'border', 'border-primary/30', 'text-primary');
+                activeLabel.classList.remove('bg-surface-container-highest', 'text-on-surface-variant');
+            });
+        });
+    </script>
+</body></html>

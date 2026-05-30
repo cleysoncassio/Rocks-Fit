@@ -42,6 +42,10 @@ urlpatterns = [
     path('crm/aluno/<int:aluno_id>/pagamento/<int:pagamento_id>/delete/', views.crm_pagamento_delete, name='crm_pagamento_delete'),
     path('crm/aluno/<int:aluno_id>/pagamento/<int:pagamento_id>/edit/', views.crm_pagamento_edit, name='crm_pagamento_edit'),
     path('crm/campanha-whatsapp/', views.crm_whatsapp_campanha, name='crm_whatsapp_campanha'),
+    
+    # Automações
+    path("crm/automacoes/", views.automacoes_hub, name="automacoes_hub"),
+    path("crm/automacoes/campanha/", views.automacoes_campanha, name="automacoes_campanha"),
 
     path('crm/caixa/', views.crm_caixa, name='crm_caixa'),
     
