@@ -1,7 +1,6 @@
 services:
   evolution-api:
     image: evoapicloud/evolution-api:2.4.0-rc2
-    container_name: evolution-api
     restart: always
     ports:
       - "8080:8080"
@@ -42,21 +41,12 @@ services:
       redis:
         condition: service_started
 
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-      - 1.1.1.1
-
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
 
   redis:
     image: redis:7-alpine
-    container_name: evolution-redis
     restart: always
     command: redis-server --appendonly yes
     volumes:
@@ -64,7 +54,6 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    container_name: evolution-postgres
     restart: always
     environment:
       - POSTGRES_USER=evolution
