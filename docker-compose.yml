@@ -1,0 +1,85 @@
+services:
+  evolution-api:
+    image: evoapicloud/evolution-api:2.4.0-rc2
+    container_name: evolution-api
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_URL=http://localhost:8080
+      - CONFIG_SESSION_PHONE_CLIENT=RocksFit
+      - CONFIG_SESSION_PHONE_NAME=chrome
+      - DEL_INSTANCE=false
+      - QRCODE_LIMIT=30
+      - QRCODE_COLOR=#198754
+
+      # Autenticação (A CHAVE GLOBAL SECRETA)
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=429683C4C977415CBEE243405C76100E
+      - AUTHENTICATION_EXPOSE_IN_ENV=true
+      - TYPEBOT_ENABLED=true
+
+      # Configuração de Banco de Dados (Obrigatório na v2)
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolutionpass@postgres:5432/evolution?schema=public
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_rocksfit
+
+      # Configuração do Redis (Obrigatório na v2 para controle de estado)
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/6
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=false
+      - CACHE_LOCAL_ENABLED=false
+
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://redis:6379/6
+      - REDIS_PREFIX_KEY=evolution
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+
+    volumes:
+      - evolution_instances:/evolution/instances
+      - evolution_store:/evolution/store
+
+  redis:
+    image: redis:7-alpine
+    container_name: evolution-redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - evolution_redis:/data
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=evolutionpass
+      - POSTGRES_DB=evolution
+    volumes:
+      - evolution_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  evolution_instances:
+  evolution_store:
+  evolution_db:
+  evolution_redis:
